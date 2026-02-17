@@ -25,7 +25,7 @@ class FFmpegConverter(ConverterInterface):
             True if conversion is possible, False otherwise
         """
         # Define format categories
-        video_formats = ['mp4', 'avi', 'mov', 'mkv', 'webm', 'flv', 'wmv', 'mpg', 'mpeg', 'm4v']
+        video_formats = ['mp4', 'avi', 'mov', 'mkv', 'webm', 'flv', 'wmv', 'mpg', 'mpeg', 'm4v', 'gif']
         audio_formats = ['mp3', 'wav', 'aac', 'flac', 'ogg', 'wma', 'm4a', 'opus', 'alac']
         
         all_supported = video_formats + audio_formats
