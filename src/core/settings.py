@@ -37,6 +37,7 @@ class Settings(BaseSettings):
 
     # ===== SQLite =====
     file_table_name: str = "FILES_METADATA"
+    conversion_table_name: str = "CONVERSIONS_METADATA"
 
     # ===== Redis =====
 

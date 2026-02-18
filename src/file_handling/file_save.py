@@ -56,8 +56,6 @@ class FileSave:
             "extension": self.file_extension,
             "size_bytes": size_bytes,
             "sha256_checksum": hasher.hexdigest(),
-            "stored_as": self.unique_filename,
         }
-
         self.db.insert_file_metadata(metadata)
         return metadata
