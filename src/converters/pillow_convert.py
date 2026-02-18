@@ -9,6 +9,7 @@ class PillowConverter(ConverterInterface):
         'jpg', 
         'jpeg', 
         'png',
+        'gif', 
         'bmp', 
         'tiff', 
         'tif',
