@@ -32,6 +32,19 @@ class ConverterInterface:
         """
         raise NotImplementedError("can_convert method must be implemented by subclasses.")
     
+    @classmethod
+    def get_formats_compatible_with(cls, format_type: str) -> set:
+        """
+        Get the set of compatible formats for conversion.
+        
+        Args:
+            format_type: The input format to check compatibility for.
+        
+        Returns:
+            Set of compatible formats.
+        """
+        return cls.supported_formats - {format_type.lower()}
+    
     def convert(self, overwrite: bool = True, quality: Optional[str] = None) -> list[str]:
         """
         Convert the input file to the output format.
