@@ -2,14 +2,14 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, Request
 from fastapi.responses import FileResponse
 from pathlib import Path
 from file_handling import FileSave
+from core import get_settings
 
 router = APIRouter(prefix="/files", tags=["files"])
 
 # Define upload directory
-UPLOAD_DIR = Path("data/uploads")
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-CONVERTED_DIR = Path("data/converted")
-
+settings = get_settings()
+UPLOAD_DIR = settings.upload_dir
+CONVERTED_DIR = settings.output_dir
 
 @router.get("/")
 def list_files():

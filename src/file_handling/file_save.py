@@ -1,6 +1,7 @@
 from db import FileDB
 from fastapi import UploadFile
 from pathlib import Path
+from core import get_settings
 import os, uuid, hashlib, mimetypes
 import magic
 
@@ -8,7 +9,7 @@ mimetypes.add_type("application/yaml", ".yaml")
 mimetypes.add_type("application/yaml", ".yml")
 
 class FileSave:
-    STORAGE_DIR = "data/uploads"
+    STORAGE_DIR = get_settings().upload_dir
     CHUNK_SIZE = 1024 * 1024  # 1MB
 
     def __init__(self, file: UploadFile):

@@ -1,8 +1,10 @@
 import sqlite3
+from core import get_settings
 
 class FileDB:
-  DB_PATH = "data/db/app.db"
-  TABLE_NAME = "FILES_METADATA"
+  settings = get_settings()
+  DB_PATH = settings.db_path
+  TABLE_NAME = settings.file_table_name
 
   def __init__(self):
     self.conn = sqlite3.connect(self.DB_PATH)

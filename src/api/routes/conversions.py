@@ -3,12 +3,13 @@ from pathlib import Path
 from fastapi import APIRouter, Request
 from converters import ConverterInterface
 from registry import ConverterRegistry
+from core import get_settings
 
 router = APIRouter(prefix="/conversions", tags=["conversions"])
 regisitry = ConverterRegistry()
-UPLOAD_DIR = Path("data/uploads")
-CONVERTED_DIR = Path("data/converted")
-CONVERTED_DIR.mkdir(parents=True, exist_ok=True)
+settings = get_settings()
+UPLOAD_DIR = settings.upload_dir
+CONVERTED_DIR = settings.output_dir
 
 @router.get("/")
 def list_conversions():
