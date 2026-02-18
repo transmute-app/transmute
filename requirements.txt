@@ -1,6 +1,6 @@
 # Production dependencies
 Pillow==12.1.1
-
-pandas>=2.0.0
-pyyaml>=6.0
-openpyxl>=3.0.0
+pandas==3.0.1
+pyyaml==6.0.3
+openpyxl==3.1.5
+fastapi==0.129.0
