@@ -6,14 +6,10 @@ import uvicorn
 
 def create_app() -> FastAPI:
     app = FastAPI()
-
     app.include_router(router, prefix="/api")
-
     web_dir = get_settings().web_dir
-
     if web_dir.exists():
         app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
-
     return app
 
 if __name__ == "__main__":
