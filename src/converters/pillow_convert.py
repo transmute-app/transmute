@@ -82,12 +82,10 @@ class PillowConverter(ConverterInterface):
         
         # Check if output file exists and overwrite is False
         if not overwrite and os.path.exists(output_file):
-            print(f"Skipping {output_file} (already exists)")
             return [output_file]
         
         try:
             # Open the image
-            print(f"Converting {self.input_file} to {output_file}...")
             img = Image.open(self.input_file)
             
             # Handle transparency for formats that don't support it
@@ -119,7 +117,6 @@ class PillowConverter(ConverterInterface):
             
             # Save the image
             img.save(output_file, **save_kwargs)
-            print(f"Conversion successful: {output_file}")
             
             return [output_file]
             
