@@ -8,8 +8,7 @@ class PillowConverter(ConverterInterface):
     supported_formats = {
         'jpg', 
         'jpeg', 
-        'png', ''
-        'gif', 
+        'png',
         'bmp', 
         'tiff', 
         'tif',
