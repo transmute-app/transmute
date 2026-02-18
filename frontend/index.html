@@ -2,9 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/icons/beaker-white.svg" />
+    <link rel="icon" id="favicon" type="image/svg+xml" href="/icons/beaker-white.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Transmute</title>
+    <script>
+      // Update favicon based on color scheme
+      function updateFavicon() {
+        const favicon = document.getElementById('favicon');
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        favicon.href = isDark ? '/icons/beaker-white.svg' : '/icons/beaker-black.svg';
+      }
+      
+      // Set initial favicon
+      updateFavicon();
+      
+      // Listen for theme changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateFavicon);
+    </script>
   </head>
   <body>
     <div id="root"></div>
