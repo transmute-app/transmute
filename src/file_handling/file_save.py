@@ -1,5 +1,5 @@
 from db import FileDB
-from fastapi import File, UploadFile
+from fastapi import UploadFile
 from pathlib import Path
 import os
 import uuid
@@ -77,4 +77,3 @@ class FileSave:
 
     # Return metadata for response to user
     return metadata
-    
