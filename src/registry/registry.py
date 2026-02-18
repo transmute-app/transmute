@@ -1,17 +1,8 @@
 import sys
 import os
 import inspect
-
-# Handle imports for both direct execution and module import
-try:
-    # Try relative imports first (when imported as a module)
-    from .. import converters
-    from ..converters.converter_interface import ConverterInterface
-except ImportError:
-    # Fall back to absolute imports (when run directly or from main.py)
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    import converters
-    from converters.converter_interface import ConverterInterface
+from converters import ConverterInterface
+import converters
 
 
 class ConverterRegistry:
@@ -160,59 +151,3 @@ class ConverterRegistry:
             matrix[fmt] = self.get_compatible_formats(fmt)
         
         return matrix
-    
-
-if __name__ == "__main__":
-    print("Initializing converter registry...")
-    registry = ConverterRegistry()
-    
-    print(f"\nRegistered {len(registry.converters)} converters:")
-    for name in registry.converters.keys():
-        print(f"  - {name}")
-    
-    print("\nSupported formats by converter:")
-    for name, formats in registry.list_converters().items():
-        print(f"  {name}: {', '.join(sorted(formats))}")
-    
-    print("\nFormat mapping (format -> converters):")
-    for fmt in sorted(registry.format_map.keys()):
-        converter_names = [c.__name__ for c in registry.format_map[fmt]]
-        print(f"  {fmt}: {', '.join(converter_names)}")
-    
-    print("\nExample: Finding converter for mp4 -> gif...")
-    converter = registry.get_converter_for_conversion('mp4', 'gif')
-    if converter:
-        print(f"  Found: {converter.__name__}")
-    else:
-        print("  No suitable converter found")
-    
-    print("\nExample: Finding converter for gif -> png...")
-    converter = registry.get_converter_for_conversion('gif', 'png')
-    if converter:
-        print(f"  Found: {converter.__name__}")
-    else:
-        print("  No suitable converter found")
-    
-    print("\nExample: Compatible formats for 'jpg':")
-    compatible = registry.get_compatible_formats('jpg')
-    print(f"  {', '.join(sorted(compatible))}")
-    
-    print("\nExample: Compatible formats for 'mp4':")
-    compatible = registry.get_compatible_formats('mp4')
-    print(f"  {', '.join(sorted(compatible))}")
-    
-    print("\nExample: Compatible formats for 'csv':")
-    compatible = registry.get_compatible_formats('csv')
-    print(f"  {', '.join(sorted(compatible))}")
-    
-    print("\nExample: Compatible formats for 'mp3':")
-    compatible = registry.get_compatible_formats('mp3')
-    print(f"  {', '.join(sorted(compatible))}")
-    
-    print("\nExample: Compatible formats for 'gif':")
-    compatible = registry.get_compatible_formats('gif')
-    print(f"  {', '.join(sorted(compatible))}")
-
-    print("\nAll Formats:")
-    all_formats = registry.get_formats()
-    print(f"  {', '.join(sorted(all_formats))}")
