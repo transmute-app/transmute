@@ -13,6 +13,19 @@
 
 Self-Hosted file converter (WIP!)
 
+Replaces:
+- https://www.freeconvert.com/
+- https://cloudconvert.com/
+- https://convertio.co/
+- https://file-converter.org/
+
+What does Transmute do better?
+- Full data control, your files only touch your hardware, no third parties snooping around
+- Unlimited access, for free
+  - No paid API
+  - No filesize limits
+  - No conversion count limits
+
 Currently supported file conversions:
 - Image to Image (png -> jpg, jpg -> webp, etc.)
 - Video to Video (mkv -> mp4, mov -> mkv, etc.)
