@@ -82,7 +82,14 @@ class PandasConverter(ConverterInterface):
         elif self.input_type == 'xlsx':
             df = pd.read_excel(self.input_file)
         elif self.input_type == 'json':
-            df = pd.read_json(self.input_file)
+            with open(self.input_file, 'r') as f:
+                data = json.load(f)
+            # Try to convert to DataFrame - if it's a list of dicts, it works directly
+            if isinstance(data, list):
+                df = pd.DataFrame(data)
+            else:
+                # For nested structures, flatten them
+                df = pd.json_normalize(data)
         elif self.input_type == 'parquet':
             df = pd.read_parquet(self.input_file)
         elif self.input_type == 'yaml':
