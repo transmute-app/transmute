@@ -37,9 +37,10 @@ function Converter() {
       setUploadResult(data)
       // Reset file input for next upload
       event.target.value = ''
-      // Set default format if available
+      // Set default format if available (alphabetically first)
       if (data.metadata?.compatible_formats?.length > 0) {
-        setSelectedFormat(data.metadata.compatible_formats[0])
+        const sortedFormats = [...data.metadata.compatible_formats].sort()
+        setSelectedFormat(sortedFormats[0])
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
@@ -185,7 +186,7 @@ function Converter() {
                     onChange={(e) => setSelectedFormat(e.target.value)}
                     className="block w-full px-3 py-2 bg-surface-dark border border-surface-dark text-text rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
                   >
-                    {uploadResult.metadata.compatible_formats.map((format: string) => (
+                    {[...uploadResult.metadata.compatible_formats].sort().map((format: string) => (
                       <option key={format} value={format}>
                         {format}
                       </option>

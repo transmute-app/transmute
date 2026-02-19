@@ -3,7 +3,8 @@ from core import media_type_aliases
 from typing import Optional
 
 class ConverterInterface:
-    supported_formats: set = set()  # To be defined by subclasses with supported formats
+    supported_input_formats: set = set()  # To be defined by subclasses with supported input formats
+    supported_output_formats: set = set()  # To be defined by subclasses with supported output formats
 
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
         """
@@ -44,7 +45,7 @@ class ConverterInterface:
         Returns:
             Set of compatible formats.
         """
-        return cls.supported_formats - {format_type.lower()}
+        return cls.supported_output_formats - {format_type.lower()}
     
     def convert(self, overwrite: bool = True, quality: Optional[str] = None) -> list[str]:
         """

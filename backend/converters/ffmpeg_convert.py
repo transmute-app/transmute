@@ -28,7 +28,8 @@ class FFmpegConverter(ConverterInterface):
         'm4a',
         'opus'
       }
-    supported_formats: set = video_formats | audio_formats
+    supported_input_formats: set = video_formats | audio_formats
+    supported_output_formats: set = set(supported_input_formats)
 
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
         """
@@ -50,7 +51,7 @@ class FFmpegConverter(ConverterInterface):
             True if conversion is possible, False otherwise
         """
         # Check if formats are supported
-        if self.input_type not in self.supported_formats or self.output_type not in self.supported_formats:
+        if self.input_type not in self.supported_input_formats or self.output_type not in self.supported_output_formats:
             return False
         
         # Determine input and output categories
@@ -83,7 +84,7 @@ class FFmpegConverter(ConverterInterface):
             # For audio formats, compatible formats are other audio formats
             return cls.audio_formats - {format_type.lower()}
         else:
-            return cls.supported_formats - {format_type.lower()}
+            return cls.supported_output_formats - {format_type.lower()}
     
     def convert(self, overwrite: bool = True, quality: Optional[str] = None) -> str:
         """

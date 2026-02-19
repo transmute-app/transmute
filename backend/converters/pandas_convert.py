@@ -5,7 +5,14 @@ from typing import Optional
 from .converter_interface import ConverterInterface
 
 class PandasConverter(ConverterInterface):
-    supported_formats: set = {'csv', 'xlsx', 'json', 'parquet', 'yaml'}
+    supported_input_formats: set = {
+        'csv', 
+        'xlsx', 
+        'json', 
+        'parquet', 
+        'yaml'
+    }
+    supported_output_formats: set = set(supported_input_formats)
 
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
         """
@@ -30,7 +37,7 @@ class PandasConverter(ConverterInterface):
         output_fmt = self.output_type.lower()
         
         # Check if formats are supported
-        if input_fmt not in self.supported_formats or output_fmt not in self.supported_formats:
+        if input_fmt not in self.supported_input_formats or output_fmt not in self.supported_output_formats:
             return False
         
         return True

@@ -13,7 +13,8 @@ class ConverterRegistry:
     """
     def __init__(self):
         self.converters = {}
-        self.format_map = {}  # Maps file format -> list of converter classes
+        self.input_format_map = {}  # Maps input format -> list of converter classes
+        self.output_format_map = {}  # Maps output format -> list of converter classes
         self._auto_register()
     
     def _auto_register(self):
@@ -36,11 +37,17 @@ class ConverterRegistry:
         self.converters[converter_class.__name__] = converter_class
         
         # Map supported formats to this converter
-        if hasattr(converter_class, 'supported_formats'):
-            for fmt in converter_class.supported_formats:
-                if fmt not in self.format_map:
-                    self.format_map[fmt] = []
-                self.format_map[fmt].append(converter_class)
+        if hasattr(converter_class, 'supported_input_formats'):
+            for fmt in converter_class.supported_input_formats:
+                if fmt not in self.input_format_map:
+                    self.input_format_map[fmt] = []
+                self.input_format_map[fmt].append(converter_class)
+        # Map supported formats to this converter
+        if hasattr(converter_class, 'supported_output_formats'):
+            for fmt in converter_class.supported_output_formats:
+                if fmt not in self.output_format_map:
+                    self.output_format_map[fmt] = []
+                self.output_format_map[fmt].append(converter_class)
     
     def get_converter(self, name):
         """
@@ -61,7 +68,7 @@ class ConverterRegistry:
         Returns:
             Set of supported format strings
         """
-        return set(self.format_map.keys())
+        return set(self.input_format_map.keys()) | set(self.output_format_map.keys())
     
     def get_normalized_format(self, format_type):
         """
@@ -75,18 +82,31 @@ class ConverterRegistry:
         """
         return media_type_aliases.get(format_type.lower(), format_type.lower())
     
-    def get_converters_for_format(self, format_type):
+    def get_converters_for_input_format(self, format_type):
         """
-        Get all converters that support a specific file format.
+        Get all converters that support a specific input file format.
         
         Args:
             format_type: File format (e.g., 'mp4', 'jpg', 'csv')
         
         Returns:
-            List of converter classes that support this format
+            List of converter classes that support this input format
         """
         normalized_format = self.get_normalized_format(format_type)
-        return self.format_map.get(normalized_format, [])
+        return self.input_format_map.get(normalized_format, [])
+    
+    def get_converters_for_output_format(self, format_type):
+        """
+        Get all converters that support a specific output file format.
+        
+        Args:
+            format_type: File format (e.g., 'mp4', 'jpg', 'csv')
+        
+        Returns:
+            List of converter classes that support this output format
+        """
+        normalized_format = self.get_normalized_format(format_type)
+        return self.output_format_map.get(normalized_format, [])
     
     def get_converter_for_conversion(self, input_format, output_format):
         """
@@ -101,8 +121,8 @@ class ConverterRegistry:
         """
         normalized_input = self.get_normalized_format(input_format)
         normalized_output = self.get_normalized_format(output_format)
-        input_converters = set(self.get_converters_for_format(normalized_input))
-        output_converters = set(self.get_converters_for_format(normalized_output))
+        input_converters = set(self.get_converters_for_input_format(normalized_input))
+        output_converters = set(self.get_converters_for_output_format(normalized_output))
         
         # Find converters that support both formats
         compatible = input_converters & output_converters
@@ -142,7 +162,7 @@ class ConverterRegistry:
         compatible = set()
         
         # Find all converters that support this format
-        converters_for_format = self.get_converters_for_format(normalized_format)
+        converters_for_format = self.get_converters_for_input_format(normalized_format)
         
         # For each converter, determine valid output formats
         for converter_class in converters_for_format:
@@ -161,7 +181,7 @@ class ConverterRegistry:
             Dictionary mapping each format to its set of compatible output formats
         """
         matrix = {}
-        all_formats = set(self.format_map.keys())
+        all_formats = set(self.input_format_map.keys()) | set(self.output_format_map.keys())
         
         for fmt in all_formats:
             normalized_fmt = self.get_normalized_format(fmt)

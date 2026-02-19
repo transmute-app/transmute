@@ -7,8 +7,10 @@ from typing import Optional
 from .converter_interface import ConverterInterface
 
 class DrawioConverter(ConverterInterface):
-    supported_formats = {
-        'drawio',
+    supported_input_formats = {
+        'drawio'
+    }
+    supported_output_formats = {
         'png',
         'pdf',
         'svg',
@@ -45,7 +47,7 @@ class DrawioConverter(ConverterInterface):
         output_fmt = self.output_type.lower()
         
         # Check if formats are supported
-        if input_fmt not in self.supported_formats or output_fmt not in self.supported_formats:
+        if input_fmt not in self.supported_input_formats or output_fmt not in self.supported_output_formats:
             return False
         
         # Can only convert FROM drawio to other formats
