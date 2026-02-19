@@ -159,7 +159,7 @@ function App() {
             </div>
           )}
 
-          {selectedFile && uploadResult && (
+          {selectedFile && uploadResult && !conversionResult && (
             <div className="space-y-4">
               <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
                 <p className="text-sm font-semibold text-gray-700 mb-1">Selected File</p>
@@ -193,21 +193,30 @@ function App() {
               >
                 {converting ? 'Converting...' : 'Convert'}
               </button>
+            </div>
+          )}
 
-              {conversionResult && (
-                <div className="space-y-3">
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-                    <p className="font-semibold mb-1">Conversion complete!</p>
-                    <p className="text-xs">Ready to download</p>
-                  </div>
-                  <button
-                    onClick={handleDownload}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg"
-                  >
-                    Download Converted File
-                  </button>
-                </div>
-              )}
+          {conversionResult && (
+            <div className="space-y-3">
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+                <p className="font-semibold mb-1">Conversion complete!</p>
+                <p className="text-xs">
+                  {(() => {
+                    let filename = conversionResult.original_filename || 'download'
+                    const lastDotIndex = filename.lastIndexOf('.')
+                    if (lastDotIndex > 0) {
+                      filename = filename.substring(0, lastDotIndex)
+                    }
+                    return filename + (conversionResult.extension || '')
+                  })()}
+                </p>
+              </div>
+              <button
+                onClick={handleDownload}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg"
+              >
+                Download Converted File
+              </button>
             </div>
           )}
 
