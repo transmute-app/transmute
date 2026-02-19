@@ -1,7 +1,6 @@
 import os
 import subprocess
-import shutil
-import glob
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -13,7 +12,16 @@ class DrawioConverter(ConverterInterface):
         'png',
         'pdf',
         'svg',
+        'jpeg',
     }
+    
+    # Draw.io CLI path by platform
+    DRAWIO_PATHS = {
+        'darwin': '/Applications/draw.io.app/Contents/MacOS/draw.io',
+        'linux': '/opt/drawio/drawio',
+        'win32': 'C:\\Program Files\\draw.io\\draw.io.exe',
+    }
+    
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
         """
         Initialize Drawio converter.
@@ -22,7 +30,7 @@ class DrawioConverter(ConverterInterface):
             input_file: Path to the input draw.io file
             output_dir: Directory where the converted file will be saved
             input_type: Input file format (must be 'drawio')
-            output_type: Output file format (e.g., 'png', 'pdf', 'svg')
+            output_type: Output file format (e.g., 'png', 'pdf', 'svg', 'jpeg')
         """
         super().__init__(input_file, output_dir, input_type, output_type)
     
@@ -67,7 +75,7 @@ class DrawioConverter(ConverterInterface):
     
     def convert(self, overwrite: bool = True, quality: Optional[str] = None) -> list[str]:
         """
-        Convert the draw.io file to the output format using drawio-export CLI.
+        Convert the draw.io file to the output format using Draw.io CLI directly.
         
         Args:
             overwrite: Whether to overwrite existing output file (default: True)
@@ -77,7 +85,7 @@ class DrawioConverter(ConverterInterface):
             List containing the path to the converted output file
             
         Raises:
-            FileNotFoundError: If input file doesn't exist or drawio-export not installed
+            FileNotFoundError: If input file doesn't exist or Draw.io not installed
             ValueError: If the conversion is not supported
             RuntimeError: If conversion fails
         """
@@ -88,11 +96,12 @@ class DrawioConverter(ConverterInterface):
         if not os.path.isfile(self.input_file):
             raise FileNotFoundError(f"Input file not found: {self.input_file}")
         
-        # Check if drawio-export is available
-        if not shutil.which('drawio-export'):
+        # Get Draw.io executable path for current platform
+        drawio_path = self.DRAWIO_PATHS.get(sys.platform)
+        if not drawio_path or not os.path.exists(drawio_path):
             raise FileNotFoundError(
-                "drawio-export CLI tool not found. "
-                "Please install it with: npm install -g @mattiash/drawio-export"
+                f"Draw.io application not found at {drawio_path}. "
+                "Please install Draw.io from https://www.drawio.com/"
             )
         
         # Generate output filename
@@ -104,22 +113,22 @@ class DrawioConverter(ConverterInterface):
             return [output_file]
         
         try:
-            # Ensure output_dir has a trailing slash for drawio-export
-            output_dir_normalized = self.output_dir.rstrip('/') + '/'
-            
-            # Build the drawio-export command
+            # Build the Draw.io CLI command
+            # -x: export mode
+            # -p: page index (0 for first page)
+            # -o: output file
+            # --transparent: transparent background for PNG
             cmd = [
-                'drawio-export',
-                '-f', self.output_type,
-                '-o', output_dir_normalized,
+                drawio_path,
+                '-x',
+                self.input_file,
+                '-p', '0',  # Export first page
+                '-o', output_file,
             ]
             
             # Add transparency for PNG format
             if self.output_type.lower() == 'png':
-                cmd.append('-t')
-            
-            # Add input file at the end
-            cmd.append(self.input_file)
+                cmd.append('--transparent')
             
             # Run the conversion
             result = subprocess.run(
@@ -129,39 +138,14 @@ class DrawioConverter(ConverterInterface):
                 check=True
             )
             
-            # Find the generated file(s) - drawio-export creates files like "Page-1.png"
-            # They will be in output_dir with pattern Page-*.{output_type}
-            pattern = os.path.join(self.output_dir, f"Page-*.{self.output_type}")
-            generated_files = glob.glob(pattern)
-            
-            if not generated_files:
-                # Try alternative patterns
-                alt_patterns = [
-                    os.path.join(self.output_dir, f"*Page-*.{self.output_type}"),
-                    os.path.join(self.output_dir, f"*.{self.output_type}"),
-                ]
-                for alt_pattern in alt_patterns:
-                    generated_files = glob.glob(alt_pattern)
-                    if generated_files:
-                        break
-            
-            if not generated_files:
-                # List directory contents for debugging
-                dir_contents = os.listdir(self.output_dir) if os.path.exists(self.output_dir) else []
+            # Verify output file was created
+            if not os.path.exists(output_file):
                 raise RuntimeError(
-                    f"No output file was created. Expected pattern: {pattern}\n"
-                    f"Directory contents: {dir_contents}\n"
+                    f"Output file was not created: {output_file}\n"
                     f"Command: {' '.join(cmd)}\n"
                     f"Stdout: {result.stdout}\n"
                     f"Stderr: {result.stderr}"
                 )
-            
-            # Use the first generated file (usually there's only one page)
-            generated_file = generated_files[0]
-            
-            # Move/rename to the expected output filename
-            if generated_file != output_file:
-                shutil.move(generated_file, output_file)
             
             return [output_file]
             
