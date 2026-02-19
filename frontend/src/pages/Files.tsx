@@ -71,7 +71,9 @@ function Files() {
     }
   }
 
-  const convertedFiles = conversions.filter(f => f.conversion)
+  const convertedFiles = conversions
+    .filter(f => f.conversion)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-surface-dark to-surface-light p-8">
