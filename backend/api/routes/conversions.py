@@ -60,7 +60,7 @@ async def create_conversion(
     if converter_type is None:
         return {"error": f"No converter found for {input_format} to {output_format}"}
 
-    converter: ConverterInterface = converter_type(f'{UPLOAD_DIR}/{og_id}.{input_format}', f'{TEMP_DIR}/', input_format, output_format)
+    converter: ConverterInterface = converter_type(og_metadata['storage_path'], f'{TEMP_DIR}/', input_format, output_format)
     output_files = converter.convert()
     moved_output_file = Path(output_files[0]).rename(f'{CONVERTED_DIR}/{converted_id}.{output_format}')
 
