@@ -74,6 +74,10 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: true
+          build-args: |
+            BUILD_VERSION=${{ github.ref_name }}
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp || github.event.repository.pushed_at }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

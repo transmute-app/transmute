@@ -53,3 +53,17 @@ EXPOSE 3313
 
 # Start the application
 ENTRYPOINT ["/app/entrypoint.sh"]
+
+# Image metadata (OCI labels)
+ARG BUILD_VERSION=""
+ARG BUILD_DATE=""
+ARG VCS_REF=""
+LABEL org.opencontainers.image.title="Transmute"
+LABEL org.opencontainers.image.description="Convert anything, anywhere. Self hosted file converter for images, video, audio, json, excel and more!"
+LABEL org.opencontainers.image.source="https://github.com/transmute-app/transmute"
+LABEL org.opencontainers.image.url="https://github.com/transmute-app/transmute"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.version="$BUILD_VERSION"
+LABEL org.opencontainers.image.revision="$VCS_REF"
+LABEL org.opencontainers.image.created="$BUILD_DATE"
+LABEL description="Convert anything, anywhere. Self hosted file converter for images, video, audio, json, excel and more!"
