@@ -1,14 +1,9 @@
 name: Docker Build and Scan
 
 on:
-  push:
+  pull_request:
     branches:
       - main
-    paths:
-      - 'docker/Dockerfile'
-      - 'requirements.txt'
-      - '.github/workflows/docker-scan.yml'
-  pull_request:
     paths:
       - 'docker/Dockerfile'
       - 'requirements.txt'
