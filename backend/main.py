@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Response, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.openapi.docs import get_redoc_html
 from api import router
 from core import get_settings
 import uvicorn
@@ -11,20 +12,31 @@ def create_app() -> FastAPI:
         title=f"{settings.app_name} API",
         description=f"API to interact with {settings.app_name} without the need for a frontend",
         version=f"{settings.app_version}",
-        docs_url="/api/docs",
-        redoc_url="/api/redoc"
+        docs_url=None,
+        redoc_url=None,
+        redirect_slashes=True
     )
     app.include_router(router, prefix="/api")
     web_dir = settings.web_dir
     if web_dir.exists():
         app.mount("/assets", StaticFiles(directory=web_dir / "assets"), name="assets")
-        if (web_dir / "icons").exists():
-            app.mount("/icons", StaticFiles(directory=web_dir / "icons"), name="icons")
-
-        @app.get("/{full_path:path}")
-        def serve_spa(full_path: str):
-            return FileResponse(web_dir / "index.html")
-
+        app.mount("/icons", StaticFiles(directory=web_dir / "icons"), name="icons")
+        
+        # Catch-all route for SPA - serves index.html for non-API routes
+        @app.get("/{path:path}")
+        async def spa_fallback(request: Request, path: str):
+            # For API routes, redirect if missing trailing slash
+            # Required to do this here instead of using redirect_slashes=True on 
+            # the router because the SPA catch-all would intercept and return 
+            # index.html instead of redirecting
+            if path.startswith("api/"):
+                return RedirectResponse(url=f"/{path}/", status_code=307)
+            
+            index_file = web_dir / "index.html"
+            if index_file.exists():
+                return FileResponse(index_file)
+            raise HTTPException(status_code=404, detail="SPA index not found")
+    
     return app
 
 if __name__ == "__main__":
