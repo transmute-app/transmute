@@ -8,4 +8,6 @@ cairosvg==2.8.2
 fastapi==0.129.0
 python-multipart==0.0.22
 python-magic==0.4.27
+pydantic-settings==2.13.0
 pillow_heif==1.2.1
+uvicorn==0.41.0
