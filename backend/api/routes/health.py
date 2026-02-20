@@ -24,6 +24,7 @@ def liveness():
     """Simple liveness check to confirm the server is running"""
     return {"status": "alive"}
 
+
 @router.get("/ready")
 def readiness():
     """Readiness check to confirm the server is ready to handle requests"""
