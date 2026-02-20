@@ -26,8 +26,12 @@ RUN apt-get update && apt-get install -y \
     xvfb \
     && rm -rf /var/lib/apt/lists/*
 
+
 # Install Draw.io
-RUN ARCH=$(dpkg --print-architecture) && \
+# Use TARGETARCH to determine the architecture and download the appropriate 
+# Draw.io .deb package, fall back to dpkg --print-architecture if TARGETARCH is 
+# not set (for older Docker versions)
+RUN ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" && \
     if [ "$ARCH" = "amd64" ]; then \
       DRAWIO_URL="https://github.com/jgraph/drawio-desktop/releases/download/v29.3.6/drawio-amd64-29.3.6.deb"; \
     else \
