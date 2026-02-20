@@ -14,6 +14,7 @@ on:
       - 'requirements.txt'
       - '.github/workflows/docker-scan.yml'
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   build-and-scan:
@@ -53,25 +54,16 @@ jobs:
         with:
           command: cves
           image: transmute:scan
-          sarif-file: scout-critical-high.sarif
+          sarif-file: ${{ runner.temp }}/scout-critical-high-medium.sarif
           write-comment: false
-          only-severities: critical,high
-
-      - name: Run Docker Scout scan - Medium
-        uses: docker/scout-action@f8c776824083494ab0d56b8105ba2ca85c86e4de  # v1.18.2
-        with:
-          command: cves
-          image: transmute:scan
-          sarif-file: scout-medium.sarif
-          write-comment: false
-          only-severities: medium
+          only-severities: critical,high,medium
 
       - name: Run Docker Scout scan - Low
         uses: docker/scout-action@f8c776824083494ab0d56b8105ba2ca85c86e4de  # v1.18.2
         with:
           command: cves
           image: transmute:scan
-          sarif-file: scout-low.sarif
+          sarif-file: ${{ runner.temp }}/scout-low.sarif
           write-comment: false
           only-severities: low
           only-fixed: true
@@ -80,19 +72,12 @@ jobs:
         uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6  #  v4.32.3
         if: always()
         with:
-          sarif_file: scout-critical-high.sarif
-          category: docker-scout-critical-high
-
-      - name: Upload Medium severity results
-        uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6  #  v4.32.3
-        if: always()
-        with:
-          sarif_file: scout-medium.sarif
-          category: docker-scout-medium
+          sarif_file: ${{ runner.temp }}/scout-critical-high-medium.sarif
+          category: docker-scout-critical-high-medium
 
       - name: Upload Low severity results
         uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6  #  v4.32.3
         if: always()
         with:
-          sarif_file: scout-low.sarif
+          sarif_file: ${{ runner.temp }}/scout-low.sarif
           category: docker-scout-low
