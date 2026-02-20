@@ -74,6 +74,7 @@ jobs:
           sarif-file: scout-low.sarif
           write-comment: false
           only-severities: low
+          only-fixed: true
 
       - name: Upload Scout results to GitHub Advanced Security
         uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6  #  v4.32.3
