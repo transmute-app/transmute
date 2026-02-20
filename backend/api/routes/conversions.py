@@ -2,12 +2,13 @@ import json
 from pathlib import Path
 import uuid
 import hashlib
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from converters import ConverterInterface
 from registry import ConverterRegistry
 from core import get_settings, sanitize_extension
 from db import ConversionDB, FileDB, ConversionRelationsDB
 from api.deps import get_file_db, get_conversion_db, get_conversion_relations_db
+from api.schemas import ConversionRequest, ConversionListResponse, FileMetadata, ErrorResponse
 
 
 router = APIRouter(prefix="/conversions", tags=["conversions"])
@@ -18,7 +19,16 @@ TEMP_DIR = settings.tmp_dir
 CONVERTED_DIR = settings.output_dir
 
 
-@router.get("/complete")
+@router.get(
+        "/complete",
+        summary="List completed conversions",
+        responses={
+            200: {
+                "model": ConversionListResponse,
+                "description": "List of completed conversions with original and converted file metadata"
+            }
+        }
+)
 def list_conversions(
     file_db: FileDB = Depends(get_file_db),
     conv_db: ConversionDB = Depends(get_conversion_db),
@@ -40,18 +50,33 @@ def list_conversions(
     return {"conversions": list(og_files_dict.values())}
 
 
-@router.post("/")
+@router.post(
+        "/",
+        summary="Create a new conversion",
+        responses={
+            200: {
+                "model": FileMetadata,
+                "description": "Successful conversion - returns metadata of the converted file"
+            },
+            400: {
+                "model": ErrorResponse,
+                "description": "Invalid input or conversion error (no converter found)"
+            },
+            404: {
+                "model": ErrorResponse,
+                "description": "File not found"
+            }
+        }
+)
 async def create_conversion(
-    request: Request,
+    conversion_request: ConversionRequest,
     file_db: FileDB = Depends(get_file_db),
     conversion_db: ConversionDB = Depends(get_conversion_db),
     conversion_relations_db: ConversionRelationsDB = Depends(get_conversion_relations_db)
 ):
     """Create a new conversion for a previously uploaded file."""
-    body = await request.json()
-
-    og_id = body.get("id")
-    output_format = sanitize_extension(body.get("output_format"))
+    og_id = conversion_request.id
+    output_format = sanitize_extension(conversion_request.output_format)
     og_metadata = file_db.get_file_metadata(og_id)
     input_format = og_metadata['media_type']
     converted_id = str(uuid.uuid4())
@@ -59,12 +84,12 @@ async def create_conversion(
 
     # Ensure the original file was uploaded and exists in the database
     if og_metadata is None:
-        return {"error": f"No file found with id {og_id}"}
+        raise HTTPException(status_code=404, detail=f"No file found with id {og_id}")
     
     # Find the appropriate converter for this conversion
     converter_type = registry.get_converter_for_conversion(input_format, output_format)
     if converter_type is None:
-        return {"error": f"No converter found for {input_format} to {output_format}"}
+        raise HTTPException(status_code=400, detail=f"No converter found for {input_format} to {output_format}")
 
     # Perform the conversion using the converter interface
     converter: ConverterInterface = converter_type(og_metadata['storage_path'], f'{TEMP_DIR}/', input_format, output_format)
