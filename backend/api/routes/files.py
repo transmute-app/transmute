@@ -25,7 +25,9 @@ async def save_file(file: UploadFile, db: FileDB) -> dict:
     uuid_str = str(uuid.uuid4())
     original_filename = file.filename or "upload"
     file_extension = sanitize_extension(Path(original_filename).suffix.lower())
-    unique_filename = f"{uuid_str}.{file_extension}"
+    unique_filename = f"{uuid_str}"
+    if file_extension:
+        unique_filename += f".{file_extension}"
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
     file_path = Path(UPLOAD_DIR) / unique_filename

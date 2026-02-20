@@ -16,6 +16,10 @@ class FileMetadata(BaseModel):
     sha256_checksum: str = Field(..., example="abc123def456...")
 
 
+class FileMetadataWithFormats(FileMetadata):
+    compatible_formats: list[str] = Field(..., example=["png", "gif", "webp"], description="List of compatible output formats")
+
+
 class ConversionItem(BaseModel):
     id: str = Field(..., example="123e4567-e89b-12d3-a456-426614174000")
     original_filename: str = Field(..., example="example.jpg")
@@ -59,7 +63,7 @@ class FileListResponse(BaseModel):
 
 class FileUploadResponse(BaseModel):
     message: str = Field(..., example="File uploaded successfully", description="Upload status message")
-    metadata: FileMetadata = Field(..., description="Uploaded file metadata")
+    metadata: FileMetadataWithFormats = Field(..., description="Uploaded file metadata with compatible formats")
 
 
 class FileDeleteResponse(BaseModel):
