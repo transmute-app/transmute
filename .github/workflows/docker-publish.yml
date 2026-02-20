@@ -18,6 +18,9 @@ jobs:
     name: Security Scan
     uses: ./.github/workflows/docker-scan.yml
     secrets: inherit
+    permissions:
+      contents: read
+      security-events: write
 
   build-and-push:
     name: Build and Push

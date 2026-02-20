@@ -23,11 +23,8 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-latest
     permissions:
-      # contents: write is required for the dependency submission action to 
-      # upload the SBOM to GitHub Advanced Security.
-      contents: write
+      contents: read
       security-events: write
-      id-token: write
 
     steps:
       - name: Checkout Repository
