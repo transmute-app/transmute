@@ -17,22 +17,28 @@ UPLOAD_DIR = settings.upload_dir
 TEMP_DIR = settings.tmp_dir
 CONVERTED_DIR = settings.output_dir
 
+
 @router.get("/complete")
 def list_conversions(
     file_db: FileDB = Depends(get_file_db),
     conv_db: ConversionDB = Depends(get_conversion_db),
     conv_rel_db: ConversionRelationsDB = Depends(get_conversion_relations_db)
 ):
+    """List all completed conversions with their original and converted file metadata."""
+    # Get lists of dicts from both databases and create lookup dictionaries
     converted_files = conv_db.list_files()
     og_files = file_db.list_files()
     converted_files_dict = {f['id']: f for f in converted_files}
     og_files_dict = {f['id']: f for f in og_files}
+
     relations = conv_rel_db.list_relations()
+    # For each relation, attach the converted file metadata to the original file metadata
     for rel in relations:
         og_id = rel['original_file_id']
         conv_id = rel['converted_file_id']
         og_files_dict[og_id]['conversion'] = converted_files_dict.get(conv_id)
     return {"conversions": list(og_files_dict.values())}
+
 
 @router.post("/")
 async def create_conversion(
@@ -41,6 +47,7 @@ async def create_conversion(
     conversion_db: ConversionDB = Depends(get_conversion_db),
     conversion_relations_db: ConversionRelationsDB = Depends(get_conversion_relations_db)
 ):
+    """Create a new conversion for a previously uploaded file."""
     body = await request.json()
 
     og_id = body.get("id")
@@ -59,10 +66,12 @@ async def create_conversion(
     if converter_type is None:
         return {"error": f"No converter found for {input_format} to {output_format}"}
 
+    # Perform the conversion using the converter interface
     converter: ConverterInterface = converter_type(og_metadata['storage_path'], f'{TEMP_DIR}/', input_format, output_format)
     output_files = converter.convert()
     moved_output_file = Path(output_files[0]).rename(f'{CONVERTED_DIR}/{converted_id}.{output_format}')
 
+    # Store the converted file metadata in the conversion database and create a relation to the original file
     converted_metadata['id'] = converted_id
     converted_metadata['media_type'] = f"{output_format}"
     converted_metadata['extension'] = f".{output_format}"
