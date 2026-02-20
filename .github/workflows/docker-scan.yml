@@ -46,14 +46,15 @@ jobs:
         with:
           context: .
           file: docker/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: false
           load: true
+          push: false
           tags: transmute:scan
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          outputs: type=docker
 
       - name: Run Docker Scout Scan - Critical/High/Medium
+        id: scout-scan
         uses: docker/scout-action@f8c776824083494ab0d56b8105ba2ca85c86e4de  # v1.18.2
         with:
           command: cves
@@ -64,7 +65,7 @@ jobs:
 
       - name: Upload Scout results to GitHub Advanced Security
         uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6  # v4.32.3
-        if: always()
+        if: steps.scout-scan.outcome != 'skipped' && steps.scout-scan.outcome != 'cancelled'
         with:
           sarif_file: ${{ runner.temp }}/scout-critical-high-medium.sarif
           category: docker-scout-critical-high-medium
