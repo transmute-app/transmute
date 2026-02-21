@@ -59,11 +59,14 @@ async def save_file(file: UploadFile, db: FileDB) -> dict:
     return metadata
 
 
-def delete_file_and_metadata(file_id: str, file_db: FileDB):
+def delete_file_and_metadata(file_id: str, file_db: FileDB, raise_if_not_found: bool = True):
     """Helper function to delete a file and its metadata from a file database."""
     metadata = file_db.get_file_metadata(file_id)
     if metadata is None:
-        raise HTTPException(status_code=404, detail="File not found")
+        if raise_if_not_found:
+            raise HTTPException(status_code=404, detail="File not found")
+        else:
+            return
     os.unlink(metadata['storage_path'])
     file_db.delete_file_metadata(file_id)
 
@@ -163,6 +166,6 @@ def delete_file(
     # Find converted file ID related to this original file ID, if it exists
     converted_file_id = conversion_rel_db.get_conversion_from_file(file_id)
     delete_file_and_metadata(file_id, file_db)
-    delete_file_and_metadata(converted_file_id, converted_file_db)
+    delete_file_and_metadata(converted_file_id, converted_file_db, raise_if_not_found=False)
     conversion_rel_db.delete_relation_by_original(file_id)
     return {"message": "File deleted successfully"}
