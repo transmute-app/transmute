@@ -5,10 +5,10 @@ import hashlib
 from fastapi import APIRouter, Depends, HTTPException
 from converters import ConverterInterface
 from registry import ConverterRegistry
-from core import get_settings, sanitize_extension
+from core import get_settings, sanitize_extension, delete_file_and_metadata
 from db import ConversionDB, FileDB, ConversionRelationsDB
 from api.deps import get_file_db, get_conversion_db, get_conversion_relations_db
-from api.schemas import ConversionRequest, ConversionListResponse, FileMetadata, ErrorResponse
+from api.schemas import ConversionRequest, ConversionListResponse, FileMetadata, ErrorResponse, FileDeleteResponse
 
 
 router = APIRouter(prefix="/conversions", tags=["conversions"])
@@ -30,24 +30,33 @@ CONVERTED_DIR = settings.output_dir
         }
 )
 def list_conversions(
-    file_db: FileDB = Depends(get_file_db),
     conv_db: ConversionDB = Depends(get_conversion_db),
     conv_rel_db: ConversionRelationsDB = Depends(get_conversion_relations_db)
 ):
-    """List all completed conversions with their original and converted file metadata."""
-    # Get lists of dicts from both databases and create lookup dictionaries
+    """List all completed conversions with their converted and original file metadata."""
+    # Get converted files and relations with denormalized original file metadata
     converted_files = conv_db.list_files()
-    og_files = file_db.list_files()
     converted_files_dict = {f['id']: f for f in converted_files}
-    og_files_dict = {f['id']: f for f in og_files}
 
     relations = conv_rel_db.list_relations()
-    # For each relation, attach the converted file metadata to the original file metadata
+    # For each relation, create a conversion-centric record with original file metadata from the relation
+    # This uses denormalized data so original files can be deleted without breaking history
+    conversion_records = []
     for rel in relations:
-        og_id = rel['original_file_id']
         conv_id = rel['converted_file_id']
-        og_files_dict[og_id]['conversion'] = converted_files_dict.get(conv_id)
-    return {"conversions": list(og_files_dict.values())}
+        if conv_id in converted_files_dict:
+            record = dict(converted_files_dict[conv_id])
+            # Build original_file metadata from denormalized relation data
+            record['original_file'] = {
+                'id': rel['original_file_id'],
+                'original_filename': rel['original_filename'],
+                'media_type': rel['original_media_type'],
+                'extension': rel['original_extension'],
+                'size_bytes': rel['original_size_bytes']
+            }
+            conversion_records.append(record)
+    
+    return {"conversions": conversion_records}
 
 
 @router.post(
@@ -105,9 +114,39 @@ async def create_conversion(
     converted_metadata['sha256_checksum'] = hashlib.sha256(moved_output_file.read_bytes()).hexdigest()
     converted_metadata.pop('created_at', None)  # Remove created_at from original metadata if it exists
     conversion_db.insert_file_metadata(converted_metadata)
+    # Store relation with denormalized original file metadata
     conversion_relations_db.insert_conversion_relation({
         'original_file_id': og_id,
-        'converted_file_id': converted_id
+        'converted_file_id': converted_id,
+        'original_filename': og_metadata['original_filename'],
+        'original_media_type': og_metadata['media_type'],
+        'original_extension': og_metadata['extension'],
+        'original_size_bytes': og_metadata['size_bytes']
     })
 
     return converted_metadata
+
+@router.delete(
+    "/{conversion_id}",
+    summary="Delete a converted file and its relation to the original file",
+    responses={
+        200: {
+            "model": FileDeleteResponse,
+            "description": "Conversion history deleted successfully"
+        },
+        404: {
+            "model": ErrorResponse,
+            "description": "Conversion history not found"
+        }
+    }
+)
+def delete_conversion(
+    conversion_id: str,
+    conversion_db: ConversionDB = Depends(get_conversion_db),
+    conversion_relations_db: ConversionRelationsDB = Depends(get_conversion_relations_db)
+):
+    """Delete a converted file and its relation to the original file"""
+    # Find converted file ID related to this original file ID, if it exists
+    delete_file_and_metadata(conversion_id, conversion_db)
+    conversion_relations_db.delete_relation_by_converted(conversion_id)
+    return {"message": "Conversion history deleted successfully"}

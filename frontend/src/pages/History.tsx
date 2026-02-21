@@ -1,18 +1,27 @@
 import { useState, useEffect } from 'react'
 import FileListItem, { FileInfo, ConversionInfo } from '../components/FileListItem'
 
-interface FileRecord {
+interface OriginalFileInfo {
   id: string
   original_filename: string
   media_type: string
   extension: string
   size_bytes: number
   created_at: string
-  conversion?: ConversionInfo
+}
+
+interface ConversionRecord {
+  id: string
+  original_filename: string
+  media_type: string
+  extension: string
+  size_bytes: number
+  created_at: string
+  original_file?: OriginalFileInfo
 }
 
 function History() {
-  const [conversions, setConversions] = useState<FileRecord[]>([])
+  const [conversions, setConversions] = useState<ConversionRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
@@ -34,7 +43,7 @@ function History() {
     fetchConversions()
   }, [])
 
-  const handleDownload = async (conversion: ConversionInfo) => {
+  const handleDownload = async (conversion: ConversionRecord) => {
     setDownloadingId(conversion.id)
     try {
       const response = await fetch(`/api/files/${conversion.id}`)
@@ -64,12 +73,12 @@ function History() {
     }
   }
 
-  const handleDelete = async (fileId: string) => {
-    setDeletingId(fileId)
+  const handleDelete = async (conversionId: string) => {
+    setDeletingId(conversionId)
     try {
-      const response = await fetch(`/api/files/${fileId}`, { method: 'DELETE' })
+      const response = await fetch(`/api/conversions/${conversionId}`, { method: 'DELETE' })
       if (!response.ok) throw new Error('Delete failed')
-      setConversions(prev => prev.filter(f => f.id !== fileId))
+      setConversions(prev => prev.filter(c => c.id !== conversionId))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Delete failed')
     } finally {
@@ -77,8 +86,7 @@ function History() {
     }
   }
 
-  const convertedFiles = conversions
-    .filter(f => f.conversion)
+  const sortedConversions = conversions
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   return (
@@ -96,30 +104,40 @@ function History() {
           <p className="text-text-muted text-sm">Loading conversions...</p>
         )}
 
-        {!loading && convertedFiles.length === 0 && (
+        {!loading && sortedConversions.length === 0 && (
           <p className="text-text-muted text-sm">No converted files yet.</p>
         )}
 
-        {!loading && convertedFiles.length > 0 && (
+        {!loading && sortedConversions.length > 0 && (
           <div className="space-y-3">
-            {convertedFiles.map(file => {
+            {sortedConversions.map(conversion => {
+              // Use original file metadata if available, otherwise use conversion metadata
+              const originalFile = conversion.original_file
               const fileInfo: FileInfo = {
-                id: file.id,
-                original_filename: file.original_filename,
-                media_type: file.media_type,
-                extension: file.extension,
-                size_bytes: file.size_bytes,
-                created_at: file.created_at,
+                id: originalFile?.id || conversion.id,
+                original_filename: originalFile?.original_filename || conversion.original_filename,
+                media_type: originalFile?.media_type || conversion.media_type,
+                extension: originalFile?.extension || conversion.extension,
+                size_bytes: originalFile?.size_bytes || conversion.size_bytes,
+                created_at: originalFile?.created_at || conversion.created_at,
+              }
+              const conversionInfo: ConversionInfo = {
+                id: conversion.id,
+                original_filename: conversion.original_filename,
+                media_type: conversion.media_type,
+                extension: conversion.extension,
+                size_bytes: conversion.size_bytes,
+                created_at: conversion.created_at,
               }
               return (
                 <FileListItem
-                  key={file.id}
+                  key={conversion.id}
                   file={fileInfo}
-                  conversion={file.conversion}
-                  onDownload={() => handleDownload(file.conversion!)}
-                  onDelete={() => handleDelete(file.id)}
-                  isDeleting={deletingId === file.id}
-                  isDownloading={downloadingId === file.conversion!.id}
+                  conversion={conversionInfo}
+                  onDownload={() => handleDownload(conversion)}
+                  onDelete={() => handleDelete(conversion.id)}
+                  isDeleting={deletingId === conversion.id}
+                  isDownloading={downloadingId === conversion.id}
                   isPending={false}
                 />
               )

@@ -65,23 +65,27 @@ function FileListItem({
           <span className="text-xs font-mono uppercase bg-surface-dark px-2 py-0.5 rounded text-text-muted">
             {file.media_type}
           </span>
-          <span className="text-text-muted text-xs">→</span>
-          {isPending && sortedFormats.length > 0 && onFormatChange ? (
-            <select
-              value={selectedFormat || ''}
-              onChange={(e) => onFormatChange(e.target.value)}
-              className="text-xs font-mono uppercase bg-primary/20 px-2 py-0.5 rounded text-primary border-none focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-            >
-              {sortedFormats.map((format) => (
-                <option key={format} value={format}>
-                  {format}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <span className="text-xs font-mono uppercase bg-primary/20 px-2 py-0.5 rounded text-primary">
-              {conversion?.media_type || selectedFormat || '?'}
-            </span>
+          {(conversion || selectedFormat) && (
+            <>
+              <span className="text-text-muted text-xs">→</span>
+              {isPending && sortedFormats.length > 0 && onFormatChange ? (
+                <select
+                  value={selectedFormat || ''}
+                  onChange={(e) => onFormatChange(e.target.value)}
+                  className="text-xs font-mono uppercase bg-primary/20 px-2 py-0.5 rounded text-primary border-none focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                >
+                  {sortedFormats.map((format) => (
+                    <option key={format} value={format}>
+                      {format}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="text-xs font-mono uppercase bg-primary/20 px-2 py-0.5 rounded text-primary">
+                  {conversion?.media_type || selectedFormat}
+                </span>
+              )}
+            </>
           )}
         </div>
 
