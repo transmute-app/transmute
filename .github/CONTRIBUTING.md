@@ -30,31 +30,7 @@ git clone https://github.com/transmute-app/transmute.git
 cd <repo>
 ```
 
-### 2. Install Python dependencies
-
-`pip3 install requirements.txt`
-
-### 3. Build the Frontend
-
-```
-cd ./frontend
-npm install
-npm run build
-```
-
-### 4. Spin up the app locally
-
-`python3 backend/main.py`
-
-Feel free to reach out via issue if you hit any snags here. ^
-
-There are a few additional dependencies outside of npm / pip
-
-- ffmpeg
-- libmagic1
-- Drawio Desktop App
-
-### 5. Create a Branch
+### 2. Create a Branch
 
 ```bash
 git checkout -b feature/my-feature
@@ -68,27 +44,35 @@ Examples:
 * `fix/job-progress`
 * `docs/api-clarification`
 
----
+### 3. Build and Run the Docker Image (Reccomended)
+`docker compose -f docker-compose-dev.yml up -d`
 
-## Development Environment
-> [!WARNING]
-> This is the desired state for this project, but it has not been dockerized yet. Stay tuned!
+### 3. Alternatively, Run Directly (Not Reccomended)
 
-The project is designed to run via Docker.
+#### 3.1. Install Python dependencies
 
-### Start the Stack
+`pip3 install requirements.txt`
 
-```bash
-docker compose up --build
-```
-
-The API will typically be available at:
+#### 3.2. Build the Frontend
 
 ```
-http://localhost:3313
+cd ./frontend
+npm install
+npm run build
 ```
 
-(Port may vary depending on configuration.)
+#### 3.3. Install other dependencies
+
+- ffmpeg
+- libmagic1
+- Drawio Desktop App
+
+#### 3.4. Spin up the app locally
+
+`python3 backend/main.py`
+
+Feel free to reach out via issue if you hit any snags.
+
 
 ---
 
@@ -112,7 +96,7 @@ Contributions adding new converters are very welcome.
 
 General expectations:
 
-* Extend the base `Converter` class
+* Extend the base `ConverterInterface` class
 * Declare supported inputs and outputs
 * Implement the `convert()` method
 * Include basic validation and error handling

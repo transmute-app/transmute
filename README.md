@@ -30,6 +30,11 @@ This application is under active development, want to support us? Give us a star
 ## Status
 This project is under heavy development, come back soon to see where it goes!
 
+# Quickstart
+```bash
+wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/docker-compose,yml" && docker compose up -d
+```
+
 ## Diagrams
 Shoutout to [draw.io](https://www.drawio.com/) - formerly diagrams.net. I love their software and have always planned out projects using it. 
 
@@ -37,32 +42,7 @@ Recently I discovered [@hediet](https://github.com/hediet) has a [draw.io vscode
 
 They are also exported to [docs/diagrams/exports](https://github.com/transmute-app/transmute/tree/main/docs/diagrams/exports) for easy viewing from the UI.
 
-## API Call Flow
+## API Documentation
+When the app is running the API docs are available at APP_URL/api/docs/
 
-### Starting a Conversion
-1. Upload the file you wish to convert
-```bash
-curl -X POST "http://localhost:3313/files/" \                                   
-  -F "file=@test-files/forest-example.jpg"
-```
-2. Save the `file_id` for use in the next call
-```json
-{
-  "message":"File uploaded successfully",
-  "file_id":"4a86e7d8-b936-465b-a79d-9c076306d17a",
-  "filename":"forest-example.jpg",
-  "content_type":"image/jpeg",
-  "stored_as":"4a86e7d8-b936-465b-a79d-9c076306d17a.jpg",
-  "size":199525
-}
-```
-3. Start the conversion
-```bash
-curl -X POST http://0.0.0.0:3313/conversions/ \
-  -d '{"id": "4a86e7d8-b936-465b-a79d-9c076306d17a", "input_format": "jpg", "output_format": "png"}'
-```
-4. Wait for the job to finish (will use the jobs endpoint? maybe some websocket here would be best instead of polling)
-5. Download the converted file once finished
-```bash
-curl -X GET http://0.0.0.0:3313/files/4a86e7d8-b936-465b-a79d-9c076306d17a -o downloaded_file.png
-```
+My plan is to eventually make these available on our website as well but I haven't worked out a proper way of doing that automatically just yet.
