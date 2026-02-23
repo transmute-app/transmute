@@ -36,8 +36,7 @@ jobs:
       - name: Install bandit
         run: |
           python -m pip install --upgrade pip
-          pipx install bandit
-          pip install bandit-sarif-formatter
+          pip install bandit bandit-sarif-formatter
           
       - name: Run bandit scan
         id: bandit-scan
