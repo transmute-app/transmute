@@ -14,7 +14,7 @@ env:
 jobs:
   security-scan:
     name: Security Scan
-    uses: ./.github/workflows/docker-scan.yml
+    uses: ./.github/workflows/scout-scan.yml
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PUBLIC_RO_TOKEN: ${{ secrets.DOCKER_PUBLIC_RO_TOKEN }}
