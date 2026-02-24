@@ -68,3 +68,7 @@ class FileUploadResponse(BaseModel):
 
 class FileDeleteResponse(BaseModel):
     message: str = Field(..., example="File deleted successfully", description="Deletion status message")
+
+
+class BatchDownloadRequest(BaseModel):
+    file_ids: list[str] = Field(..., example=["123e4567-e89b-12d3-a456-426614174000", "987fcdeb-51a2-43f1-b789-123456789abc"], description="List of converted file IDs to download")

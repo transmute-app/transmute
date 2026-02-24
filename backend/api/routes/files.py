@@ -2,10 +2,9 @@ import os
 import uuid
 import hashlib
 
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import FileResponse
 from zipfile import ZipFile
-from io import BytesIO
 from pathlib import Path
 from core import get_settings, detect_media_type, sanitize_extension, delete_file_and_metadata, validate_safe_path
 from db import FileDB, ConversionDB, ConversionRelationsDB
@@ -20,6 +19,7 @@ settings = get_settings()
 converter_registry = ConverterRegistry()
 UPLOAD_DIR = settings.upload_dir
 CONVERTED_DIR = settings.output_dir
+TMP_DIR = settings.tmp_dir
 
 
 async def save_file(file: UploadFile, db: FileDB) -> dict:
@@ -134,6 +134,61 @@ def get_file(file_id: str):
                 media_type="application/octet-stream"
             )
     raise HTTPException(status_code=404, detail="File not found")
+
+@router.post(
+        "/batch",
+        summary="Batch download converted files",
+        response_class=FileResponse,
+        responses={
+            200: {
+                "content": {"application/zip": {}},
+                "description": "ZIP file containing all converted files"
+            },
+            404: {
+                "model": ErrorResponse,
+                "description": "One or more converted files not found"
+            }
+        }
+)
+def batch_download_files(
+    request: BatchDownloadRequest,
+    background_tasks: BackgroundTasks,
+    file_db: FileDB = Depends(get_conversion_db)
+):
+    """Batch download converted files as a ZIP archive"""
+    # Create temporary ZIP file
+    zip_id = str(uuid.uuid4())
+    zip_path = TMP_DIR / f"{zip_id}.zip"
+    
+    with ZipFile(zip_path, "w") as zip_file:
+        for file_id in request.file_ids:
+            file_metadata = file_db.get_file_metadata(file_id)
+            if file_metadata is None:
+                # Clean up temp file before raising error
+                if zip_path.exists():
+                    os.unlink(zip_path)
+                raise HTTPException(status_code=404, detail=f"File with id {file_id} not found")
+            
+            file_path = Path(file_metadata['storage_path'])
+            # Validate path before adding to ZIP
+            validate_safe_path(file_path, raise_exception=True)
+            
+            if not file_path.exists():
+                # Clean up temp file before raising error
+                if zip_path.exists():
+                    os.unlink(zip_path)
+                raise HTTPException(status_code=404, detail=f"File with id {file_id} not found on disk")
+            
+            zip_file.write(file_path, arcname=file_path.name)
+    
+    # Schedule cleanup of temp ZIP file after response is sent
+    background_tasks.add_task(os.unlink, zip_path)
+    
+    return FileResponse(
+        path=zip_path,
+        filename="transmute_batch_conversion.zip",
+        media_type="application/zip"
+    )
 
 @router.delete(
     "/{file_id}",
