@@ -135,38 +135,33 @@ function History() {
     setDownloadingSelected(true)
     setError(null)
 
-    const conversionsToDownload = sortedConversions.filter(c => selectedIds.has(c.id))
-    for (const conversion of conversionsToDownload) {
-      try {
-        const response = await fetch(`/api/files/${conversion.id}`)
-        if (!response.ok) throw new Error('Download failed')
+    try {
+      const response = await fetch('/api/files/batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          file_ids: Array.from(selectedIds)
+        })
+      })
 
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
+      if (!response.ok) throw new Error('Batch download failed')
 
-        let filename = conversion.original_filename || 'download'
-        const lastDotIndex = filename.lastIndexOf('.')
-        if (lastDotIndex > 0) {
-          filename = filename.substring(0, lastDotIndex)
-        }
-        filename += conversion.extension || ''
-
-        a.download = filename
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-        
-        // Small delay between downloads to avoid browser blocking
-        await new Promise(resolve => setTimeout(resolve, 300))
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Download failed')
-      }
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `transmute_batch_${new Date().toISOString().split('T')[0]}.zip`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Batch download failed')
+    } finally {
+      setDownloadingSelected(false)
     }
-
-    setDownloadingSelected(false)
   }
 
   const sortedConversions = conversions
