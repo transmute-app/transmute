@@ -155,7 +155,8 @@ def get_file(file_id: str, file_db: FileDB = Depends(get_file_db), conv_db: Conv
 def batch_download_files(
     request: BatchDownloadRequest,
     background_tasks: BackgroundTasks,
-    file_db: FileDB = Depends(get_conversion_db)
+    file_db: FileDB = Depends(get_file_db),
+    conv_db: ConversionDB = Depends(get_conversion_db)
 ):
     """Batch download converted files as a ZIP archive"""
     # Create temporary ZIP file
@@ -164,8 +165,15 @@ def batch_download_files(
     
     with ZipFile(zip_path, "w") as zip_file:
         for file_id in request.file_ids:
-            file_metadata = file_db.get_file_metadata(file_id)
-            if file_metadata is None:
+            found_file_in_db = False
+            # Check both original and converted file databases for the file ID
+            for db in [file_db, conv_db]:
+                file_metadata = db.get_file_metadata(file_id)
+                if file_metadata is not None:
+                    found_file_in_db = True
+                    break
+            
+            if not found_file_in_db:
                 # Clean up temp file before raising error
                 if zip_path.exists():
                     os.unlink(zip_path)
