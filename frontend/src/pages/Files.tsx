@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FaCheckSquare, FaSquare } from 'react-icons/fa'
 import FileListItem, { FileInfo } from '../components/FileListItem'
 
 function Files() {
@@ -143,27 +142,17 @@ function Files() {
             </div>
             <div className="space-y-3">
               {files.map(file => (
-              <div
-                key={file.id}
-                className="flex items-center gap-3"
-              >
-                <button
-                  onClick={() => toggleSelection(file.id)}
-                  className="text-2xl text-primary hover:text-primary-light transition duration-200 cursor-pointer flex-shrink-0"
-                  aria-label={selectedIds.has(file.id) ? 'Deselect file' : 'Select file'}
-                >
-                  {selectedIds.has(file.id) ? <FaCheckSquare /> : <FaSquare />}
-                </button>
-                <div className="flex-1">
-                  <FileListItem
-                    file={file}
-                    onDelete={() => handleDelete(file.id)}
-                    isDeleting={deletingId === file.id}
-                    isPending={true}
-                  />
-                </div>
-              </div>
-            ))}
+                <FileListItem
+                  key={file.id}
+                  file={file}
+                  onDelete={() => handleDelete(file.id)}
+                  isDeleting={deletingId === file.id}
+                  isPending={true}
+                  showCheckbox={true}
+                  isSelected={selectedIds.has(file.id)}
+                  onToggleSelect={() => toggleSelection(file.id)}
+                />
+              ))}
             </div>
           </>
         )}

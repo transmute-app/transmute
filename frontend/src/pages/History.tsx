@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import FileListItem, { FileInfo, ConversionInfo } from '../components/FileListItem'
-import { FaCheckSquare, FaSquare } from 'react-icons/fa'
 
 interface OriginalFileInfo {
   id: string
@@ -239,26 +238,19 @@ function History() {
                 created_at: conversion.created_at,
               }
               return (
-                <div key={conversion.id} className="flex items-center gap-3">
-                  <button
-                    onClick={() => toggleSelection(conversion.id)}
-                    className="text-primary hover:text-primary-light text-2xl transition duration-200 flex-shrink-0"
-                    aria-label="Select conversion"
-                  >
-                    {selectedIds.has(conversion.id) ? <FaCheckSquare /> : <FaSquare />}
-                  </button>
-                  <div className="flex-1">
-                    <FileListItem
-                      file={fileInfo}
-                      conversion={conversionInfo}
-                      onDownload={() => handleDownload(conversion)}
-                      onDelete={() => handleDelete(conversion.id)}
-                      isDeleting={deletingId === conversion.id}
-                      isDownloading={downloadingId === conversion.id}
-                      isPending={false}
-                    />
-                  </div>
-                </div>
+                <FileListItem
+                  key={conversion.id}
+                  file={fileInfo}
+                  conversion={conversionInfo}
+                  onDownload={() => handleDownload(conversion)}
+                  onDelete={() => handleDelete(conversion.id)}
+                  isDeleting={deletingId === conversion.id}
+                  isDownloading={downloadingId === conversion.id}
+                  isPending={false}
+                  showCheckbox={true}
+                  isSelected={selectedIds.has(conversion.id)}
+                  onToggleSelect={() => toggleSelection(conversion.id)}
+                />
               )
             })}
             </div>

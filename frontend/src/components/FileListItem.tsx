@@ -1,3 +1,5 @@
+import { FaCheckSquare, FaSquare } from 'react-icons/fa'
+
 export interface FileInfo {
     id: string
     original_filename: string
@@ -27,6 +29,9 @@ interface FileListItemProps {
     isDeleting?: boolean
     isDownloading?: boolean
     isPending?: boolean // true for pending conversions, false for completed
+    showCheckbox?: boolean
+    isSelected?: boolean
+    onToggleSelect?: () => void
 }
 
 function formatFileSize(bytes: number): string {
@@ -50,6 +55,9 @@ function FileListItem({
     isDeleting = false,
     isDownloading = false,
     isPending = false,
+    showCheckbox = false,
+    isSelected = false,
+    onToggleSelect,
 }: FileListItemProps) {
     const sortedFormats = file.compatible_formats
         ? [...file.compatible_formats].sort()
@@ -70,6 +78,15 @@ function FileListItem({
 
     return (
         <div className="bg-surface-light border border-surface-dark rounded-lg p-4 flex items-center gap-4">
+            {showCheckbox && onToggleSelect && (
+                <button
+                    onClick={onToggleSelect}
+                    className="text-primary hover:text-primary-light text-2xl transition duration-200 flex-shrink-0"
+                    aria-label={isSelected ? 'Deselect file' : 'Select file'}
+                >
+                    {isSelected ? <FaCheckSquare /> : <FaSquare />}
+                </button>
+            )}
             <div className="flex-1 min-w-0">
                 {/* Format conversion indicator */}
                 <div className="flex items-center gap-2 mb-1">
