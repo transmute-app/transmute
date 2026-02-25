@@ -12,7 +12,7 @@ function Footer() {
   }, [])
 
   return (
-    <footer className="bg-surface-dark border-t border-surface-light mt-auto">
+    <footer className="mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-center gap-2 text-text-muted text-sm">
             <a href="https://github.com/transmute-app/transmute" target="_blank" rel="noopener noreferrer" className="hover:text-text transition-colors">
