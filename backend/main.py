@@ -23,7 +23,7 @@ def create_app() -> FastAPI:
         app.mount("/icons", StaticFiles(directory=web_dir / "icons"), name="icons")
         
         # Catch-all route for SPA - serves index.html for non-API routes
-        @app.get("/{path:path}")
+        @app.get("/{path:path}", include_in_schema=False)
         async def spa_fallback(request: Request, path: str):
             # For API routes, redirect if missing trailing slash
             # Required to do this here instead of using redirect_slashes=True on 
