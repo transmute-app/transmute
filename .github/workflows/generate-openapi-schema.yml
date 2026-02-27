@@ -1,0 +1,40 @@
+name: Generate OpenAPI Schema
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  bandit-scan:
+    name: Generate OpenAPI Schema
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+      
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.11'
+      
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Export OpenAPI Schema
+        run: |
+          python backend/export_openapi.py --output openapi.json
+      
+      - name: Trigger Repository Dispatch
+        run: |
+          schema_content=$(cat openapi.json | jq -c .)
+          curl -X POST -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ secrets.TRANSMUTE_OPENAPI_DISPATCH_TOKEN }}" \
+          https://api.github.com/repos/transmute-app/openapi-specifications/dispatches \
+          -d '{"event_type":"openapi_schema_generated", "client_payload": {"schema": $schema_content}}'
