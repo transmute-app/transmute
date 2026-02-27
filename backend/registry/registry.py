@@ -191,3 +191,7 @@ class ConverterRegistry:
             matrix[normalized_fmt] = self.get_compatible_formats(normalized_fmt)
         
         return matrix
+
+
+# Shared singleton — import this instead of instantiating ConverterRegistry() directly.
+registry = ConverterRegistry()

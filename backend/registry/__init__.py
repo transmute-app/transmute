@@ -1,3 +1,3 @@
-from .registry import ConverterRegistry
+from .registry import ConverterRegistry, registry
 
-__all__ = ["ConverterRegistry"]
+__all__ = ["ConverterRegistry", "registry"]

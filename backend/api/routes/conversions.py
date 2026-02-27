@@ -4,7 +4,7 @@ import uuid
 import hashlib
 from fastapi import APIRouter, Depends, HTTPException
 from converters import ConverterInterface
-from registry import ConverterRegistry
+from registry import registry
 from core import get_settings, sanitize_extension, delete_file_and_metadata, validate_safe_path
 from db import ConversionDB, FileDB, ConversionRelationsDB
 from api.deps import get_file_db, get_conversion_db, get_conversion_relations_db
@@ -12,7 +12,6 @@ from api.schemas import ConversionRequest, ConversionListResponse, FileMetadata,
 
 
 router = APIRouter(prefix="/conversions", tags=["conversions"])
-registry = ConverterRegistry()
 settings = get_settings()
 UPLOAD_DIR = settings.upload_dir
 TEMP_DIR = settings.tmp_dir
