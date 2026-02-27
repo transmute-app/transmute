@@ -40,6 +40,7 @@ RUN ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" && \
     wget -q "$DRAWIO_URL" -O /tmp/drawio.deb && \
     apt-get update && apt-get install -y /tmp/drawio.deb && \
     rm /tmp/drawio.deb && \
+    apt-get install -y --only-upgrade libnss3 && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy backend code
