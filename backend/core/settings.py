@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     file_table_name: str = "FILES_METADATA"
     conversion_table_name: str = "CONVERSIONS_METADATA"
     conversion_relations_table_name: str = "CONVERSION_RELATIONS"
+    app_settings_table_name: str = "APP_SETTINGS"
 
     # ===== Redis =====
 
