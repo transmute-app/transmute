@@ -16,6 +16,12 @@ class DrawioConverter(ConverterInterface):
         'svg',
         'jpeg',
     }
+    drawio_paths = {
+        'darwin': '/Applications/draw.io.app/Contents/MacOS/draw.io',
+        'linux': '/opt/drawio/drawio',
+        'win32': 'C:\\Program Files\\draw.io\\draw.io.exe',
+    }
+    drawio_path = drawio_paths.get(sys.platform, 'drawio')
     
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
         """
@@ -38,7 +44,7 @@ class DrawioConverter(ConverterInterface):
             True if Draw.io is available, False otherwise.
         """
         try:
-            subprocess.run(['drawio', '--version', '--no-sandbox'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run([cls.drawio_path, '--version', '--no-sandbox'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             return True
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
@@ -121,7 +127,7 @@ class DrawioConverter(ConverterInterface):
             # --transparent: transparent background for PNG
             # --no-sandbox: required for running in containers/non-root environments
             cmd = [
-                'drawio',
+                self.drawio_path,
                 '-x',
                 self.input_file,
                 '-p', '0',  # Export first page

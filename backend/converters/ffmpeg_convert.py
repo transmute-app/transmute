@@ -1,6 +1,7 @@
 import subprocess
 import os
 from pathlib import Path
+import sys
 from typing import Optional
 from .converter_interface import ConverterInterface
 
@@ -31,6 +32,13 @@ class FFmpegConverter(ConverterInterface):
     supported_input_formats: set = video_formats | audio_formats
     supported_output_formats: set = set(supported_input_formats)
 
+    ffmpeg_paths = {
+        'darwin': '/opt/homebrew/bin/ffmpeg',
+        'linux': '/usr/bin/ffmpeg',
+        'win32': 'C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe',
+    }
+    ffmpeg_path = ffmpeg_paths.get(sys.platform, 'ffmpeg')
+
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
         """
         Initialize FFmpeg converter.
@@ -52,7 +60,7 @@ class FFmpegConverter(ConverterInterface):
             True if FFmpeg is available, False otherwise.
         """
         try:
-            subprocess.run(['ffmpeg', '-version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run([cls.ffmpeg_path, '-version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             return True
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
@@ -132,7 +140,7 @@ class FFmpegConverter(ConverterInterface):
         output_file = os.path.join(self.output_dir, f"{input_filename}.{self.output_type}")
         
         # Build FFmpeg command
-        cmd = ['ffmpeg']
+        cmd = [self.ffmpeg_path]
         
         if overwrite:
             cmd.append('-y')
