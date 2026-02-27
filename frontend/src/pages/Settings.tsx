@@ -69,6 +69,13 @@ function Settings() {
           <h1 className="text-3xl font-bold text-primary">Settings</h1>
         </div>
 
+        <div className="flex items-start gap-3 p-4 mb-6 bg-accent/10 border border-accent/40 rounded-lg text-accent text-sm">
+          <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          <span>Settings are not functional yet. Changes will not be saved or applied.</span>
+        </div>
+
         <div className="space-y-6">
 
           {/* Appearance */}
