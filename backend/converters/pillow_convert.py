@@ -5,27 +5,20 @@ from typing import Optional
 from io import BytesIO
 from PIL import Image
 from pillow_heif import HeifImagePlugin
-
-# Add Homebrew library paths for Cairo on macOS
-# This is a temporary workaround until we can get Docker properly set up
-if sys.platform == 'darwin':  # macOS
-    os.environ['DYLD_LIBRARY_PATH'] = '/opt/homebrew/lib:/usr/local/lib:' + os.environ.get('DYLD_LIBRARY_PATH', '')
-    # Also try to help ctypes find the library
-    import ctypes.util
-    original_find_library = ctypes.util.find_library
-    def custom_find_library(name):
-        # Try homebrew paths first
-        for prefix in ['/opt/homebrew', '/usr/local']:
-            for lib_dir in ['lib', 'lib64']:
-                for ext in ['dylib', 'so']:
-                    path = f"{prefix}/{lib_dir}/lib{name}.{ext}"
-                    if os.path.exists(path):
-                        return path
-        return original_find_library(name)
-    ctypes.util.find_library = custom_find_library
-
-import cairosvg
 from .converter_interface import ConverterInterface
+
+try:
+    if sys.platform == 'darwin':
+        # Homebrew installs Cairo to paths not searched by default.
+        # Setting DYLD_LIBRARY_PATH before the first ctypes load is enough.
+        _brew_lib = '/opt/homebrew/lib' if os.path.exists('/opt/homebrew') else '/usr/local/lib'
+        os.environ.setdefault('DYLD_LIBRARY_PATH', '')
+        if _brew_lib not in os.environ['DYLD_LIBRARY_PATH']:
+            os.environ['DYLD_LIBRARY_PATH'] = f"{_brew_lib}:{os.environ['DYLD_LIBRARY_PATH']}"
+    import cairosvg
+    _CAIROSVG_AVAILABLE = True
+except (ImportError, OSError):
+    _CAIROSVG_AVAILABLE = False
 
 class PillowConverter(ConverterInterface):
     supported_input_formats: set = {
@@ -89,6 +82,9 @@ class PillowConverter(ConverterInterface):
         base_formats = super().get_formats_compatible_with(format_type)
         # Can convert FROM SVG but not TO SVG (rasterization only)
         base_formats.discard('svg')
+        # SVG input requires cairosvg
+        if format_type.lower() == 'svg' and not _CAIROSVG_AVAILABLE:
+            return set()
         return base_formats
     
     def convert(self, overwrite: bool = True, quality: Optional[str] = None) -> list[str]:
@@ -130,6 +126,11 @@ class PillowConverter(ConverterInterface):
             # Handle SVG input specially
             input_fmt = self.input_type.lower()
             if input_fmt == 'svg':
+                if not _CAIROSVG_AVAILABLE:
+                    raise RuntimeError(
+                        "cairosvg is required for SVG conversion but could not be loaded. "
+                        "Install Cairo (e.g. `brew install cairo`) and cairosvg (`pip install cairosvg`)."
+                    )
                 # Convert SVG to PNG with transparency using cairosvg
                 png_data = cairosvg.svg2png(url=self.input_file)
                 img = Image.open(BytesIO(png_data))
