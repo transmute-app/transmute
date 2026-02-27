@@ -59,7 +59,7 @@ def list_conversions(
 
 
 @router.post(
-        "/",
+        "",
         summary="Create a new conversion",
         responses={
             200: {

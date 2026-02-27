@@ -60,7 +60,7 @@ function Converter() {
       formData.append('file', file)
 
       try {
-        const response = await fetch('/api/files/', {
+        const response = await fetch('/api/files', {
           method: 'POST',
           body: formData,
         })
@@ -145,7 +145,7 @@ function Converter() {
       const inputFormat = file.extension?.replace(/^\./, '') || ''
 
       try {
-        const response = await fetch('/api/conversions/', {
+        const response = await fetch('/api/conversions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

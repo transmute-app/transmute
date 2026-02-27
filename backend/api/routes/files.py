@@ -61,7 +61,7 @@ async def save_file(file: UploadFile, db: FileDB) -> dict:
 
 
 @router.get(
-    "/",
+    "",
     summary="List all uploaded files",
     responses={
         200: {
@@ -79,7 +79,7 @@ def list_files(file_db: FileDB = Depends(get_file_db)):
 
 
 @router.post(
-    "/",
+    "",
     summary="Upload a file",
     responses={
         200: {

@@ -59,7 +59,7 @@ def create_app() -> FastAPI:
                     # (e.g. //evil.com) which are a form of open redirect
                     clean = "".join(c for c in path if c.isalnum() or c in "/")
                     safe_path = "/".join(seg for seg in clean.split("/") if seg)
-                    return RedirectResponse(url=f"/{safe_path}/", status_code=307)
+                    #return RedirectResponse(url=f"/{safe_path}/", status_code=307)
             
             index_file = web_dir / "index.html"
             if index_file.exists():

@@ -14,7 +14,7 @@ function Files() {
   useEffect(() => {
     const fetchFiles = async () => {
       try {
-        const response = await fetch('/api/files/')
+        const response = await fetch('/api/files')
         if (!response.ok) throw new Error('Failed to fetch files')
         const data = await response.json()
         setFiles(data.files)

@@ -5,7 +5,7 @@ from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 router = APIRouter(prefix="/docs", tags=["docs"], redirect_slashes=True)
 settings = get_settings()
 
-@router.get("/", include_in_schema=False)
+@router.get("", include_in_schema=False)
 def overridden_redoc():
     """
     Overrides the default /redoc endpoint to use a custom favicon.
