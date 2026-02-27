@@ -51,9 +51,10 @@ class Settings(BaseSettings):
 
     # ===== Server =====
 
-    host: str = "YOUR_TRANSMUTE_HOST"
+    api_display_host: str = "YOUR_TRANSMUTE_IP"
+    host: str = "0.0.0.0"
     port: int = 3313
-    server_url: str | None = None
+    api_server_url: str | None = None
 
     def model_post_init(self, __context):
         """Compute derived paths after initialization."""
@@ -63,7 +64,7 @@ class Settings(BaseSettings):
         self.output_dir = self.data_dir / "outputs"
         self.tmp_dir = self.data_dir / "tmp"
 
-        self.server_url = f"http://{self.host}:{self.port}"
+        self.api_server_url = f"http://{self.api_display_host}:{self.port}"
 
         # Ensure directories exist
         for path in [

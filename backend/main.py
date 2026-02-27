@@ -13,7 +13,7 @@ def create_app() -> FastAPI:
         title=f"{settings.app_name} API",
         description=f"API to interact with {settings.app_name} without the need for a frontend",
         version=f"{settings.app_version}",
-        servers=[{"url": settings.server_url, "description": f"{settings.app_name} API server"}],
+        servers=[{"url": settings.api_server_url, "description": f"{settings.app_name} API server"}],
         docs_url=None,
         redoc_url=None,
         redirect_slashes=True
@@ -56,5 +56,6 @@ def create_app() -> FastAPI:
     return app
 
 if __name__ == "__main__":
+    settings = get_settings()
     app = create_app()
-    uvicorn.run(app, host="0.0.0.0", port=3313)
+    uvicorn.run(app, host=settings.host, port=settings.port)
