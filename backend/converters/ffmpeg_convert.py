@@ -43,6 +43,20 @@ class FFmpegConverter(ConverterInterface):
         """
         super().__init__(input_file, output_dir, input_type, output_type)
     
+    @classmethod
+    def can_register(cls) -> bool:
+        """
+        Check if FFmpeg is available for registration.
+        
+        Returns:
+            True if FFmpeg is available, False otherwise.
+        """
+        try:
+            subprocess.run(['ffmpeg', '-version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return False
+
     def __can_convert(self) -> bool:
         """
         Check if the input file can be converted to the output format.

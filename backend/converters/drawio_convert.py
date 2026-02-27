@@ -17,13 +17,6 @@ class DrawioConverter(ConverterInterface):
         'jpeg',
     }
     
-    # Draw.io CLI path by platform
-    DRAWIO_PATHS = {
-        'darwin': '/Applications/draw.io.app/Contents/MacOS/draw.io',
-        'linux': '/opt/drawio/drawio',
-        'win32': 'C:\\Program Files\\draw.io\\draw.io.exe',
-    }
-    
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
         """
         Initialize Drawio converter.
@@ -36,6 +29,20 @@ class DrawioConverter(ConverterInterface):
         """
         super().__init__(input_file, output_dir, input_type, output_type)
     
+    @classmethod
+    def can_register(cls) -> bool:
+        """
+        Check if the Draw.io converter can be registered.
+        
+        Returns:
+            True if Draw.io is available, False otherwise.
+        """
+        try:
+            subprocess.run(['drawio', '--version', '--no-sandbox'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return False
+
     def __can_convert(self) -> bool:
         """
         Check if the input file can be converted to the output format.
@@ -98,14 +105,6 @@ class DrawioConverter(ConverterInterface):
         if not os.path.isfile(self.input_file):
             raise FileNotFoundError(f"Input file not found: {self.input_file}")
         
-        # Get Draw.io executable path for current platform
-        drawio_path = self.DRAWIO_PATHS.get(sys.platform)
-        if not drawio_path or not os.path.exists(drawio_path):
-            raise FileNotFoundError(
-                f"Draw.io application not found at {drawio_path}. "
-                "Please install Draw.io from https://www.drawio.com/"
-            )
-        
         # Generate output filename
         input_filename = Path(self.input_file).stem
         output_file = os.path.join(self.output_dir, f"{input_filename}.{self.output_type}")
@@ -122,7 +121,7 @@ class DrawioConverter(ConverterInterface):
             # --transparent: transparent background for PNG
             # --no-sandbox: required for running in containers/non-root environments
             cmd = [
-                drawio_path,
+                'drawio',
                 '-x',
                 self.input_file,
                 '-p', '0',  # Export first page

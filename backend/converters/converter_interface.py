@@ -35,6 +35,18 @@ class ConverterInterface:
         raise NotImplementedError("can_convert method must be implemented by subclasses.")
     
     @classmethod
+    def can_register(cls) -> bool:
+        """
+        Check if the converter can be registered based on required non-pip dependencies.
+        Should only be overridden if there is some specific condition that must be met for the converter to be registered.
+        e.g. FFMpeg must be installed in order for ffmpeg_convert.py to be registered.
+        
+        Returns:
+            True if the converter can be registered, False otherwise.
+        """
+        return True
+    
+    @classmethod
     def get_formats_compatible_with(cls, format_type: str) -> set:
         """
         Get the set of compatible formats for conversion.

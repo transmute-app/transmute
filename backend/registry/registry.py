@@ -24,7 +24,10 @@ class ConverterRegistry:
         # Get all classes from the converters module
         for name, obj in inspect.getmembers(converters, inspect.isclass):
             # Check if it's a subclass of ConverterInterface (but not the interface itself)
-            if issubclass(obj, ConverterInterface) and obj is not ConverterInterface:
+            # And also check if it can be registered (e.g., required dependencies are met)
+            if issubclass(obj, ConverterInterface) and \
+                obj is not ConverterInterface and \
+                obj.can_register():
                 self.register_converter(obj)
     
     def register_converter(self, converter_class):
