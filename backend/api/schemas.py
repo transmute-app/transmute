@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Literal, Optional
 
 
 class ConversionRequest(BaseModel):
@@ -72,3 +72,18 @@ class FileDeleteResponse(BaseModel):
 
 class BatchDownloadRequest(BaseModel):
     file_ids: list[str] = Field(..., example=["123e4567-e89b-12d3-a456-426614174000", "987fcdeb-51a2-43f1-b789-123456789abc"], description="List of converted file IDs to download")
+
+
+ThemeValue = Literal["rubedo", "citrinitas", "viriditas", "nigredo", "albedo"]
+
+
+class AppSettingsResponse(BaseModel):
+    theme: ThemeValue = Field(..., example="rubedo", description="Active UI theme")
+    auto_download: bool = Field(..., example=False, description="Auto-download converted files on completion")
+    keep_originals: bool = Field(..., example=True, description="Retain uploaded source files after conversion")
+
+
+class AppSettingsUpdate(BaseModel):
+    theme: Optional[ThemeValue] = Field(None, example="rubedo", description="UI theme to apply")
+    auto_download: Optional[bool] = Field(None, example=False, description="Auto-download on completion")
+    keep_originals: Optional[bool] = Field(None, example=True, description="Keep original files after conversion")

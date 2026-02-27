@@ -31,11 +31,35 @@ function ThemeSwatch({ colors }: { colors: string[] }) {
   )
 }
 
+interface AppSettings {
+  theme: string
+  auto_download: boolean
+  keep_originals: boolean
+}
+
 function Settings() {
   const [theme, setTheme] = useState('rubedo')
-  const [themeOpen, setThemeOpen] = useState(false)
-  const themeRef = useRef<HTMLDivElement>(null)
   const [autoDownload, setAutoDownload] = useState(false)
+  const [saveOriginals, setSaveOriginals] = useState(true)
+  const [themeOpen, setThemeOpen] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const themeRef = useRef<HTMLDivElement>(null)
+
+  // Load settings once on mount
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.ok ? r.json() : Promise.reject('Failed to load settings'))
+      .then((data: AppSettings) => {
+        setTheme(data.theme)
+        setAutoDownload(data.auto_download)
+        setSaveOriginals(data.keep_originals)
+        setLoaded(true)
+      })
+      .catch(() => setLoaded(true)) // fall back to defaults silently
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -46,12 +70,24 @@ function Settings() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-  const [saveOriginals, setSaveOriginals] = useState(true)
-  const [saved, setSaved] = useState(false)
 
-  const handleSave = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+  const handleSave = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme, auto_download: autoDownload, keep_originals: saveOriginals }),
+      })
+      if (!response.ok) throw new Error('Failed to save settings')
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save settings')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleClearConversions = () => {
@@ -62,12 +98,28 @@ function Settings() {
     // No-op for now
   }
 
+  if (!loaded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-surface-dark to-surface-light p-8 flex items-start justify-start">
+        <div className="max-w-4xl mx-auto w-full pt-8">
+          <p className="text-text-muted text-sm">Loading settings...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-surface-dark to-surface-light p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6 min-h-[4rem]">
           <h1 className="text-3xl font-bold text-primary">Settings</h1>
         </div>
+
+        {error && (
+          <div className="p-3 bg-primary/20 border border-primary rounded-lg text-primary-light text-sm mb-4">
+            {error}
+          </div>
+        )}
 
         <div className="flex items-start gap-3 p-4 mb-6 bg-accent/10 border border-accent/40 rounded-lg text-accent text-sm">
           <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -197,9 +249,10 @@ function Settings() {
         <div className="mt-8 flex justify-end">
           <button
             onClick={handleSave}
-            className="bg-success hover:bg-success-dark text-white font-semibold py-2 px-8 rounded-lg transition duration-200 shadow-md hover:shadow-lg"
+            disabled={saving}
+            className="bg-success hover:bg-success-dark text-white font-semibold py-2 px-8 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saved ? 'Saved!' : 'Save Changes'}
+            {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
           </button>
         </div>
 
