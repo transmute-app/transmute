@@ -48,19 +48,6 @@ def create_app() -> FastAPI:
         # Catch-all route for SPA - serves index.html for non-API routes
         @app.get("/{path:path}", include_in_schema=False)
         async def spa_fallback(request: Request, path: str):
-            # For API routes, redirect if missing trailing slash
-            # Required to do this here instead of using redirect_slashes=True on 
-            # the router because the SPA catch-all would intercept and return 
-            # index.html instead of redirecting
-            if path.startswith("api/"):
-                if not request.url.path.endswith("/"):
-                    # Sanitize: keep only alphanumeric and slashes, then collapse
-                    # multiple/leading slashes to prevent protocol-relative redirects
-                    # (e.g. //evil.com) which are a form of open redirect
-                    clean = "".join(c for c in path if c.isalnum() or c in "/")
-                    safe_path = "/".join(seg for seg in clean.split("/") if seg)
-                    #return RedirectResponse(url=f"/{safe_path}/", status_code=307)
-            
             index_file = web_dir / "index.html"
             if index_file.exists():
                 return FileResponse(index_file)
