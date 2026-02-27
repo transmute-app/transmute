@@ -129,8 +129,8 @@ class SettingsDB:
                 values[i] = int(values[i])
 
         with self.conn:
-            self.conn.execute(  # nosec B608
-                f"UPDATE {self.TABLE_NAME} SET {set_clause} WHERE id = ?",
+            self.conn.execute(
+                f"UPDATE {self.TABLE_NAME} SET {set_clause} WHERE id = ?",  # nosec B608
                 [*values, _SETTINGS_ROW_ID]
             )
 
