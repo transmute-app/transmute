@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { FaArrowRightArrowLeft, FaClockRotateLeft, FaBook, FaFile } from 'react-icons/fa6'
+import { FaArrowRightArrowLeft, FaClockRotateLeft, FaBook, FaFile, FaGear } from 'react-icons/fa6'
 
 function Header() {
   return (
@@ -39,6 +39,13 @@ function Header() {
             >
               <FaBook />
             </a>
+            <Link
+              to="/settings"
+              className="text-text hover:text-primary px-3 py-2 rounded-md text-xl font-medium transition duration-200"
+              title="Settings"
+            >
+              <FaGear />
+            </Link>
           </div>
         </div>
       </nav>

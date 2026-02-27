@@ -4,6 +4,7 @@ import Footer from './components/Footer'
 import Converter from './pages/Converter'
 import History from './pages/History'
 import Files from './pages/Files'
+import Settings from './pages/Settings'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
             <Route path="/" element={<Converter />} />
             <Route path="/files" element={<Files />} />
             <Route path="/history" element={<History />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>
         <Footer />
