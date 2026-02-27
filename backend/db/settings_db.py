@@ -102,12 +102,14 @@ class SettingsDB:
         Raises ValueError for invalid theme values.
         Returns the updated settings dict.
         """
+        # Prevent SQL injection by allowing only known columns
         allowed = {"theme", "auto_download", "keep_originals"}
         filtered = {k: v for k, v in updates.items() if k in allowed}
 
         if not filtered:
             return self.get_settings()
 
+        # Prevent SQL injection by allowing only known theme values
         if "theme" in filtered:
             try:
                 filtered["theme"] = Theme(filtered["theme"]).value
@@ -121,6 +123,7 @@ class SettingsDB:
         values = list(filtered.values())
 
         # Coerce booleans to ints for SQLite storage
+        # Prevent SQL injection by allowing only integers for these
         for i, key in enumerate(filtered):
             if key in ("auto_download", "keep_originals"):
                 values[i] = int(values[i])
