@@ -52,7 +52,10 @@ class Settings(BaseSettings):
     # ===== Server =====
 
     api_display_host: str = "YOUR_TRANSMUTE_IP"
-    host: str = "0.0.0.0"
+
+    # Binding to all interfaces is required as this app should be reachable from
+    # other machines besides just localhost
+    host: str = "0.0.0.0"  # nosec B104
     port: int = 3313
     api_server_url: str | None = None
 
