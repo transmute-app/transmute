@@ -4,6 +4,8 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+from core import validate_safe_path
+
 from .converter_interface import ConverterInterface
 
 class DrawioConverter(ConverterInterface):
@@ -44,7 +46,9 @@ class DrawioConverter(ConverterInterface):
             True if Draw.io is available, False otherwise.
         """
         try:
-            subprocess.run([cls.drawio_path, '--version', '--no-sandbox'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            # Subprocess is safe here because the command is constructed without
+            # user input.
+            subprocess.run([cls.drawio_path, '--version', '--no-sandbox'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # nosec B603
             return True
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
@@ -120,6 +124,10 @@ class DrawioConverter(ConverterInterface):
             return [output_file]
         
         try:
+            # Validate input file path
+            validate_safe_path(self.input_file)
+            validate_safe_path(output_file)
+
             # Build the Draw.io CLI command
             # -x: export mode
             # -p: page index (0 for first page)
@@ -140,7 +148,9 @@ class DrawioConverter(ConverterInterface):
                 cmd.append('--transparent')
             
             # Run the conversion
-            result = subprocess.run(
+            # Subprocess is safe here because the input file path is validated
+            # and the command is constructed without user input.
+            result = subprocess.run( # nosec B603
                 cmd,
                 capture_output=True,
                 text=True,

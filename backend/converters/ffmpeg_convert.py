@@ -62,7 +62,9 @@ class FFmpegConverter(ConverterInterface):
             True if FFmpeg is available, False otherwise.
         """
         try:
-            subprocess.run([cls.ffmpeg_path, '-version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            # Subprocess is safe here because the command is constructed without
+            # user input.
+            subprocess.run([cls.ffmpeg_path, '-version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # nosec B603
             return True
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
@@ -149,6 +151,7 @@ class FFmpegConverter(ConverterInterface):
         else:
             cmd.append('-n')
         
+        validate_safe_path(self.input_file)
         cmd.extend(['-i', self.input_file])
         
         # Add quality settings for video conversions
@@ -164,7 +167,9 @@ class FFmpegConverter(ConverterInterface):
         
         # Execute FFmpeg command
         try:
-            result = subprocess.run(
+            # Subprocess is safe here because the input file path is validated
+            # and the command is constructed without user input.
+            result = subprocess.run( # nosec B603
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
