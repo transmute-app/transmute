@@ -34,7 +34,9 @@ jobs:
       - name: Trigger Repository Dispatch
         run: |
           schema_content=$(cat openapi.json | jq -c .)
+          payload=$(jq -n --arg sha "${{ github.sha }}" --argjson schema "$schema_content" \
+              '{"event_type":"openapi_schema_generated", "client_payload": {"sha": $sha, "schema": $schema}}')
           curl -X POST -H "Accept: application/vnd.github.v3+json" \
           -H "Authorization: token ${{ secrets.TRANSMUTE_OPENAPI_DISPATCH_TOKEN }}" \
           https://api.github.com/repos/transmute-app/openapi-specifications/dispatches \
-          -d '{"event_type":"openapi_schema_generated", "client_payload": {"schema": $schema_content}}'
+          -d "$payload"
