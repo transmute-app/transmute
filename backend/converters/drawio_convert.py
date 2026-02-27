@@ -1,5 +1,5 @@
 import os
-import subprocess
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
 from typing import Optional

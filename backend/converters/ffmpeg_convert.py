@@ -1,9 +1,11 @@
-import subprocess
-import os
-from pathlib import Path
+import subprocess  # nosec B404
 import sys
+import os
+
+from pathlib import Path
 from typing import Optional
 from .converter_interface import ConverterInterface
+from core import validate_safe_path
 
 class FFmpegConverter(ConverterInterface):
     video_formats: set = {
