@@ -25,6 +25,7 @@ function Header() {
               to="/"
               className="text-text hover:text-primary px-3 py-2 rounded-md text-xl font-medium transition duration-200"
               title="Converter"
+              aria-label="Converter"
             >
               <FaArrowRightArrowLeft />
             </Link>
@@ -32,6 +33,7 @@ function Header() {
               to="/files"
               className="text-text hover:text-primary px-3 py-2 rounded-md text-xl font-medium transition duration-200"
               title="Files"
+              aria-label="Files"
             >
               <FaFile />
             </Link>
@@ -39,6 +41,7 @@ function Header() {
               to="/history"
               className="text-text hover:text-primary px-3 py-2 rounded-md text-xl font-medium transition duration-200"
               title="History"
+              aria-label="History"
             >
               <FaClockRotateLeft />
             </Link>
@@ -46,6 +49,7 @@ function Header() {
               href="/api/docs"
               className="text-text hover:text-primary px-3 py-2 rounded-md text-xl font-medium transition duration-200"
               title="API Docs"
+              aria-label="API Docs"
             >
               <FaBook />
             </a>
@@ -53,6 +57,7 @@ function Header() {
               to="/settings"
               className="text-text hover:text-primary px-3 py-2 rounded-md text-xl font-medium transition duration-200"
               title="Settings"
+              aria-label="Settings"
             >
               <FaGear />
             </Link>
