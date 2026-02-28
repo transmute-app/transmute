@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { FaArrowRightArrowLeft, FaClockRotateLeft, FaBook, FaFile, FaGear } from 'react-icons/fa6'
 
 function Header() {
@@ -21,30 +21,37 @@ function Header() {
             <span className="text-2xl font-bold text-primary">Transmute</span>
           </Link>
           <div className="flex space-x-8">
-            <Link
+            <NavLink
               to="/"
-              className="text-text hover:text-primary px-3 py-2 rounded-md text-xl font-medium transition duration-200"
+              end
+              className={({ isActive }) =>
+                `px-3 py-2 rounded-md text-xl font-medium transition duration-200 ${isActive ? 'text-primary' : 'text-text hover:text-primary'}`
+              }
               title="Converter"
               aria-label="Converter"
             >
               <FaArrowRightArrowLeft />
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/files"
-              className="text-text hover:text-primary px-3 py-2 rounded-md text-xl font-medium transition duration-200"
+              className={({ isActive }) =>
+                `px-3 py-2 rounded-md text-xl font-medium transition duration-200 ${isActive ? 'text-primary' : 'text-text hover:text-primary'}`
+              }
               title="Files"
               aria-label="Files"
             >
               <FaFile />
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/history"
-              className="text-text hover:text-primary px-3 py-2 rounded-md text-xl font-medium transition duration-200"
+              className={({ isActive }) =>
+                `px-3 py-2 rounded-md text-xl font-medium transition duration-200 ${isActive ? 'text-primary' : 'text-text hover:text-primary'}`
+              }
               title="History"
               aria-label="History"
             >
               <FaClockRotateLeft />
-            </Link>
+            </NavLink>
             <a
               href="/api/docs"
               className="text-text hover:text-primary px-3 py-2 rounded-md text-xl font-medium transition duration-200"
@@ -53,14 +60,16 @@ function Header() {
             >
               <FaBook />
             </a>
-            <Link
+            <NavLink
               to="/settings"
-              className="text-text hover:text-primary px-3 py-2 rounded-md text-xl font-medium transition duration-200"
+              className={({ isActive }) =>
+                `px-3 py-2 rounded-md text-xl font-medium transition duration-200 ${isActive ? 'text-primary' : 'text-text hover:text-primary'}`
+              }
               title="Settings"
               aria-label="Settings"
             >
               <FaGear />
-            </Link>
+            </NavLink>
           </div>
         </div>
       </nav>
