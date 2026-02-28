@@ -42,7 +42,7 @@ wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/
 | Rubedo (Default) | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/rubedo.png" width=50%> |
 | Citrinitas       | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/citrinitas.png" width=50%> |
 | Viriditas        | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/viriditas.png" width=50%> |
-| Nigrido          | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/nigrido.png" width=50%> |
+| Nigredo          | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/nigredo.png" width=50%> |
 | Albedo           | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/albedo.png" width=50%> |
 | Aurora           | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/aurora.png" width=50%> |
 | Caelum           | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/caelum.png" width=50%> |
