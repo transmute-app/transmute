@@ -36,12 +36,14 @@ interface AppSettings {
   theme: string
   auto_download: boolean
   keep_originals: boolean
+  cleanup_ttl_minutes: number
 }
 
 function Settings() {
   const { theme, setTheme } = useTheme()
   const [autoDownload, setAutoDownload] = useState(false)
   const [saveOriginals, setSaveOriginals] = useState(true)
+  const [cleanupTtl, setCleanupTtl] = useState(60)
   const [themeOpen, setThemeOpen] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -59,6 +61,7 @@ function Settings() {
         setTheme(data.theme as ThemeName)
         setAutoDownload(data.auto_download)
         setSaveOriginals(data.keep_originals)
+        setCleanupTtl(data.cleanup_ttl_minutes)
         setLoaded(true)
       })
       .catch(() => setLoaded(true)) // fall back to defaults silently
@@ -81,7 +84,7 @@ function Settings() {
       const response = await fetch('/api/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ theme, auto_download: autoDownload, keep_originals: saveOriginals }),
+        body: JSON.stringify({ theme, auto_download: autoDownload, keep_originals: saveOriginals, cleanup_ttl_minutes: cleanupTtl }),
       })
       if (!response.ok) throw new Error('Failed to save settings')
       setSaved(true)
@@ -221,6 +224,36 @@ function Settings() {
                     className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${saveOriginals ? 'translate-x-6' : 'translate-x-0'}`}
                   />
                 </button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-text font-medium">Cleanup TTL</p>
+                  <p className="text-text-muted text-sm">Minutes before temporary files are cleaned up</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-surface-dark border border-surface-light rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setCleanupTtl(v => Math.max(1, v - 1))}
+                      className="px-3 py-2 text-text-muted hover:text-text hover:bg-surface-light transition-colors duration-150 text-base leading-none select-none"
+                      aria-label="Decrease"
+                    >−</button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10080}
+                      value={cleanupTtl}
+                      onChange={e => setCleanupTtl(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-16 bg-transparent text-text text-sm text-center py-2 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                    <button
+                      onClick={() => setCleanupTtl(v => Math.min(10080, v + 1))}
+                      className="px-3 py-2 text-text-muted hover:text-text hover:bg-surface-light transition-colors duration-150 text-base leading-none select-none"
+                      aria-label="Increase"
+                    >+</button>
+                  </div>
+                  <span className="text-text-muted text-sm">min</span>
+                </div>
               </div>
             </div>
           </section>

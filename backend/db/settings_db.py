@@ -25,6 +25,7 @@ _DEFAULT_SETTINGS = {
     "theme":            Theme.RUBEDO.value,
     "auto_download":    False,
     "keep_originals":   True,
+    "cleanup_ttl_minutes": 60
 }
 
 _SETTINGS_ROW_ID = 1  # Single-row table; always read/write row with this id
@@ -69,7 +70,8 @@ class SettingsDB:
                     id             INTEGER PRIMARY KEY,
                     theme          TEXT    NOT NULL DEFAULT '{Theme.RUBEDO.value}',
                     auto_download  INTEGER NOT NULL DEFAULT 0,
-                    keep_originals INTEGER NOT NULL DEFAULT 1
+                    keep_originals INTEGER NOT NULL DEFAULT 1,
+                    cleanup_ttl_minutes INTEGER NOT NULL DEFAULT 60
                 )
             """)  # nosec B608
 
@@ -83,13 +85,14 @@ class SettingsDB:
         if cursor.fetchone() is None:
             with self.conn:
                 self.conn.execute(
-                    f"INSERT INTO {self.TABLE_NAME} (id, theme, auto_download, keep_originals) "  # nosec B608
-                    f"VALUES (?, ?, ?, ?)",
+                    f"INSERT INTO {self.TABLE_NAME} (id, theme, auto_download, keep_originals, cleanup_ttl_minutes) "  # nosec B608
+                    f"VALUES (?, ?, ?, ?, ?)",
                     (
                         _SETTINGS_ROW_ID,
                         _DEFAULT_SETTINGS["theme"],
                         int(_DEFAULT_SETTINGS["auto_download"]),
                         int(_DEFAULT_SETTINGS["keep_originals"]),
+                        int(_DEFAULT_SETTINGS["cleanup_ttl_minutes"]),
                     )
                 )
 
@@ -98,16 +101,17 @@ class SettingsDB:
 
         Args:
             row: A tuple representing a single row from the settings table,
-                with columns (id, theme, auto_download, keep_originals).
+                with columns (id, theme, auto_download, keep_originals, cleanup_ttl_minutes).
 
         Returns:
             A dictionary with keys theme (str), auto_download (bool),
-            and keep_originals (bool).
+            keep_originals (bool), and cleanup_ttl_minutes (int).
         """
         return {
             "theme":          row[1],
             "auto_download":  bool(row[2]),
             "keep_originals": bool(row[3]),
+            "cleanup_ttl_minutes": int(row[4]),
         }
 
     def get_settings(self) -> dict:
@@ -115,7 +119,7 @@ class SettingsDB:
 
         Returns:
             A dictionary with keys theme (str), auto_download (bool),
-            and keep_originals (bool). Falls back to default values if
+            keep_originals (bool), and cleanup_ttl_minutes (int). Falls back to default values if
             the settings row is missing.
         """
         cursor = self.conn.cursor()
@@ -131,7 +135,7 @@ class SettingsDB:
     def update_settings(self, updates: dict) -> dict:
         """Apply a partial or full update to the app settings.
 
-        Accepted keys are theme, auto_download, and keep_originals.
+        Accepted keys are theme, auto_download, and keep_originals, cleanup_ttl_minutes.
         Unknown keys are silently ignored. The settings row is created with
         defaults if it does not yet exist.
 
@@ -142,17 +146,19 @@ class SettingsDB:
                     converted files.
                 keep_originals (bool): Whether to retain original files
                     after conversion.
+                cleanup_ttl_minutes (int): Time-to-live in minutes for cleanup.
+        
 
         Returns:
             A dictionary reflecting the updated settings, with keys theme
-            (str), auto_download (bool), and keep_originals (bool).
+            (str), auto_download (bool), keep_originals (bool), and cleanup_ttl_minutes (int).
 
         Raises:
             ValueError: If the provided theme value is not a valid
                 Theme enum member.
         """
         # Prevent SQL injection by allowing only known columns
-        allowed = {"theme", "auto_download", "keep_originals"}
+        allowed = {"theme", "auto_download", "keep_originals", "cleanup_ttl_minutes"}
         filtered = {k: v for k, v in updates.items() if k in allowed}
 
         if not filtered:
@@ -170,6 +176,8 @@ class SettingsDB:
             filtered["auto_download"] = int(bool(filtered["auto_download"]))
         if "keep_originals" in filtered:
             filtered["keep_originals"] = int(bool(filtered["keep_originals"]))
+        if "cleanup_ttl_minutes" in filtered:
+            filtered["cleanup_ttl_minutes"] = int(filtered["cleanup_ttl_minutes"])
 
         set_clause = ", ".join(f"{col} = ?" for col in filtered)
         values = list(filtered.values()) + [_SETTINGS_ROW_ID]

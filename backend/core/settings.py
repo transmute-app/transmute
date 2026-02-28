@@ -46,10 +46,6 @@ class Settings(BaseSettings):
 
     redis_url: str = "redis://redis:6379/0"
 
-    # ===== Cleanup =====
-
-    cleanup_ttl_hours: int = 72
-
     # ===== Server =====
 
     api_display_host: str = "YOUR_TRANSMUTE_IP"
