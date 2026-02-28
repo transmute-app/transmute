@@ -35,6 +35,18 @@ This project is under heavy development, come back soon to see where it goes!
 wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/docker-compose,yml" && docker compose up -d
 ```
 
+## Themes & Screenshots
+
+| Theme            | Screenshot |
+| ---------------- | ---------- |
+| Rubedo (Default) | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/rubedo.jpeg" width=50%> |
+| Citrinitas       | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/citrinitas.jpeg" width=50%> |
+| Viriditas        | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/viriditas.jpeg" width=50%> |
+| Nigrido          | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/nigrido.jpeg" width=50%> |
+| Albedo           | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/albedo.jpeg" width=50%> |
+| Aurora           | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/aurora.jpeg" width=50%> |
+| Caelum           | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/caelum.jpeg" width=50%> |
+
 ## Diagrams
 Shoutout to [draw.io](https://www.drawio.com/) - formerly diagrams.net. I love their software and have always planned out projects using it. 
 
