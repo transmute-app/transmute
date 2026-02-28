@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 
-export type ThemeName = 'rubedo' | 'citrinitas' | 'viriditas' | 'nigredo' | 'albedo'
+export type ThemeName = 'rubedo' | 'citrinitas' | 'viriditas' | 'nigredo' | 'albedo' | 'aurora' | 'caelum'
 
 interface ThemeContextValue {
   theme: ThemeName
@@ -19,7 +19,7 @@ function applyThemeToDom(name: ThemeName) {
   try { localStorage.setItem(STORAGE_KEY, name) } catch (_) {}
 }
 
-const VALID_THEMES = new Set<ThemeName>(['rubedo', 'citrinitas', 'viriditas', 'nigredo', 'albedo'])
+const VALID_THEMES = new Set<ThemeName>(['rubedo', 'citrinitas', 'viriditas', 'nigredo', 'albedo', 'aurora', 'caelum'])
 
 function readStoredTheme(): ThemeName {
   try {

@@ -9,10 +9,12 @@ interface Theme {
 
 const THEMES: Theme[] = [
   { value: 'rubedo',     label: 'Rubedo',     colors: ['#ef4444', '#171e2f'] },  // Red / Dark Blue
-  { value: 'citrinitas', label: 'Citrinitas', colors: ['#ffd700', '#3c00a4'] },  // Gold / Violet
+  { value: 'citrinitas', label: 'Citrinitas', colors: ['#fbbf24', '#140d2d'] },  // Gold / Deep Violet
   { value: 'viriditas',  label: 'Viriditas',  colors: ['#16a34a', '#000000'] },  // Green / Black
   { value: 'nigredo',    label: 'Nigredo',    colors: ['#3c00a4', '#000000'] },  // Purple / Black
   { value: 'albedo',     label: 'Albedo',     colors: ['#f8fafc', '#cbd5e1'] },  // Light / Silver
+  { value: 'aurora',     label: 'Aurora',     colors: ['#ea580c', '#fffbf0'] },  // Orange / Warm Cream
+  { value: 'caelum',     label: 'Caelum',     colors: ['#0284c7', '#f0f9ff'] },  // Sky Blue / Cool White
 ]
 
 function ThemeSwatch({ colors }: { colors: string[] }) {

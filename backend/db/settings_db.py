@@ -18,6 +18,8 @@ class Theme(str, Enum):
     VIRIDITAS  = "viriditas"
     NIGREDO    = "nigredo"
     ALBEDO     = "albedo"
+    AURORA     = "aurora"
+    CAELUM     = "caelum"
 
 
 # Defaults applied on first run / if the row is missing
