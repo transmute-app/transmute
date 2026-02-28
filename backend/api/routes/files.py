@@ -200,6 +200,26 @@ def batch_download_files(
     )
 
 @router.delete(
+    "/all",
+    summary="Delete all uploaded files",
+    responses={
+        200: {
+            "model": FileDeleteResponse,
+            "description": "All files deleted successfully"
+        }
+    }
+)
+def delete_all_files(
+    file_db: FileDB = Depends(get_file_db)
+):
+    """Delete all uploaded files"""
+    # Find all uploaded file IDs
+    uploaded_files = file_db.list_files()
+    for file in uploaded_files:
+        delete_file_and_metadata(file['id'], file_db)
+    return {"message": "All files deleted successfully"}
+
+@router.delete(
     "/{file_id}",
     summary="Delete an uploaded file",
     responses={

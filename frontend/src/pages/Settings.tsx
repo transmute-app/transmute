@@ -47,6 +47,8 @@ function Settings() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [clearConversionsStatus, setClearConversionsStatus] = useState<'idle' | 'clearing' | 'success' | 'error'>('idle')
+  const [clearUploadsStatus, setClearUploadsStatus] = useState<'idle' | 'clearing' | 'success' | 'error'>('idle')
   const themeRef = useRef<HTMLDivElement>(null)
 
   // Load settings once on mount
@@ -92,11 +94,31 @@ function Settings() {
   }
 
   const handleClearConversions = () => {
-    // No-op for now
+    setClearConversionsStatus('clearing')
+    fetch('/api/conversions/all', { method: 'DELETE' })
+      .then(r => {
+        if (!r.ok) throw new Error()
+        setClearConversionsStatus('success')
+        setTimeout(() => setClearConversionsStatus('idle'), 2000)
+      })
+      .catch(() => {
+        setClearConversionsStatus('error')
+        setTimeout(() => setClearConversionsStatus('idle'), 2000)
+      })
   }
 
   const handleClearUploads = () => {
-    // No-op for now
+    setClearUploadsStatus('clearing')
+    fetch('/api/files/all', { method: 'DELETE' })
+      .then(r => {
+        if (!r.ok) throw new Error()
+        setClearUploadsStatus('success')
+        setTimeout(() => setClearUploadsStatus('idle'), 2000)
+      })
+      .catch(() => {
+        setClearUploadsStatus('error')
+        setTimeout(() => setClearUploadsStatus('idle'), 2000)
+      })
   }
 
   if (!loaded) {
@@ -214,9 +236,10 @@ function Settings() {
                 </div>
                 <button
                   onClick={handleClearConversions}
-                  className="bg-primary/20 hover:bg-primary/40 text-primary-light font-semibold py-2 px-5 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm"
+                  disabled={clearConversionsStatus === 'clearing'}
+                  className="bg-primary/20 hover:bg-primary/40 text-primary-light font-semibold py-2 px-5 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Clear History
+                  {clearConversionsStatus === 'clearing' ? 'Clearing...' : clearConversionsStatus === 'success' ? 'Cleared!' : clearConversionsStatus === 'error' ? 'Failed' : 'Clear History'}
                 </button>
               </div>
 
@@ -229,9 +252,10 @@ function Settings() {
                 </div>
                 <button
                   onClick={handleClearUploads}
-                  className="bg-primary/20 hover:bg-primary/40 text-primary-light font-semibold py-2 px-5 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm"
+                  disabled={clearUploadsStatus === 'clearing'}
+                  className="bg-primary/20 hover:bg-primary/40 text-primary-light font-semibold py-2 px-5 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Clear Files
+                  {clearUploadsStatus === 'clearing' ? 'Clearing...' : clearUploadsStatus === 'success' ? 'Cleared!' : clearUploadsStatus === 'error' ? 'Failed' : 'Clear Files'}
                 </button>
               </div>
             </div>

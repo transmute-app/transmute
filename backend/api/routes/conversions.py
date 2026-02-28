@@ -130,6 +130,28 @@ async def create_conversion(
     return converted_metadata
 
 @router.delete(
+    "/all",
+    summary="Delete all converted files and their relations to the original files",
+    responses={
+        200: {
+            "model": FileDeleteResponse,
+            "description": "Conversion history deleted successfully"
+        }
+    }
+)
+def delete_conversion(
+    conversion_db: ConversionDB = Depends(get_conversion_db),
+    conversion_relations_db: ConversionRelationsDB = Depends(get_conversion_relations_db)
+):
+    """Delete all converted files and their relations to the original files"""
+    # Find all converted file IDs
+    converted_files = conversion_db.list_files()
+    for file in converted_files:
+        delete_file_and_metadata(file['id'], conversion_db)
+        conversion_relations_db.delete_relation_by_converted(file['id'])
+    return {"message": "All conversion history deleted successfully"}
+
+@router.delete(
     "/{conversion_id}",
     summary="Delete a converted file and its relation to the original file",
     responses={
