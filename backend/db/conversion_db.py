@@ -1,4 +1,3 @@
-import sqlite3
 from core import get_settings
 from .file_db import FileDB
 
