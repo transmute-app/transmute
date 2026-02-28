@@ -7,6 +7,7 @@ import Converter from './pages/Converter'
 import History from './pages/History'
 import Files from './pages/Files'
 import Settings from './pages/Settings'
+import NotFound from './pages/NotFound'
 
 function RouteTitle() {
   const location = useLocation()
@@ -38,6 +39,7 @@ function App() {
               <Route path="/files" element={<Files />} />
               <Route path="/history" element={<History />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <Footer />
