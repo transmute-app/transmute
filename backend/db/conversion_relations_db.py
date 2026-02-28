@@ -170,3 +170,8 @@ class ConversionRelationsDB:
             }
             for row in rows
         ]
+
+    def close(self) -> None:
+        """Close the database connection."""
+        if self.conn:
+            self.conn.close()
