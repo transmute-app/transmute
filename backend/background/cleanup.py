@@ -2,15 +2,14 @@ import calendar
 import threading
 import time
 
-from db import FileDB, SettingsDB
+from db import FileDB, SettingsDB, ConversionDB, ConversionRelationsDB
 from core import delete_file_and_metadata
 
-def cleanup_logic():
+def file_cleanup_logic(file_db: FileDB, conversion_relations_db: ConversionRelationsDB = None):
     now = time.time()
     settings_db = SettingsDB()
     ttl_minutes = settings_db.get_settings().get("cleanup_ttl_minutes", 60)
     settings_db.close()
-    file_db = FileDB()
     all_files = file_db.list_files()
 
     for file in all_files:
@@ -19,13 +18,21 @@ def cleanup_logic():
             created_at = calendar.timegm(time.strptime(created_at_timestamp, "%Y-%m-%d %H:%M:%S"))
             if now - created_at > ttl_minutes * 60:  # If the file was created more than the TTL seconds ago
                 delete_file_and_metadata(file['id'], file_db)
+                if conversion_relations_db:
+                    # Additional cleanup logic for conversion relations
+                    conversion_relations_db.delete_relation_by_converted(file['id'])
 
-def cleanup_task():
+def relationship_cleanup_logic():
+    # Placeholder for future relationship cleanup logic
+    pass
+
+def file_cleanup_task():
     while True:
-        cleanup_logic()
+        file_cleanup_logic(FileDB())
+        file_cleanup_logic(ConversionDB(), ConversionRelationsDB())
         time.sleep(60) # Sleep for 1 minute
 
-def get_cleanup_thread():
-    thread = threading.Thread(target=cleanup_task)
+def get_upload_cleanup_thread():
+    thread = threading.Thread(target=file_cleanup_task)
     thread.daemon = True # Allows the main program to exit even if the thread is running
     return thread

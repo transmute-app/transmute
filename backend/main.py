@@ -5,7 +5,7 @@ from fastapi.openapi.docs import get_redoc_html
 from fastapi.openapi.utils import get_openapi
 from api import router
 from core import get_settings
-from background import get_cleanup_thread
+from background import get_upload_cleanup_thread
 import uvicorn
 
 def create_app() -> FastAPI:
@@ -59,6 +59,6 @@ def create_app() -> FastAPI:
 if __name__ == "__main__":
     settings = get_settings()
     app = create_app()
-    cleanup_thread = get_cleanup_thread()
+    cleanup_thread = get_upload_cleanup_thread()
     cleanup_thread.start()
     uvicorn.run(app, host=settings.host, port=settings.port)
