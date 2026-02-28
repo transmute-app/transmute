@@ -42,6 +42,18 @@ def validate_sql_identifier(identifier: str) -> str:
 
 
 def detect_media_type(file_path: Path) -> str:
+    """
+    Detect the media type of a file based on its extension.
+
+    Falls back to libmagic content-based detection when the file has no
+    extension, then maps the resulting MIME type back to an extension string.
+
+    Args:
+        file_path: Path to the file whose media type should be detected
+
+    Returns:
+        A lowercase extension string without a leading dot (e.g. "png", "pdf")
+    """
     # Use extensions as the media_type
     _, extension = os.path.splitext(file_path)
     if not extension:
@@ -52,6 +64,20 @@ def detect_media_type(file_path: Path) -> str:
     return media_type
 
 def sanitize_extension(extension: str) -> str:
+    """
+    Sanitize a file extension string for safe storage and comparison.
+
+    Strips surrounding whitespace and a leading dot, removes characters that
+    are not alphanumeric, underscore, hyphen, or dot, and normalizes to
+    lowercase.
+
+    Args:
+        extension: The raw extension string to sanitize (may include a
+            leading dot)
+
+    Returns:
+        A cleaned, lowercase extension string without a leading dot
+    """
     # Keep alphanumerics plus _, -, and ., normalize case.
     cleaned = extension.strip().lstrip(".")
     return "".join(ch for ch in cleaned if ch.isalnum() or ch in {"_", "-", "."}).lower()
@@ -201,7 +227,23 @@ def sanitize_filename(filename: str) -> str:
     return cleaned
 
 def delete_file_and_metadata(file_id: str, file_db: "FileDB", raise_if_not_found: bool = True):
-    """Helper function to delete a file and its metadata from a file database."""
+    """
+    Delete a file from disk and remove its metadata from the database.
+
+    Looks up the file's metadata by ID, validates that the storage path is
+    within an allowed directory, unlinks the file, and then deletes the
+    metadata record.
+
+    Args:
+        file_id: Unique identifier of the file to delete
+        file_db: Database instance used to look up and delete file metadata
+        raise_if_not_found: If True, raise an HTTPException when the file ID
+            does not exist; if False, return silently
+
+    Raises:
+        HTTPException: If the file is not found (when raise_if_not_found is
+            True) or if the storage path fails validation
+    """
     metadata = file_db.get_file_metadata(file_id)
     if metadata is None:
         if raise_if_not_found:
