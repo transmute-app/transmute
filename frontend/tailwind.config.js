@@ -6,25 +6,28 @@ export default {
   ],
   theme: {
     extend: {
+      // All colors reference CSS custom properties defined per [data-theme] in
+      // index.css. The `<alpha-value>` placeholder lets Tailwind's opacity
+      // modifiers work (e.g. bg-primary/20 → rgb(var(--color-primary) / 0.2)).
       colors: {
         primary: {
-          DEFAULT: '#ef4444',
-          light: '#f87171',
-          dark: '#dc2626',
+          DEFAULT: 'rgb(var(--color-primary) / <alpha-value>)',
+          light:   'rgb(var(--color-primary-light) / <alpha-value>)',
+          dark:    'rgb(var(--color-primary-dark) / <alpha-value>)',
         },
-        accent: '#f59e0b',
+        accent:  'rgb(var(--color-accent) / <alpha-value>)',
         success: {
-          DEFAULT: '#16a34a',
-          light: '#22c55e',
-          dark: '#15803d',
+          DEFAULT: 'rgb(var(--color-success) / <alpha-value>)',
+          light:   'rgb(var(--color-success-light) / <alpha-value>)',
+          dark:    'rgb(var(--color-success-dark) / <alpha-value>)',
         },
         surface: {
-          dark: '#0f172a',
-          light: '#1e293b',
+          dark:  'rgb(var(--color-surface-dark) / <alpha-value>)',
+          light: 'rgb(var(--color-surface-light) / <alpha-value>)',
         },
         text: {
-          DEFAULT: '#f8fafc',
-          muted: '#94a3b8',
+          DEFAULT: 'rgb(var(--color-text) / <alpha-value>)',
+          muted:   'rgb(var(--color-text-muted) / <alpha-value>)',
         },
       },
     },

@@ -2,8 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  Theme CSS variables — space-separated RGB channels so Tailwind opacity
+  modifiers like bg-primary/20 work: rgb(var(--color-primary) / 0.2)
+*/
+
+/* ── rubedo ── red flame on dark navy (default) */
+[data-theme="rubedo"], :root {
+  --color-primary:       239 68  68;   /* #ef4444 */
+  --color-primary-light: 248 113 113;  /* #f87171 */
+  --color-primary-dark:  220 38  38;   /* #dc2626 */
+  --color-accent:        245 158 11;   /* #f59e0b */
+  --color-success:       22  163 74;   /* #16a34a */
+  --color-success-light: 34  197 94;   /* #22c55e */
+  --color-success-dark:  21  128 61;   /* #15803d */
+  --color-surface-dark:  15  23  42;   /* #0f172a */
+  --color-surface-light: 30  41  59;   /* #1e293b */
+  --color-text:          248 250 252;  /* #f8fafc */
+  --color-text-muted:    148 163 184;  /* #94a3b8 */
+}
+
+/* ── citrinitas ── gold on deep violet */
+[data-theme="citrinitas"] {
+  --color-primary:       251 191 36;   /* #fbbf24 */
+  --color-primary-light: 252 211 77;   /* #fcd34d */
+  --color-primary-dark:  217 119 6;    /* #d97706 */
+  --color-accent:        245 158 11;   /* #f59e0b */
+  --color-success:       22  163 74;   /* #16a34a */
+  --color-success-light: 34  197 94;   /* #22c55e */
+  --color-success-dark:  21  128 61;   /* #15803d */
+  --color-surface-dark:  30  16  64;   /* #1e1040 */
+  --color-surface-light: 45  27  105;  /* #2d1b69 */
+  --color-text:          248 250 252;  /* #f8fafc */
+  --color-text-muted:    196 181 253;  /* #c4b5fd */
+}
+
+/* ── viriditas ── green on near-black */
+[data-theme="viriditas"] {
+  --color-primary:       34  197 94;   /* #22c55e */
+  --color-primary-light: 74  222 128;  /* #4ade80 */
+  --color-primary-dark:  22  163 74;   /* #16a34a */
+  --color-accent:        132 204 22;   /* #84cc16 */
+  --color-success:       14  165 233;  /* #0ea5e9 */
+  --color-success-light: 56  189 248;  /* #38bdf8 */
+  --color-success-dark:  2   132 199;  /* #0284c7 */
+  --color-surface-dark:  3   7   18;   /* #030712 */
+  --color-surface-light: 5   46  22;   /* #052e16 */
+  --color-text:          240 253 244;  /* #f0fdf4 */
+  --color-text-muted:    134 239 172;  /* #86efac */
+}
+
+/* ── nigredo ── soft purple on pure black */
+[data-theme="nigredo"] {
+  --color-primary:       167 139 250;  /* #a78bfa */
+  --color-primary-light: 196 181 253;  /* #c4b5fd */
+  --color-primary-dark:  124 58  237;  /* #7c3aed */
+  --color-accent:        232 121 249;  /* #e879f9 */
+  --color-success:       14  165 233;  /* #0ea5e9 */
+  --color-success-light: 56  189 248;  /* #38bdf8 */
+  --color-success-dark:  2   132 199;  /* #0284c7 */
+  --color-surface-dark:  0   0   0;    /* #000000 */
+  --color-surface-light: 13  13  26;   /* #0d0d1a */
+  --color-text:          248 250 252;  /* #f8fafc */
+  --color-text-muted:    148 163 184;  /* #94a3b8 */
+}
+
+/* ── albedo ── slate on white (light mode) */
+[data-theme="albedo"] {
+  --color-primary:       71  85  105;  /* #475569 */
+  --color-primary-light: 100 116 139;  /* #64748b */
+  --color-primary-dark:  51  65  85;   /* #334155 */
+  --color-accent:        14  165 233;  /* #0ea5e9 */
+  --color-success:       22  163 74;   /* #16a34a */
+  --color-success-light: 34  197 94;   /* #22c55e */
+  --color-success-dark:  21  128 61;   /* #15803d */
+  --color-surface-dark:  226 232 240;  /* #e2e8f0 */
+  --color-surface-light: 248 250 252;  /* #f8fafc */
+  --color-text:          15  23  42;   /* #0f172a */
+  --color-text-muted:    71  85  105;  /* #475569 */
+}
+
 @layer base {
   html, body {
-    background-color: #0f172a;
+    background-color: rgb(var(--color-surface-dark));
   }
 }

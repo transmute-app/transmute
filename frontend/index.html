@@ -5,6 +5,23 @@
     <link rel="icon" id="favicon" type="image/png" href="/icons/beaker-red-bg.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Transmute</title>
+    <!--
+      Blocking theme script — runs synchronously before the browser paints
+      anything, eliminating the flash of the default color scheme on refresh.
+      localStorage is written by ThemeContext whenever the theme changes;
+      the backend API remains the authoritative source of truth.
+    -->
+    <script>
+      (function () {
+        var VALID = ['rubedo', 'citrinitas', 'viriditas', 'nigredo', 'albedo'];
+        try {
+          var t = localStorage.getItem('transmute-theme');
+          if (t && VALID.indexOf(t) !== -1) {
+            document.documentElement.setAttribute('data-theme', t);
+          }
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

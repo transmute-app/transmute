@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { ThemeProvider } from './ThemeContext'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import Converter from './pages/Converter'
@@ -8,21 +9,24 @@ import Settings from './pages/Settings'
 
 function App() {
   return (
-    <Router>
-      <div className="flex flex-col h-screen overflow-hidden">
-        <Header />
-        <main className="flex-grow overflow-auto">
-          <Routes>
-            <Route path="/" element={<Converter />} />
-            <Route path="/files" element={<Files />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <div className="flex flex-col h-screen overflow-hidden">
+          <Header />
+          <main className="flex-grow overflow-auto">
+            <Routes>
+              <Route path="/" element={<Converter />} />
+              <Route path="/files" element={<Files />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </Router>
+    </ThemeProvider>
   )
 }
 
 export default App
+

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTheme, type ThemeName } from '../ThemeContext'
 
 interface Theme {
   value: string
@@ -38,7 +39,7 @@ interface AppSettings {
 }
 
 function Settings() {
-  const [theme, setTheme] = useState('rubedo')
+  const { theme, setTheme } = useTheme()
   const [autoDownload, setAutoDownload] = useState(false)
   const [saveOriginals, setSaveOriginals] = useState(true)
   const [themeOpen, setThemeOpen] = useState(false)
@@ -53,7 +54,7 @@ function Settings() {
     fetch('/api/settings')
       .then(r => r.ok ? r.json() : Promise.reject('Failed to load settings'))
       .then((data: AppSettings) => {
-        setTheme(data.theme)
+        setTheme(data.theme as ThemeName)
         setAutoDownload(data.auto_download)
         setSaveOriginals(data.keep_originals)
         setLoaded(true)
@@ -121,13 +122,6 @@ function Settings() {
           </div>
         )}
 
-        <div className="flex items-start gap-3 p-4 mb-6 bg-accent/10 border border-accent/40 rounded-lg text-accent text-sm">
-          <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-          </svg>
-          <span>Settings are not functional yet. Changes will not be saved or applied.</span>
-        </div>
-
         <div className="space-y-6">
 
           {/* Appearance */}
@@ -155,7 +149,7 @@ function Settings() {
                       {THEMES.map(t => (
                         <button
                           key={t.value}
-                          onClick={() => { setTheme(t.value); setThemeOpen(false) }}
+                          onClick={() => { setTheme(t.value as ThemeName); setThemeOpen(false) }}
                           className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left transition duration-150 ${
                             theme === t.value
                               ? 'bg-primary/20 text-primary-light'
