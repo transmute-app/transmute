@@ -36,12 +36,14 @@ interface AppSettings {
   theme: string
   auto_download: boolean
   keep_originals: boolean
+  cleanup_ttl_minutes: number
 }
 
 function Settings() {
   const { theme, setTheme } = useTheme()
   const [autoDownload, setAutoDownload] = useState(false)
   const [saveOriginals, setSaveOriginals] = useState(true)
+  const [cleanupTtl, setCleanupTtl] = useState(60)
   const [themeOpen, setThemeOpen] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -59,6 +61,7 @@ function Settings() {
         setTheme(data.theme as ThemeName)
         setAutoDownload(data.auto_download)
         setSaveOriginals(data.keep_originals)
+        setCleanupTtl(data.cleanup_ttl_minutes)
         setLoaded(true)
       })
       .catch(() => setLoaded(true)) // fall back to defaults silently
@@ -81,7 +84,7 @@ function Settings() {
       const response = await fetch('/api/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ theme, auto_download: autoDownload, keep_originals: saveOriginals }),
+        body: JSON.stringify({ theme, auto_download: autoDownload, keep_originals: saveOriginals, cleanup_ttl_minutes: cleanupTtl }),
       })
       if (!response.ok) throw new Error('Failed to save settings')
       setSaved(true)
@@ -212,6 +215,12 @@ function Settings() {
                 <div>
                   <p className="text-text font-medium">Keep Original Files</p>
                   <p className="text-text-muted text-sm">Retain uploaded source files after conversion</p>
+                  <p className="text-yellow-400/80 text-xs mt-1 flex items-center gap-1">
+                    <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
+                    Not yet implemented — this setting has no effect
+                  </p>
                 </div>
                 <button
                   onClick={() => setSaveOriginals(v => !v)}
@@ -221,6 +230,36 @@ function Settings() {
                     className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${saveOriginals ? 'translate-x-6' : 'translate-x-0'}`}
                   />
                 </button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-text font-medium">Cleanup TTL</p>
+                  <p className="text-text-muted text-sm">Minutes before uploads & conversions are cleaned up</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-surface-dark border border-surface-light rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setCleanupTtl(v => Math.max(1, v - 1))}
+                      className="px-3 py-2 text-text-muted hover:text-text hover:bg-surface-light transition-colors duration-150 text-base leading-none select-none"
+                      aria-label="Decrease"
+                    >−</button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10080}
+                      value={cleanupTtl}
+                      onChange={e => setCleanupTtl(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-16 bg-transparent text-text text-sm text-center py-2 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                    <button
+                      onClick={() => setCleanupTtl(v => Math.min(10080, v + 1))}
+                      className="px-3 py-2 text-text-muted hover:text-text hover:bg-surface-light transition-colors duration-150 text-base leading-none select-none"
+                      aria-label="Increase"
+                    >+</button>
+                  </div>
+                  <span className="text-text-muted text-sm">min</span>
+                </div>
               </div>
             </div>
           </section>

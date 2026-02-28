@@ -25,6 +25,15 @@ function Converter() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [downloadingAll, setDownloadingAll] = useState(false)
+  const [autoDownload, setAutoDownload] = useState(false)
+
+  // Load auto-download setting
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => setAutoDownload(!!data.auto_download))
+      .catch(() => {})
+  }, [])
 
   // Handle files passed from Files page
   useEffect(() => {
@@ -184,6 +193,42 @@ function Converter() {
     setPendingFiles([])
     setConverting(false)
     setConvertingIndex(null)
+
+    if (autoDownload && newCompletedConversions.length > 0) {
+      await triggerDownloads(newCompletedConversions)
+    }
+  }
+
+  const triggerDownloads = async (conversions: CompletedConversion[]) => {
+    if (conversions.length === 0) return
+    if (conversions.length === 1) {
+      await handleDownload(conversions[0].conversion)
+    } else {
+      setDownloadingAll(true)
+      setError(null)
+      try {
+        const conversionIds = conversions.map(cc => cc.conversion.id)
+        const response = await fetch('/api/files/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file_ids: conversionIds }),
+        })
+        if (!response.ok) throw new Error('Batch download failed')
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `transmute_batch_${new Date().toISOString().split('T')[0]}.zip`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Batch download failed')
+      } finally {
+        setDownloadingAll(false)
+      }
+    }
   }
 
   const handleDownload = async (conversion: ConversionInfo) => {
@@ -218,37 +263,7 @@ function Converter() {
 
   const handleDownloadAll = async () => {
     if (completedConversions.length === 0) return
-    setDownloadingAll(true)
-    setError(null)
-
-    try {
-      const conversionIds = completedConversions.map(cc => cc.conversion.id)
-      const response = await fetch('/api/files/batch', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          file_ids: conversionIds
-        })
-      })
-
-      if (!response.ok) throw new Error('Batch download failed')
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `transmute_batch_${new Date().toISOString().split('T')[0]}.zip`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Batch download failed')
-    } finally {
-      setDownloadingAll(false)
-    }
+    await triggerDownloads(completedConversions)
   }
 
   const hasPendingFiles = pendingFiles.length > 0

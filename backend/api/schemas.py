@@ -81,9 +81,11 @@ class AppSettingsResponse(BaseModel):
     theme: ThemeValue = Field(..., example="rubedo", description="Active UI theme")
     auto_download: bool = Field(..., example=False, description="Auto-download converted files on completion")
     keep_originals: bool = Field(..., example=True, description="Retain uploaded source files after conversion")
+    cleanup_ttl_minutes: int = Field(..., example=60, description="Time-to-live in minutes for cleanup")
 
 
 class AppSettingsUpdate(BaseModel):
     theme: Optional[ThemeValue] = Field(None, example="rubedo", description="UI theme to apply")
     auto_download: Optional[bool] = Field(None, example=False, description="Auto-download on completion")
     keep_originals: Optional[bool] = Field(None, example=True, description="Keep original files after conversion")
+    cleanup_ttl_minutes: Optional[int] = Field(None, example=60, description="Time-to-live in minutes for cleanup")
