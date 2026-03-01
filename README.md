@@ -31,7 +31,7 @@ This application is under active development, want to support us? Give us a star
 
 # Quickstart
 ```bash
-wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/docker-compose,yml" && docker compose up -d
+wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/docker-compose.yml" && docker compose up -d
 ```
 
 ## What Does Transmute Replace?
