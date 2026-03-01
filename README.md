@@ -24,6 +24,11 @@ This application is under active development, want to support us? Give us a star
 </div>
 <!-- POST_GIF_MARKER -->
 
+# Quickstart
+```bash
+wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/docker-compose,yml" && docker compose up -d
+```
+
 ## What Does Transmute Replace?
 *For the record, I love all of these services and use them all frequently. Transmute is not up to par with any of them yet. But it will be!*
 | Service | Why Replace? |
@@ -31,12 +36,6 @@ This application is under active development, want to support us? Give us a star
 | [cloudconvert.com](https://cloudconvert.com/) |  File size limits, API is paid only, 3rd-party gets my files |
 | [freeconvert.com](https://www.freeconvert.com/) | File size limits, 3rd-party gets my files |
 | [cconvertio.co](https://convertio.co/) | File size limits, 3rd-party gets my files |
-
-
-# Quickstart
-```bash
-wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/docker-compose,yml" && docker compose up -d
-```
 
 ## Themes & Screenshots
 
@@ -47,14 +46,5 @@ wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/
 | Viriditas        | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/viriditas.png" width=100%> | Caelum           | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/caelum.png" width=100%> |
 | Nigredo          | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/nigredo.png" width=100%> | | |
 
-## Diagrams
-Shoutout to [draw.io](https://www.drawio.com/) - formerly diagrams.net. I love their software and have always planned out projects using it. 
-
-Recently I discovered [@hediet](https://github.com/hediet) has a [draw.io vscode extension](https://github.com/hediet/vscode-drawio) so now we have our diagrams stored in git at [docs/diagrams/source](https://github.com/transmute-app/transmute/tree/main/docs/diagrams/source). 
-
-They are also exported to [docs/diagrams/exports](https://github.com/transmute-app/transmute/tree/main/docs/diagrams/exports) for easy viewing from the UI.
-
 ## API Documentation
-When the app is running the API docs are available at APP_URL/api/docs/
-
-My plan is to eventually make these available on our website as well but I haven't worked out a proper way of doing that automatically just yet.
+When the app is running the API docs are available at http://TRANSMUTE_IP:3313/api/docs
