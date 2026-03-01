@@ -1,6 +1,7 @@
 import os
 import fitz  # PyMuPDF
 import pymupdf4llm
+import markdown
 from pathlib import Path
 from typing import Optional
 
@@ -94,7 +95,7 @@ class PyMuPDFConverter(ConverterInterface):
         Returns:
             Markdown-formatted content.
         """
-        return pymupdf4llm.to_markdown(self.input_file)
+        return pymupdf4llm.to_markdown(self.input_file, show_progress=False)
 
     def _extract_html(self) -> str:
         """
@@ -106,8 +107,7 @@ class PyMuPDFConverter(ConverterInterface):
         Returns:
             HTML-formatted content.
         """
-        md_text = pymupdf4llm.to_markdown(self.input_file)
-        import markdown
+        md_text = pymupdf4llm.to_markdown(self.input_file, show_progress=False)
         body = markdown.markdown(md_text, extensions=['tables', 'fenced_code'])
         return (
             "<!DOCTYPE html>\n"
