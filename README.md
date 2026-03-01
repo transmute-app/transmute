@@ -33,9 +33,6 @@ This application is under active development, want to support us? Give us a star
 | [cconvertio.co](https://convertio.co/) | File size limits, 3rd-party gets my files |
 
 
-## Status
-This project is under heavy development, come back soon to see where it goes!
-
 # Quickstart
 ```bash
 wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/docker-compose,yml" && docker compose up -d
