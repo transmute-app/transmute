@@ -1,7 +1,6 @@
-from fastapi import FastAPI, HTTPException, Response, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, RedirectResponse
-from fastapi.openapi.docs import get_redoc_html
+from fastapi.responses import FileResponse
 from fastapi.openapi.utils import get_openapi
 from api import router
 from core import get_settings

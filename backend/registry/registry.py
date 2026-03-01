@@ -1,5 +1,3 @@
-import sys
-import os
 import inspect
 from core import media_type_aliases
 from converters import ConverterInterface

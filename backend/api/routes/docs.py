@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from core import get_settings
-from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
+from fastapi.openapi.docs import get_redoc_html
 
 router = APIRouter(prefix="/docs", tags=["docs"], redirect_slashes=True)
 settings = get_settings()
