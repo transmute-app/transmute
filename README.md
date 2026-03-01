@@ -17,12 +17,17 @@ The self-hosted file converter that lets you convert anything, anywhere.
 
 This application is under active development, want to support us? Give us a star or jump in and contribute!
 
-<!-- PRE_GIF_MARKER -->
+## Screenshots
+| Converter / Home | File Lists | Settings |
+| --- | --- | --- |
+| <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/converter.png" width=100%> | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/files.png" width=100%> | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/settings.png" width=100%> |
+
+<!-- PRE_GIF_MARKER 
 <div align="center">
   <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/demos/demo.gif" alt="GIF showind the Transmute workflow" width=75%>
   <p><i>Fun fact, this gif was created by converting a screen recording using Transmute!</i></p>
 </div>
-<!-- POST_GIF_MARKER -->
+ POST_GIF_MARKER -->
 
 # Quickstart
 ```bash
@@ -37,7 +42,7 @@ wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/
 | [freeconvert.com](https://www.freeconvert.com/) | File size limits, 3rd-party gets my files |
 | [cconvertio.co](https://convertio.co/) | File size limits, 3rd-party gets my files |
 
-## Themes & Screenshots
+## Themes
 
 | Dark Theme       | Screenshot | Light Theme      | Screenshot |
 | ---------------- | ---------- | ---------------- | ---------- |
