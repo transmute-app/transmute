@@ -7,6 +7,12 @@
   Transmute
 </h1>
 
+![GitHub Stars](https://img.shields.io/github/stars/transmute-app/transmute?style=flat)
+![Last Commit](https://img.shields.io/github/last-commit/transmute-app/transmute)
+![License](https://img.shields.io/github/license/transmute-app/transmute)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
+![Status](https://img.shields.io/badge/status-active%20development-yellow)
+
 The self-hosted file converter that lets you convert anything, anywhere.
 
 This application is under active development, want to support us? Give us a star or jump in and contribute!
