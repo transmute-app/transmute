@@ -1,5 +1,3 @@
-import sys
-import os
 import inspect
 from typing import Type
 from core import media_type_aliases

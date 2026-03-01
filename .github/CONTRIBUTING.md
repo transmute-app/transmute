@@ -1,5 +1,10 @@
 # Contributing
 
+![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.129-009688?logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
+
 First off, thank you for your interest in contributing ❤️
 
 This project is intended to be a reliable, self-hosted tool, and contributions of all kinds are welcome: code, documentation, bug reports, ideas, and feedback.
@@ -25,9 +30,18 @@ If you are unsure where to start, check the open issues or look for issues label
 
 ### 1. Fork and Clone
 
+1. Click **Fork** at the top-right of the [transmute repository](https://github.com/transmute-app/transmute) to create your own copy.
+2. Clone your fork locally:
+
 ```bash
-git clone https://github.com/transmute-app/transmute.git
-cd <repo>
+git clone https://github.com/<your-username>/transmute.git
+cd transmute
+```
+
+3. Add the upstream remote so you can keep your fork in sync:
+
+```bash
+git remote add upstream https://github.com/transmute-app/transmute.git
 ```
 
 ### 2. Create a Branch
@@ -63,9 +77,10 @@ npm run build
 
 #### 3.3. Install other dependencies
 
-- ffmpeg
-- libmagic1
-- Drawio Desktop App
+- ffmpeg: For video / audio conversions
+- libmagic1: For filetype detection when there are no extensions
+- cairo: SVG interpreting / conversions
+- Drawio Desktop App: To render `.drawio` files
 
 #### 3.4. Spin up the app locally
 

@@ -7,16 +7,32 @@
   Transmute
 </h1>
 
+![GitHub Stars](https://img.shields.io/github/stars/transmute-app/transmute?style=flat)
+![Last Commit](https://img.shields.io/github/last-commit/transmute-app/transmute)
+![License](https://img.shields.io/github/license/transmute-app/transmute)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
+![Status](https://img.shields.io/badge/status-active%20development-yellow)
+
 The self-hosted file converter that lets you convert anything, anywhere.
 
 This application is under active development, want to support us? Give us a star or jump in and contribute!
 
-<!-- PRE_GIF_MARKER -->
+## Screenshots
+| Converter / Home | File Lists | Settings |
+| --- | --- | --- |
+| <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/converter.png" width=100%> | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/files.png" width=100%> | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/settings.png" width=100%> |
+
+<!-- PRE_GIF_MARKER 
 <div align="center">
   <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/demos/demo.gif" alt="GIF showind the Transmute workflow" width=75%>
   <p><i>Fun fact, this gif was created by converting a screen recording using Transmute!</i></p>
 </div>
-<!-- POST_GIF_MARKER -->
+ POST_GIF_MARKER -->
+
+# Quickstart
+```bash
+wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/docker-compose.yml" && docker compose up -d
+```
 
 ## What Does Transmute Replace?
 *For the record, I love all of these services and use them all frequently. Transmute is not up to par with any of them yet. But it will be!*
@@ -26,16 +42,7 @@ This application is under active development, want to support us? Give us a star
 | [freeconvert.com](https://www.freeconvert.com/) | File size limits, 3rd-party gets my files |
 | [cconvertio.co](https://convertio.co/) | File size limits, 3rd-party gets my files |
 
-
-## Status
-This project is under heavy development, come back soon to see where it goes!
-
-# Quickstart
-```bash
-wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/docker-compose,yml" && docker compose up -d
-```
-
-## Themes & Screenshots
+## Themes
 
 | Dark Theme       | Screenshot | Light Theme      | Screenshot |
 | ---------------- | ---------- | ---------------- | ---------- |
@@ -44,14 +51,5 @@ wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/
 | Viriditas        | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/viriditas.png" width=100%> | Caelum           | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/caelum.png" width=100%> |
 | Nigredo          | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/nigredo.png" width=100%> | | |
 
-## Diagrams
-Shoutout to [draw.io](https://www.drawio.com/) - formerly diagrams.net. I love their software and have always planned out projects using it. 
-
-Recently I discovered [@hediet](https://github.com/hediet) has a [draw.io vscode extension](https://github.com/hediet/vscode-drawio) so now we have our diagrams stored in git at [docs/diagrams/source](https://github.com/transmute-app/transmute/tree/main/docs/diagrams/source). 
-
-They are also exported to [docs/diagrams/exports](https://github.com/transmute-app/transmute/tree/main/docs/diagrams/exports) for easy viewing from the UI.
-
 ## API Documentation
-When the app is running the API docs are available at APP_URL/api/docs/
-
-My plan is to eventually make these available on our website as well but I haven't worked out a proper way of doing that automatically just yet.
+When the app is running the API docs are available at http://TRANSMUTE_IP:3313/api/docs
