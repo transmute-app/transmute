@@ -1,4 +1,5 @@
 import inspect
+from typing import Type
 from core import media_type_aliases
 from converters import ConverterInterface
 import converters
@@ -9,13 +10,13 @@ class ConverterRegistry:
     Registry for managing available converters.
     Automatically discovers and registers all converter classes.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.converters = {}
         self.input_format_map = {}  # Maps input format -> list of converter classes
         self.output_format_map = {}  # Maps output format -> list of converter classes
         self._auto_register()
     
-    def _auto_register(self):
+    def _auto_register(self) -> None:
         """
         Automatically discover and register all converter classes from the converters module.
         """
@@ -28,7 +29,7 @@ class ConverterRegistry:
                 obj.can_register():
                 self.register_converter(obj)
     
-    def register_converter(self, converter_class):
+    def register_converter(self, converter_class) -> None:
         """
         Register a converter class in the registry.
         
@@ -50,7 +51,7 @@ class ConverterRegistry:
                     self.output_format_map[fmt] = []
                 self.output_format_map[fmt].append(converter_class)
     
-    def get_converter(self, name):
+    def get_converter(self, name) -> Type[ConverterInterface] | None:
         """
         Retrieve a converter class by name.
         
@@ -62,7 +63,7 @@ class ConverterRegistry:
         """
         return self.converters.get(name, None)
     
-    def get_formats(self):
+    def get_formats(self) -> set[str]:
         """
         Get a set of all supported formats across all registered converters.
         
@@ -71,7 +72,7 @@ class ConverterRegistry:
         """
         return set(self.input_format_map.keys()) | set(self.output_format_map.keys())
     
-    def get_normalized_format(self, format_type):
+    def get_normalized_format(self, format_type) -> str:
         """
         Get the normalized format name for a given format type, using media type aliases.
         
@@ -83,7 +84,7 @@ class ConverterRegistry:
         """
         return media_type_aliases.get(format_type.lower(), format_type.lower())
     
-    def get_converters_for_input_format(self, format_type):
+    def get_converters_for_input_format(self, format_type) -> list[Type[ConverterInterface]]:
         """
         Get all converters that support a specific input file format.
         
@@ -96,7 +97,7 @@ class ConverterRegistry:
         normalized_format = self.get_normalized_format(format_type)
         return self.input_format_map.get(normalized_format, [])
     
-    def get_converters_for_output_format(self, format_type):
+    def get_converters_for_output_format(self, format_type) -> list[Type[ConverterInterface]]:
         """
         Get all converters that support a specific output file format.
         
@@ -109,7 +110,7 @@ class ConverterRegistry:
         normalized_format = self.get_normalized_format(format_type)
         return self.output_format_map.get(normalized_format, [])
     
-    def get_converter_for_conversion(self, input_format, output_format):
+    def get_converter_for_conversion(self, input_format, output_format) -> Type[ConverterInterface] | None:
         """
         Find the appropriate converter for a specific conversion.
         
@@ -130,7 +131,7 @@ class ConverterRegistry:
         
         return compatible.pop() if compatible else None
     
-    def list_converters(self):
+    def list_converters(self) -> dict[str, list[str]] :
         """
         List all registered converters with their supported formats.
         
@@ -145,7 +146,7 @@ class ConverterRegistry:
                 result[name] = []
         return result
     
-    def get_compatible_formats(self, format_type):
+    def get_compatible_formats(self, format_type) -> set[str]:
         """
         Get all formats compatible with the given format.
         
@@ -174,7 +175,7 @@ class ConverterRegistry:
         
         return compatible
     
-    def get_format_compatibility_matrix(self):
+    def get_format_compatibility_matrix(self) -> dict[str, set[str]]:
         """
         Get a complete compatibility matrix showing which formats can convert to which.
         
