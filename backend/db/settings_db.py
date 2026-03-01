@@ -1,6 +1,5 @@
 import sqlite3
 from enum import Enum
-from typing import Optional
 from core import get_settings, validate_sql_identifier
 
 '''

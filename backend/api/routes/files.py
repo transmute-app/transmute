@@ -7,9 +7,9 @@ from fastapi.responses import FileResponse
 from zipfile import ZipFile
 from pathlib import Path
 from core import get_settings, detect_media_type, sanitize_extension, delete_file_and_metadata, validate_safe_path
-from db import FileDB, ConversionDB, ConversionRelationsDB
+from db import FileDB, ConversionDB
 from registry import registry as converter_registry
-from api.deps import get_file_db, get_conversion_db, get_conversion_relations_db
+from api.deps import get_file_db, get_conversion_db
 from api.schemas import FileListResponse, FileUploadResponse, FileDeleteResponse, ErrorResponse, BatchDownloadRequest
 
 router = APIRouter(prefix="/files", tags=["files"])
