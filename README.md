@@ -17,6 +17,9 @@ The self-hosted file converter that lets you convert anything, anywhere.
 
 This application is under active development, want to support us? Give us a star or jump in and contribute!
 
+> [!NOTE]
+> **This project is human-led and human-reviewed.** Every line of code is understood, validated, and owned by a real person. This is not a vibe-coded AI slop project, and automated agents or fully AI-generated contributions are not welcome here. See the [contributing guide](https://github.com/transmute-app/transmute?tab=contributing-ov-file#no-autonomous-agents-or-ai-assistants) for more details
+
 ## Screenshots
 | Converter / Home | File Lists | Settings |
 | --- | --- | --- |
@@ -53,3 +56,7 @@ wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/
 
 ## API Documentation
 When the app is running the API docs are available at http://TRANSMUTE_IP:3313/api/docs
+
+## Contributing
+
+Contributions are welcome! This project is human-driven — autonomous agents and AI assistants are not welcome contributors and such submissions will be rejected. See the [contributing guide](https://github.com/transmute-app/transmute?tab=contributing-ov-file#no-autonomous-agents-or-ai-assistants) for details.
