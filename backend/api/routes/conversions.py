@@ -138,7 +138,7 @@ async def create_conversion(
         }
     }
 )
-def delete_conversion(
+def delete_all_conversions(
     conversion_db: ConversionDB = Depends(get_conversion_db),
     conversion_relations_db: ConversionRelationsDB = Depends(get_conversion_relations_db)
 ):
@@ -164,7 +164,7 @@ def delete_conversion(
         }
     }
 )
-def delete_conversion(
+def delete_single_conversion(
     conversion_id: str,
     conversion_db: ConversionDB = Depends(get_conversion_db),
     conversion_relations_db: ConversionRelationsDB = Depends(get_conversion_relations_db)
