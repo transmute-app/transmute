@@ -7,9 +7,7 @@
   Transmute
 </h1>
 
-![GitHub Stars](https://img.shields.io/github/stars/transmute-app/transmute?style=flat)
-![Last Commit](https://img.shields.io/github/last-commit/transmute-app/transmute)
-![License](https://img.shields.io/github/license/transmute-app/transmute)
+![License](https://img.shields.io/badge/license-MIT-green)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 ![Status](https://img.shields.io/badge/status-active%20development-yellow)
 
