@@ -9,18 +9,23 @@ from core import validate_safe_path
 
 class FFmpegConverter(ConverterInterface):
     video_formats: set = {
-        'mp4', 
-        'avi', 
-        'mov', 
-        'mkv', 
-        'webm', 
-        'flv', 
-        'wmv', 
-        'mpg', 
-        'mpeg', 
-        'm4v', 
-        'gif'
-      }
+        'mp4',
+        'avi',
+        'mov',
+        'mkv',
+        'webm',
+        'flv',
+        'wmv',
+        'mpg',
+        'mpeg',
+        'm4v',
+        'gif',
+        'ts',
+        '3gp',
+        'ogv',
+        'asf',
+        'f4v',
+    }
     audio_formats: set = {
         'mp3',
         'wav',
@@ -29,8 +34,15 @@ class FFmpegConverter(ConverterInterface):
         'ogg',
         'wma',
         'm4a',
-        'opus'
-      }
+        'opus',
+        'aiff',
+        'aif',
+        'mp2',
+        'ac3',
+        'amr',
+        'oga',
+        'mka',
+    }
     supported_input_formats: set = video_formats | audio_formats
     supported_output_formats: set = set(supported_input_formats)
 
@@ -155,7 +167,8 @@ class FFmpegConverter(ConverterInterface):
         cmd.extend(['-i', self.input_file])
         
         # Add quality settings for video conversions
-        if quality and self.output_type in ['mp4', 'avi', 'mov', 'mkv', 'webm']:
+        _quality_video_formats = {'mp4', 'avi', 'mov', 'mkv', 'webm', 'ts', '3gp', 'ogv', 'f4v'}
+        if quality and self.output_type in _quality_video_formats:
             if quality == 'high':
                 cmd.extend(['-crf', '18', '-preset', 'slow'])
             elif quality == 'medium':
