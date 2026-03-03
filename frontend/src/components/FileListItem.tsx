@@ -118,7 +118,7 @@ function FileListItem({
         </div>
 
         {/* Filename */}
-        <p className="text-sm font-medium text-text truncate">
+        <p className="text-sm font-medium text-text truncate" title={getDisplayFilename()}>
           {getDisplayFilename()}
         </p>
 
