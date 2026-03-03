@@ -25,7 +25,7 @@ class ConverterInterface:
         os.makedirs(self.output_dir, exist_ok=True)
         
     
-    def __can_convert(self) -> bool:
+    def can_convert(self) -> bool:
         """
         Check if conversion between the specified formats is possible.
         

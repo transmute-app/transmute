@@ -138,7 +138,7 @@ class PyPandocConverter(ConverterInterface):
                 continue
         return None
 
-    def __can_convert(self) -> bool:
+    def can_convert(self) -> bool:
         """
         Check if the input file can be converted to the output format.
 
@@ -203,7 +203,7 @@ class PyPandocConverter(ConverterInterface):
             ValueError: If the conversion is not supported.
             RuntimeError: If conversion fails.
         """
-        if not self.__can_convert():
+        if not self.can_convert():
             raise ValueError(
                 f"Conversion from {self.input_type} to {self.output_type} is not supported."
             )

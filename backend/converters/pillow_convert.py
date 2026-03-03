@@ -74,7 +74,7 @@ class PillowConverter(ConverterInterface):
         super().__init__(input_file, output_dir, input_type, output_type)
         HeifImagePlugin.register_heif_opener()
     
-    def __can_convert(self) -> bool:
+    def can_convert(self) -> bool:
         """
         Check if the input file can be converted to the output format.
         
@@ -127,7 +127,7 @@ class PillowConverter(ConverterInterface):
             RuntimeError: If image conversion fails
         """
         # Validate conversion is possible
-        if not self.__can_convert():
+        if not self.can_convert():
             raise ValueError(
                 f"Cannot convert {self.input_type} to {self.output_type}. "
                 f"Unsupported image format."

@@ -82,7 +82,7 @@ class FFmpegConverter(ConverterInterface):
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
 
-    def __can_convert(self) -> bool:
+    def can_convert(self) -> bool:
         """
         Check if the input file can be converted to the output format.
         
@@ -142,7 +142,7 @@ class FFmpegConverter(ConverterInterface):
             RuntimeError: If FFmpeg conversion fails
         """
         # Validate conversion is possible
-        if not self.__can_convert():
+        if not self.can_convert():
             raise ValueError(
                 f"Cannot convert {self.input_type} to {self.output_type}. "
                 f"Audio-only formats cannot be converted to video formats."

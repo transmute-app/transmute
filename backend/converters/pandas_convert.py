@@ -26,7 +26,7 @@ class PandasConverter(ConverterInterface):
         """
         super().__init__(input_file, output_dir, input_type, output_type)
     
-    def __can_convert(self) -> bool:
+    def can_convert(self) -> bool:
         """
         Check if conversion between the specified formats is possible.
         
@@ -53,7 +53,7 @@ class PandasConverter(ConverterInterface):
         Returns:
             List of paths to the converted output files.
         """
-        if not self.__can_convert():
+        if not self.can_convert():
             raise ValueError(f"Conversion from {self.input_type} to {self.output_type} is not supported.")
         
         # Prepare output file path
