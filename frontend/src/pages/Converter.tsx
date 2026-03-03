@@ -424,7 +424,7 @@ function Converter() {
                 <button
                   type="button"
                   onClick={() => navigate('/files')}
-                  className="bg-surface-light text-text text-sm font-medium py-2 px-4 rounded-lg border border-surface-dark shadow-[0_2px_0_rgba(0,0,0,0.5)] transform transition duration-150 hover:bg-surface-dark/80 hover:text-text-muted hover:shadow-none hover:translate-y-0.5"
+                  className="bg-surface-light text-text text-sm font-medium py-2 px-4 rounded-lg border border-surface-dark shadow-[0_2px_0_rgba(0,0,0,0.5)] transform transition duration-150 hover:bg-surface-dark hover:text-text-muted hover:shadow-none hover:translate-y-0.5"
                 >
                   View uploaded files
                 </button>
