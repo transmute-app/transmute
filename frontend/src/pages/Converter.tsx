@@ -26,6 +26,7 @@ function Converter() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [downloadingAll, setDownloadingAll] = useState(false)
   const [autoDownload, setAutoDownload] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
 
   // Load auto-download setting
   useEffect(() => {
@@ -54,9 +55,8 @@ function Converter() {
     }
   }, [location.state, location.pathname, navigate])
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
-    if (!files || files.length === 0) return
+  const processFiles = async (files: File[]) => {
+    if (files.length === 0) return
 
     setUploading(true)
     setError(null)
@@ -64,7 +64,7 @@ function Converter() {
 
     const newPendingFiles: PendingFile[] = []
 
-    for (const file of Array.from(files)) {
+    for (const file of files) {
       const formData = new FormData()
       formData.append('file', file)
 
@@ -105,9 +105,31 @@ function Converter() {
     }
 
     setPendingFiles((prev) => [...prev, ...newPendingFiles])
-    event.target.value = ''
     setUploading(false)
     setUploadCount(0)
+  }
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+    await processFiles(Array.from(files))
+    event.target.value = ''
+  }
+
+  const handleDrop = async (event: React.DragEvent) => {
+    event.preventDefault()
+    setDragOver(false)
+    const files = Array.from(event.dataTransfer.files)
+    await processFiles(files)
+  }
+
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault()
+    setDragOver(true)
+  }
+
+  const handleDragLeave = () => {
+    setDragOver(false)
   }
 
   const handleFormatChange = (fileId: string, format: string) => {
@@ -275,27 +297,41 @@ function Converter() {
     return (
       <div className="h-full bg-gradient-to-br from-surface-dark to-surface-light flex items-center justify-center p-4">
         <div className="bg-surface-light rounded-lg shadow-xl p-8 max-w-xl w-full border border-surface-dark">
-          <h1 className="text-4xl font-bold text-center text-primary mb-6">
+          <h1 className="text-4xl font-bold text-center text-primary mb-2">
             Transmute
           </h1>
+          <h3 className="text-md text-center text-text-muted mb-6">
+            Drop a file, pick a format, Transmute.
+          </h3>
           
           <div className="space-y-4">
-            <div>
+            <label
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              className={`flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-150 ${
+                dragOver
+                  ? 'border-primary bg-primary/10'
+                  : 'border-surface-dark hover:border-primary/60 hover:bg-primary/5'
+              } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+            >
+              <div className="flex flex-col items-center justify-center gap-1 text-text-muted">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mb-1 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                </svg>
+                <span className="text-sm font-medium">
+                  {uploading ? `Uploading ${uploadCount} file${uploadCount > 1 ? 's' : ''}...` : 'Drop files here'}
+                </span>
+                <span className="text-xs opacity-60">or click to browse</span>
+              </div>
               <input
                 type="file"
                 multiple
                 onChange={handleFileSelect}
                 disabled={uploading}
-                className="block w-full text-sm text-text-muted
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-lg file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-primary/20 file:text-primary
-                  hover:file:bg-primary/30
-                  cursor-pointer
-                  disabled:opacity-50 disabled:cursor-not-allowed"
+                className="hidden"
               />
-            </div>
+            </label>
 
             {error && (
               <div className="p-3 bg-primary/20 border border-primary rounded-lg text-primary-light text-sm">
@@ -316,25 +352,34 @@ function Converter() {
 
         {/* File input */}
         <div className="mb-6">
-          <input
-            type="file"
-            multiple
-            onChange={handleFileSelect}
-            disabled={uploading || converting}
-            className="block w-full text-sm text-text-muted
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-lg file:border-0
-              file:text-sm file:font-semibold
-              file:bg-primary/20 file:text-primary
-              hover:file:bg-primary/30
-              cursor-pointer
-              disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-          {uploading && (
-            <p className="text-sm text-primary font-medium mt-2">
-              Uploading {uploadCount} file{uploadCount > 1 ? 's' : ''}...
-            </p>
-          )}
+          <label
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            className={`flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-150 ${
+              dragOver
+                ? 'border-primary bg-primary/10'
+                : 'border-surface-dark hover:border-primary/60 hover:bg-primary/5'
+            } ${uploading || converting ? 'opacity-50 pointer-events-none' : ''}`}
+          >
+            <div className="flex items-center gap-3 text-text-muted">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+              <span className="text-sm">
+                {uploading
+                  ? `Uploading ${uploadCount} file${uploadCount > 1 ? 's' : ''}...`
+                  : 'Drop files here or click to browse'}
+              </span>
+            </div>
+            <input
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              disabled={uploading || converting}
+              className="hidden"
+            />
+          </label>
         </div>
 
         {error && (
