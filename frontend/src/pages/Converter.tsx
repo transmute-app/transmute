@@ -313,7 +313,7 @@ function Converter() {
   const hasCompletedConversions = completedConversions.length > 0
   const hasStarted = hasPendingFiles || hasCompletedConversions
   const renderUploadArea = () => {
-    const baseClasses = 'flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors duration-200 cursor-pointer px-6 py-8'
+    const baseClasses = 'flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors duration-200 cursor-pointer px-6 py-6'
     const stateClasses = isDragging
       ? 'border-primary bg-surface-dark/60'
       : 'border-surface-dark bg-surface-dark/40 hover:border-primary/60 hover:bg-surface-dark/60'
@@ -367,7 +367,7 @@ function Converter() {
   // Initial landing page - shown before any files are selected
   if (!hasStarted && !uploading) {
     return (
-      <div className="min-h-screen lg:h-screen bg-gradient-to-br from-surface-dark to-surface-light px-4 py-6 lg:py-4 flex items-center lg:overflow-hidden">
+      <div className="h-full bg-gradient-to-br from-surface-dark to-surface-light px-4 py-6 lg:py-4 flex items-center overflow-hidden">
         <div className="max-w-5xl mx-auto w-full">
           <div className="mb-10 text-center">
             <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight text-primary">
@@ -417,7 +417,7 @@ function Converter() {
                   </li>
                 </ul>
               </div>
-              <div className="mt-3 flex flex-wrap gap-3">
+              <div className="mt-2 flex flex-wrap gap-3">
                 <button
                   type="button"
                   onClick={() => navigate('/files')}
