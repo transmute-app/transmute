@@ -371,7 +371,10 @@ function Converter() {
         <div className="max-w-5xl mx-auto w-full">
           <div className="mb-8 text-center">
             <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight text-primary">
-              Convert files📄 on your own server🗄️
+              Convert files
+              <span className="inline-block ml-1">📄</span>
+              {' '}on your own server
+              <span className="inline-block ml-1">🗄️</span>
             </h1>
             <p className="mt-4 text-sm lg:text-base text-text-muted leading-relaxed max-w-2xl mx-auto">
               Drag in images, video, audio or documents and choose exactly how you want them converted. Your files stay on this server.
