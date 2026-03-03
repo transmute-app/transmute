@@ -389,7 +389,7 @@ function Converter() {
                 </p>
                 <ul className="space-y-2 text-sm text-text-muted leading-snug">
                   <li className="flex items-start gap-2">
-                    <span className="mt-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-semibold font-serif text-surface-dark">
+                    <span className="mt-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[12px] font-semibold text-surface-dark">
                       1
                     </span>
                     <p>
@@ -398,7 +398,7 @@ function Converter() {
                     </p>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-semibold font-serif text-surface-dark">
+                    <span className="mt-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[12px] font-semibold text-surface-dark">
                       2
                     </span>
                     <p>
@@ -407,7 +407,7 @@ function Converter() {
                     </p>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-semibold font-serif text-surface-dark">
+                    <span className="mt-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[12px] font-semibold text-surface-dark">
                       3
                     </span>
                     <p>
