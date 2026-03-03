@@ -37,7 +37,6 @@ class FFmpegConverter(ConverterInterface):
         'm4a',
         'opus',
         'aiff',
-        'aif',
         'mp2',
         'ac3',
         # 'amr' excluded: requires libopencore-amrnb which is not compiled
