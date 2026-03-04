@@ -52,8 +52,11 @@ def file_cleanup_task() -> None:
     on each iteration, then sleeps for 60 seconds before repeating.
     """
     while True:
-        file_cleanup_logic(FileDB())
-        file_cleanup_logic(ConversionDB(), ConversionRelationsDB())
+        try:
+            file_cleanup_logic(FileDB())
+            file_cleanup_logic(ConversionDB(), ConversionRelationsDB())
+        except Exception as e:
+            print(f"Cleanup error: {e}")
         time.sleep(60) # Sleep for 1 minute
 
 def get_upload_cleanup_thread() -> threading.Thread:
