@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import FileListItem, { FileInfo, ConversionInfo } from '../components/FileListItem'
 import { api } from '../api'
+import { downloadBlob, downloadFromResponse } from '../download'
 
 interface PendingFile {
   file: FileInfo
@@ -214,16 +215,8 @@ function Converter() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ file_ids: conversionIds }),
         })
-        if (!response.ok) throw new Error('Batch download failed')
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `transmute_batch_${new Date().toISOString().split('T')[0]}.zip`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
+        const filename = `transmute_batch_${new Date().toISOString().split('T')[0]}.zip`
+        await downloadFromResponse(response, filename)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Batch download failed')
       } finally {
@@ -236,12 +229,6 @@ function Converter() {
     setDownloadingId(conversion.id)
     try {
       const response = await fetch(api.filesId(conversion.id))
-      if (!response.ok) throw new Error('Download failed')
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
 
       let filename = conversion.original_filename || 'download'
       const lastDotIndex = filename.lastIndexOf('.')
@@ -250,11 +237,7 @@ function Converter() {
       }
       filename += conversion.extension || ''
 
-      a.download = filename
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      await downloadFromResponse(response, filename)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Download failed')
     } finally {
