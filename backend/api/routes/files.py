@@ -6,7 +6,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Backgro
 from fastapi.responses import FileResponse
 from zipfile import ZipFile
 from pathlib import Path
-from core import get_settings, detect_media_type, sanitize_extension, delete_file_and_metadata, validate_safe_path
+from core import get_settings, detect_media_type, sanitize_extension, sanitize_filename, delete_file_and_metadata, validate_safe_path
 from db import FileDB, ConversionDB
 from registry import registry as converter_registry
 from api.deps import get_file_db, get_conversion_db
@@ -162,6 +162,8 @@ def batch_download_files(
     zip_id = str(uuid.uuid4())
     zip_path = TMP_DIR / f"{zip_id}.zip"
     
+    seen_names: dict[str, int] = {}
+
     with ZipFile(zip_path, "w") as zip_file:
         for file_id in request.file_ids:
             found_file_in_db = False
@@ -188,7 +190,20 @@ def batch_download_files(
                     os.unlink(zip_path)
                 raise HTTPException(status_code=404, detail=f"File with id {file_id} not found on disk")
             
-            zip_file.write(file_path, arcname=file_path.name)
+            # Use sanitized original filename for the ZIP entry
+            arcname = sanitize_filename(file_metadata['original_filename'])
+            # Deduplicate names when multiple files share the same original filename
+            if arcname in seen_names:
+                seen_names[arcname] += 1
+                stem, _, ext = arcname.rpartition(".")
+                if ext and stem:
+                    arcname = f"{stem} ({seen_names[arcname]}).{ext}"
+                else:
+                    arcname = f"{arcname} ({seen_names[arcname]})"
+            else:
+                seen_names[arcname] = 0
+
+            zip_file.write(file_path, arcname=arcname)
     
     # Schedule cleanup of temp ZIP file after response is sent
     background_tasks.add_task(os.unlink, zip_path)
