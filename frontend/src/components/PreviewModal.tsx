@@ -339,6 +339,9 @@ function PreviewModal({ fileId, filename, mediaType, onClose }: PreviewModalProp
   const [textContent, setTextContent] = useState<string | null>(null)
   const [textLoading, setTextLoading] = useState(false)
 
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+  const [pdfLoading, setPdfLoading] = useState(false)
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -355,6 +358,24 @@ function PreviewModal({ fileId, filename, mediaType, onClose }: PreviewModalProp
       .then(setTextContent)
       .catch(() => setTextContent('Failed to load file content.'))
       .finally(() => setTextLoading(false))
+  }, [url, previewType])
+
+  useEffect(() => {
+    if (previewType !== 'pdf') return
+    setPdfLoading(true)
+    let objectUrl: string | null = null
+    fetch(url)
+      .then(r => r.blob())
+      .then(blob => {
+        const pdfBlob = new Blob([blob], { type: 'application/pdf' })
+        objectUrl = URL.createObjectURL(pdfBlob)
+        setPdfUrl(objectUrl)
+      })
+      .catch(() => setPdfUrl(null))
+      .finally(() => setPdfLoading(false))
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
   }, [url, previewType])
 
   return (
@@ -404,11 +425,15 @@ function PreviewModal({ fileId, filename, mediaType, onClose }: PreviewModalProp
             </div>
           )}
           {previewType === 'pdf' && (
-            <iframe
-              src={url}
-              title={filename}
-              className="w-[80vw] h-[75vh] rounded border-0"
-            />
+            pdfLoading
+              ? <p className="text-text-muted text-sm">Loading...</p>
+              : pdfUrl
+                ? <iframe
+                    src={pdfUrl}
+                    title={filename}
+                    className="w-[80vw] h-[75vh] rounded border-0"
+                  />
+                : <p className="text-text-muted text-sm">Failed to load PDF.</p>
           )}
           {previewType === 'text' && (
             textLoading
