@@ -20,7 +20,7 @@ pypandoc==1.16.2
 weasyprint==68.1
 PyMuPDF==1.25.5
 pymupdf4llm==0.0.17
-markdown==3.7
+markdown==3.8.1
 pysubs2==1.8.0
 fonttools==4.61.1
 brotli==1.2.0
