@@ -112,6 +112,21 @@
   --color-text-muted:    120 113 108;  /* #78716c */
 }
 
+/* ── argentum ── silver violet on porcelain white (light mode) */
+[data-theme="argentum"] {
+  --color-primary:       139 122 168;  /* #8b7aa8 */
+  --color-primary-light: 181 166 208;  /* #b5a6d0 */
+  --color-primary-dark:  103 88  128;  /* #675880 */
+  --color-accent:        15  118 110;  /* #0f766e */
+  --color-success:       22  163 74;   /* #16a34a */
+  --color-success-light: 34  197 94;   /* #22c55e */
+  --color-success-dark:  21  128 61;   /* #15803d */
+  --color-surface-dark:  236 232 243;  /* #ece8f3 */
+  --color-surface-light: 250 247 255;  /* #faf7ff */
+  --color-text:          41  37  52;   /* #292534 */
+  --color-text-muted:    108 101 124;  /* #6c657c */
+}
+
 @layer base {
   html, body {
     background-color: rgb(var(--color-surface-dark));

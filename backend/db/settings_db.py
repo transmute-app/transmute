@@ -20,6 +20,7 @@ class Theme(str, Enum):
     ALBEDO     = "albedo"
     AURORA     = "aurora"
     CAELUM     = "caelum"
+    ARGENTUM   = "argentum"
 
 
 # Defaults applied when a user has no settings row yet

@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import { useAuth } from './AuthContext'
 import { authFetch as fetch } from './utils/api'
 
-export type ThemeName = 'rubedo' | 'citrinitas' | 'viriditas' | 'nigredo' | 'albedo' | 'aurora' | 'caelum'
+export type ThemeName = 'rubedo' | 'citrinitas' | 'viriditas' | 'nigredo' | 'albedo' | 'aurora' | 'caelum' | 'argentum'
 
 interface ThemeContextValue {
   theme: ThemeName
@@ -26,7 +26,7 @@ function applyThemeToDom(name: ThemeName) {
   try { localStorage.setItem(STORAGE_KEY, name) } catch { /* storage unavailable */ }
 }
 
-const VALID_THEMES = new Set<ThemeName>(['rubedo', 'citrinitas', 'viriditas', 'nigredo', 'albedo', 'aurora', 'caelum'])
+const VALID_THEMES = new Set<ThemeName>(['rubedo', 'citrinitas', 'viriditas', 'nigredo', 'albedo', 'aurora', 'caelum', 'argentum'])
 
 function readStoredTheme(): ThemeName {
   try {

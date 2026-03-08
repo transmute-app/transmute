@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # ===== Core =====
 
     app_name: str = "Transmute"
-    app_version: str = "0.0.1"
+    app_version: str = "0.1.1"
 
     # ===== Storage =====
 
@@ -47,10 +47,6 @@ class Settings(BaseSettings):
     auth_secret_key: str = ""
     auth_algorithm: str = "HS256"
     auth_access_token_expire_minutes: int = 60
-
-    # ===== Redis =====
-
-    redis_url: str = "redis://redis:6379/0"
 
     # ===== Server =====
 

@@ -2,16 +2,41 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.openapi.utils import get_openapi
+from textwrap import dedent
 from api import router
 from core import get_settings
 from background import get_upload_cleanup_thread
 import uvicorn
 
+
+def build_api_description(app_name: str) -> str:
+    return dedent(f"""
+    API to interact with {app_name} without the need for a frontend.
+
+    ## Authentication
+
+    ### Getting an API key
+
+    Authenticate with your user account first, then create a key under 'My Account' -> 'API Keys'.
+    The generated key is shown exactly once, so store it safely after creation.
+
+    ### Using an API key
+
+    For any endpoint that expects bearer authentication, send your API key in the `Authorization` header:
+
+    ```http
+    Authorization: Bearer <your-api-key>
+    ```
+
+    The API accepts either a JWT bearer token for authenticated users through the web interface,
+    or an API key for programmatic access anywhere bearer auth is required.
+    """).strip()
+
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
         title=f"{settings.app_name} API",
-        description=f"API to interact with {settings.app_name} without the need for a frontend",
+        description=build_api_description(settings.app_name),
         version=f"{settings.app_version}",
         servers=[{"url": settings.api_server_url, "description": f"{settings.app_name} API server"}],
         docs_url=None,
@@ -36,6 +61,11 @@ def create_app() -> FastAPI:
                 "type": "http",
                 "scheme": "bearer",
                 "bearerFormat": "JWT",
+                "description": (
+                    "Send either a JWT or an API key as `Authorization: Bearer <token>`. "
+                    "Authenticate with your user account first, then create a key under 'My Account' -> 'API Keys'. "
+                    "The generated key is shown exactly once, so store it safely after creation."
+                ),
             }
         }
         schema["security"] = [{"BearerAuth": []}]

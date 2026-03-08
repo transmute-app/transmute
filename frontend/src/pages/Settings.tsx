@@ -29,6 +29,7 @@ const THEMES: Theme[] = [
   { value: 'albedo',     label: 'Albedo',     colors: ['#f8fafc', '#cbd5e1'] },  // Light / Silver
   { value: 'aurora',     label: 'Aurora',     colors: ['#ea580c', '#fffbf0'] },  // Orange / Warm Cream
   { value: 'caelum',     label: 'Caelum',     colors: ['#0284c7', '#f0f9ff'] },  // Sky Blue / Cool White
+  { value: 'argentum',   label: 'Argentum',   colors: ['#8b7aa8', '#faf7ff'] },  // Silver Violet / Porcelain White
 ]
 
 function ThemeSwatch({ colors }: { colors: string[] }) {
