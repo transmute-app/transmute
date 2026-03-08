@@ -1,15 +1,39 @@
 name: Docker Publish
 
 on:
+  workflow_call:
+    inputs:
+      version_tag:
+        description: Semantic version tag to publish, for example v1.2.3
+        required: false
+        type: string
+    secrets:
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_PUBLIC_RO_TOKEN:
+        required: true
+      DOCKER_PUBLIC_RW_TOKEN:
+        required: true
   push:
     branches:
       - main
     tags:
       - 'v*.*.*'
+    paths:
+      - '.github/workflows/docker-publish.yml'
+      - 'docker/**'
+      - 'frontend/**'
+      - 'backend/**'
+      - 'docker/**'
+      - 'requirements.txt'
 
 env:
   DOCKER_HUB_NAMESPACE: neonvariant
   DOCKER_HUB_REPOSITORY: transmute
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.version_tag != '' && inputs.version_tag || github.ref }}
+  cancel-in-progress: ${{ inputs.version_tag == '' && !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
   security-scan:
@@ -36,13 +60,59 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          fetch-depth: 0
           persist-credentials: false
+          ref: ${{ inputs.version_tag != '' && format('refs/tags/{0}', inputs.version_tag) || github.ref }}
+
+      - name: Resolve release context
+        id: release_context
+        env:
+          INPUT_VERSION_TAG: ${{ inputs.version_tag }}
+        shell: bash
+        run: |
+          if [[ -n "$INPUT_VERSION_TAG" ]]; then
+            VERSION_TAG="$INPUT_VERSION_TAG"
+          else
+            VERSION_TAG="${GITHUB_REF_NAME}"
+          fi
+
+          VERSION="${VERSION_TAG#v}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+          echo "version_tag=$VERSION_TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "major_minor=$MAJOR.$MINOR" >> "$GITHUB_OUTPUT"
+          echo "major=$MAJOR" >> "$GITHUB_OUTPUT"
+          echo "v_major_minor=v$MAJOR.$MINOR" >> "$GITHUB_OUTPUT"
+          echo "v_major=v$MAJOR" >> "$GITHUB_OUTPUT"
+          echo "build_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3.12.0
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
+      - name: Determine if latest version tag
+        id: check_latest
+        if: startsWith(github.ref, 'refs/tags/') || inputs.version_tag != ''
+        env:
+          INPUT_VERSION_TAG: ${{ inputs.version_tag }}
+        run: |
+          git fetch --tags --quiet
+          if [[ -n "$INPUT_VERSION_TAG" ]]; then
+            CURRENT_TAG="$INPUT_VERSION_TAG"
+          else
+            CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          LATEST_TAG=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -1)
+          echo "Current tag: $CURRENT_TAG, Latest tag: $LATEST_TAG"
+          if [[ "$CURRENT_TAG" == "$LATEST_TAG" ]]; then
+            echo "is_latest=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_latest=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract metadata (tags, labels) for push events
+        id: meta_push
+        if: inputs.version_tag == ''
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051  # v5.10.0
         with:
           images: |
@@ -54,7 +124,26 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=raw,value=latest,enable=${{ steps.check_latest.outputs.is_latest == 'true' }}
+
+      - name: Extract metadata (tags, labels) for workflow calls
+        id: meta_release
+        if: inputs.version_tag != ''
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051  # v5.10.0
+        with:
+          images: |
+            ${{ env.DOCKER_HUB_NAMESPACE }}/${{ env.DOCKER_HUB_REPOSITORY }}
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ steps.release_context.outputs.version_tag }}
+            type=raw,value=${{ steps.release_context.outputs.version }}
+            type=raw,value=${{ steps.release_context.outputs.major_minor }}
+            type=raw,value=${{ steps.release_context.outputs.major }}
+            type=raw,value=${{ steps.release_context.outputs.v_major_minor }}
+            type=raw,value=${{ steps.release_context.outputs.v_major }}
+            type=raw,value=latest,enable=${{ steps.check_latest.outputs.is_latest == 'true' }}
 
       - name: Log in to Docker Hub
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3.7.0
@@ -78,11 +167,11 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
-            BUILD_VERSION=${{ github.ref_name }}
+            BUILD_VERSION=${{ steps.release_context.outputs.version_tag }}
             VCS_REF=${{ github.sha }}
-            BUILD_DATE=${{ github.event.head_commit.timestamp || github.event.repository.pushed_at }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+            BUILD_DATE=${{ steps.release_context.outputs.build_date }}
+          tags: ${{ inputs.version_tag != '' && steps.meta_release.outputs.tags || steps.meta_push.outputs.tags }}
+          labels: ${{ inputs.version_tag != '' && steps.meta_release.outputs.labels || steps.meta_push.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: true

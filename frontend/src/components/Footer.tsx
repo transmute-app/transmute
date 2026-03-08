@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { FaGithub, FaExternalLinkAlt } from 'react-icons/fa'
+import { FaGithub, FaExternalLinkAlt, FaBook } from 'react-icons/fa'
+import { publicFetch as fetch } from '../utils/api'
 
 function Footer() {
   const [appInfo, setAppInfo] = useState<{ name: string; version: string } | null>(null)
@@ -15,7 +16,7 @@ function Footer() {
     <footer className="mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center justify-center gap-2 text-text-muted text-sm">
-          <a href="https://github.com/transmute-app/transmute" target="_blank" rel="noopener noreferrer" className="hover:text-text transition-colors" aria-label="GitHub">
+          <a href="https://github.com/transmute-app/transmute" target="_blank" rel="noopener noreferrer" className="hover:text-text transition-colors" aria-label="GitHub" title="Source Code">
             <FaGithub size={16} />
           </a>
           <span className="text-text-muted/30">|</span>
@@ -26,7 +27,11 @@ function Footer() {
             )}
           </span>
           <span className="text-text-muted/30">|</span>
-          <a href="https://transmute.sh" target="_blank" rel="noopener noreferrer" className="hover:text-text transition-colors" aria-label="Website">
+          <a href="/api/docs" className="hover:text-text transition-colors" aria-label="API Docs" title="API Documentation">
+            <FaBook size={14} />
+          </a>
+          <span className="text-text-muted/30">|</span>
+          <a href="https://transmute.sh" target="_blank" rel="noopener noreferrer" className="hover:text-text transition-colors" aria-label="Website" title="Transmute Website">
             <FaExternalLinkAlt size={13} />
           </a>
         </div>

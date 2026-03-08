@@ -1,0 +1,55 @@
+name: Version Bump and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      overview_note:
+        description: 'Overview note for the release'
+        required: false
+        type: string
+
+
+jobs:
+  bump-version:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.release.outputs.new_version }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - id: release
+        uses: chase-roohms/tag-and-release@v1  # zizmor: ignore[unpinned-uses]
+        with:
+          version_bump: ${{ github.event.inputs.bump_type }}
+          update_parent_tags: true
+          overview_note: ${{ github.event.inputs.overview_note }}
+  
+  docker-publish:
+    needs: bump-version
+    uses: ./.github/workflows/docker-publish.yml
+    with:
+      version_tag: ${{ needs.bump-version.outputs.new_version }}
+    secrets: 
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PUBLIC_RO_TOKEN: ${{ secrets.DOCKER_PUBLIC_RO_TOKEN }}
+      DOCKER_PUBLIC_RW_TOKEN: ${{ secrets.DOCKER_PUBLIC_RW_TOKEN }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      security-events: write

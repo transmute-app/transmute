@@ -1,6 +1,7 @@
 import sqlite3
+import threading
 from enum import Enum
-from core import get_settings, validate_sql_identifier
+from core import get_settings, validate_sql_identifier, migrate_table_columns, assign_orphaned_rows_to_admin
 
 '''
 Anywhere you see # nosec B608, it is marking a Bandit false positive. The table 
@@ -21,15 +22,14 @@ class Theme(str, Enum):
     CAELUM     = "caelum"
 
 
-# Defaults applied on first run / if the row is missing
+# Defaults applied when a user has no settings row yet
 _DEFAULT_SETTINGS = {
     "theme":            Theme.RUBEDO.value,
     "auto_download":    False,
     "keep_originals":   True,
+    "cleanup_enabled":  True,
     "cleanup_ttl_minutes": 60
 }
-
-_SETTINGS_ROW_ID = 1  # Single-row table; always read/write row with this id
 
 
 class SettingsDB:
@@ -56,12 +56,18 @@ class SettingsDB:
         return self._table_name
 
     def __init__(self) -> None:
-        """Initialize SettingsDB, validate the table name, create tables, and seed defaults."""
+        """Initialize SettingsDB, validate the table name, and create tables."""
         # Validate and lock table name — immutable after init
         object.__setattr__(self, '_table_name', validate_sql_identifier(self._TABLE_NAME))
-        self.conn = sqlite3.connect(self.DB_PATH, check_same_thread=False)
+        self._local = threading.local()
         self.create_tables()
-        self._seed_defaults()
+
+    @property
+    def conn(self) -> sqlite3.Connection:
+        """Return a thread-local SQLite connection, creating one if needed."""
+        if not hasattr(self._local, 'conn') or self._local.conn is None:
+            self._local.conn = sqlite3.connect(self.DB_PATH)
+        return self._local.conn
 
     def create_tables(self) -> None:
         """Create the app settings table if it does not already exist."""
@@ -69,101 +75,94 @@ class SettingsDB:
             self.conn.execute(f"""
                 CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (
                     id             INTEGER PRIMARY KEY,
+                    user_id        TEXT,
                     theme          TEXT    NOT NULL DEFAULT '{Theme.RUBEDO.value}',
                     auto_download  INTEGER NOT NULL DEFAULT 0,
                     keep_originals INTEGER NOT NULL DEFAULT 1,
+                    cleanup_enabled INTEGER NOT NULL DEFAULT 1,
                     cleanup_ttl_minutes INTEGER NOT NULL DEFAULT 60
                 )
             """)  # nosec B608
 
-    def _seed_defaults(self) -> None:
-        """Insert the default settings row if it does not already exist."""
+        # Ensure every expected column exists (handles older DB schemas)
+        migrate_table_columns(self.conn, self.TABLE_NAME, {
+            "user_id":             "TEXT",
+            "theme":               f"TEXT NOT NULL DEFAULT '{Theme.RUBEDO.value}'",
+            "auto_download":       "INTEGER NOT NULL DEFAULT 0",
+            "keep_originals":      "INTEGER NOT NULL DEFAULT 1",
+            "cleanup_enabled":     "INTEGER NOT NULL DEFAULT 1",
+            "cleanup_ttl_minutes": "INTEGER NOT NULL DEFAULT 60",
+        })  # nosec B608
+
+        # Assign pre-auth orphaned rows to the first admin
+        assign_orphaned_rows_to_admin(self.conn, self.TABLE_NAME)
+
+    def _ensure_user_row(self, user_id: str) -> None:
+        """Insert the default settings row for a user if it does not already exist."""
         cursor = self.conn.cursor()
         cursor.execute(
-            f"SELECT id FROM {self.TABLE_NAME} WHERE id = ?",  # nosec B608
-            (_SETTINGS_ROW_ID,)
+            f"SELECT id FROM {self.TABLE_NAME} WHERE user_id = ?",  # nosec B608
+            (user_id,)
         )
         if cursor.fetchone() is None:
             with self.conn:
                 self.conn.execute(
-                    f"INSERT INTO {self.TABLE_NAME} (id, theme, auto_download, keep_originals, cleanup_ttl_minutes) "  # nosec B608
-                    f"VALUES (?, ?, ?, ?, ?)",
+                    f"INSERT INTO {self.TABLE_NAME} (user_id, theme, auto_download, keep_originals, cleanup_enabled, cleanup_ttl_minutes) "  # nosec B608
+                    f"VALUES (?, ?, ?, ?, ?, ?)",
                     (
-                        _SETTINGS_ROW_ID,
+                        user_id,
                         _DEFAULT_SETTINGS["theme"],
                         int(_DEFAULT_SETTINGS["auto_download"]),
                         int(_DEFAULT_SETTINGS["keep_originals"]),
+                        int(_DEFAULT_SETTINGS["cleanup_enabled"]),
                         int(_DEFAULT_SETTINGS["cleanup_ttl_minutes"]),
                     )
                 )
 
-    def _row_to_dict(self, row: tuple) -> dict:
-        """Convert a raw database row tuple to a settings dictionary.
+    @staticmethod
+    def _row_to_dict(row: dict) -> dict:
+        """Normalise a raw database row dict into typed application settings.
 
         Args:
-            row: A tuple representing a single row from the settings table,
-                with columns (id, theme, auto_download, keep_originals, cleanup_ttl_minutes).
+            row: A dictionary produced by the Row-factory cursor, keyed by
+                column name.
 
         Returns:
             A dictionary with keys theme (str), auto_download (bool),
-            keep_originals (bool), and cleanup_ttl_minutes (int).
+            keep_originals (bool), cleanup_enabled (bool), and
+            cleanup_ttl_minutes (int).
         """
         return {
-            "theme":          row[1],
-            "auto_download":  bool(row[2]),
-            "keep_originals": bool(row[3]),
-            "cleanup_ttl_minutes": int(row[4]),
+            "theme":               row["theme"],
+            "auto_download":       bool(row["auto_download"]),
+            "keep_originals":      bool(row["keep_originals"]),
+            "cleanup_enabled":     bool(row["cleanup_enabled"]),
+            "cleanup_ttl_minutes": int(row["cleanup_ttl_minutes"]),
         }
 
-    def get_settings(self) -> dict:
-        """Return the current app settings as a dictionary.
-
-        Returns:
-            A dictionary with keys theme (str), auto_download (bool),
-            keep_originals (bool), and cleanup_ttl_minutes (int). Falls back to default values if
-            the settings row is missing.
-        """
+    def get_settings(self, user_id: str) -> dict:
+        """Return the settings for a given user, creating defaults if needed."""
+        self._ensure_user_row(user_id)
         cursor = self.conn.cursor()
+        cursor.row_factory = sqlite3.Row
         cursor.execute(
-            f"SELECT * FROM {self.TABLE_NAME} WHERE id = ?",  # nosec B608
-            (_SETTINGS_ROW_ID,)
+            f"SELECT * FROM {self.TABLE_NAME} WHERE user_id = ?",  # nosec B608
+            (user_id,)
         )
         row = cursor.fetchone()
         if row is None:
             return dict(_DEFAULT_SETTINGS)
         return self._row_to_dict(row)
 
-    def update_settings(self, updates: dict) -> dict:
-        """Apply a partial or full update to the app settings.
-
-        Accepted keys are theme, auto_download, and keep_originals, cleanup_ttl_minutes.
-        Unknown keys are silently ignored. The settings row is created with
-        defaults if it does not yet exist.
-
-        Args:
-            updates: A dictionary containing one or more of the following keys:
-                theme (str): UI theme name; must be a valid Theme value.
-                auto_download (bool): Whether to automatically download
-                    converted files.
-                keep_originals (bool): Whether to retain original files
-                    after conversion.
-                cleanup_ttl_minutes (int): Time-to-live in minutes for cleanup.
-        
-
-        Returns:
-            A dictionary reflecting the updated settings, with keys theme
-            (str), auto_download (bool), keep_originals (bool), and cleanup_ttl_minutes (int).
-
-        Raises:
-            ValueError: If the provided theme value is not a valid
-                Theme enum member.
-        """
+    def update_settings(self, user_id: str, updates: dict) -> dict:
+        """Apply a partial or full update to a user's settings."""
+        self._ensure_user_row(user_id)
         # Prevent SQL injection by allowing only known columns
-        allowed = {"theme", "auto_download", "keep_originals", "cleanup_ttl_minutes"}
+        allowed = {"theme", "auto_download", "keep_originals", "cleanup_enabled", "cleanup_ttl_minutes"}
         filtered = {k: v for k, v in updates.items() if k in allowed}
 
         if not filtered:
-            return self.get_settings()
+            return self.get_settings(user_id)
 
         # Prevent SQL injection by allowing only known theme values
         if "theme" in filtered:
@@ -177,21 +176,65 @@ class SettingsDB:
             filtered["auto_download"] = int(bool(filtered["auto_download"]))
         if "keep_originals" in filtered:
             filtered["keep_originals"] = int(bool(filtered["keep_originals"]))
+        if "cleanup_enabled" in filtered:
+            filtered["cleanup_enabled"] = int(bool(filtered["cleanup_enabled"]))
         if "cleanup_ttl_minutes" in filtered:
             filtered["cleanup_ttl_minutes"] = int(filtered["cleanup_ttl_minutes"])
 
         set_clause = ", ".join(f"{col} = ?" for col in filtered)
-        values = list(filtered.values()) + [_SETTINGS_ROW_ID]
+        values = list(filtered.values()) + [user_id]
 
         with self.conn:
             self.conn.execute(
-                f"UPDATE {self.TABLE_NAME} SET {set_clause} WHERE id = ?",  # nosec B608
+                f"UPDATE {self.TABLE_NAME} SET {set_clause} WHERE user_id = ?",  # nosec B608
                 values
             )
 
-        return self.get_settings()
+        return self.get_settings(user_id)
+
+    def get_admin_cleanup_settings(self) -> dict:
+        """Return cleanup settings from the first admin user's row.
+
+        Falls back to defaults if no admin settings row exists or the
+        users table has not been created yet (fresh install).
+        Used by the background cleanup task.
+        """
+        try:
+            cursor = self.conn.cursor()
+            cursor.row_factory = sqlite3.Row
+            # Find the first admin's settings by joining against the users table
+            user_table = validate_sql_identifier(self.settings.user_table_name)
+            cursor.execute(
+                f"SELECT s.cleanup_enabled, s.cleanup_ttl_minutes "
+                f"FROM {self.TABLE_NAME} s "
+                f"INNER JOIN {user_table} u ON s.user_id = u.uuid "
+                f"WHERE u.role = 'admin' "
+                f"ORDER BY u.rowid LIMIT 1",  # nosec B608
+            )
+            row = cursor.fetchone()
+        except sqlite3.OperationalError:
+            row = None
+        if row is None:
+            return {
+                "cleanup_enabled": _DEFAULT_SETTINGS["cleanup_enabled"],
+                "cleanup_ttl_minutes": _DEFAULT_SETTINGS["cleanup_ttl_minutes"],
+            }
+        return {
+            "cleanup_enabled": bool(row["cleanup_enabled"]),
+            "cleanup_ttl_minutes": int(row["cleanup_ttl_minutes"]),
+        }
+
+    def delete_settings(self, user_id: str) -> bool:
+        """Delete the settings row for a given user. Returns True if a row was deleted."""
+        with self.conn:
+            cursor = self.conn.execute(
+                f"DELETE FROM {self.TABLE_NAME} WHERE user_id = ?",  # nosec B608
+                (user_id,)
+            )
+        return cursor.rowcount > 0
 
     def close(self) -> None:
-        """Close the database connection."""
-        if self.conn:
-            self.conn.close()
+        """Close the current thread's database connection."""
+        if hasattr(self._local, 'conn') and self._local.conn:
+            self._local.conn.close()
+            self._local.conn = None

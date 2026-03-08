@@ -5,6 +5,8 @@ from typing import Optional
 from io import BytesIO
 from PIL import Image
 from pillow_heif import HeifImagePlugin
+import pillow_avif  # noqa: F401 — registers AVIF plugin on import
+import pillow_jxl   # noqa: F401 — registers JPEG XL plugin on import
 from .converter_interface import ConverterInterface
 
 try:
@@ -20,25 +22,77 @@ try:
 except (ImportError, OSError):
     _CAIROSVG_AVAILABLE = False
 
+
 class PillowConverter(ConverterInterface):
     supported_input_formats: set = {
-        'jpeg', 
+        'jpeg',
         'png',
-        'gif', 
-        'bmp', 
-        'tiff', 
+        'gif',
+        'bmp',
+        'tiff',
         'tif',
-        'webp', 
-        'ico', 
-        'ppm', 
-        'pgm', 
-        'pbm', 
+        'webp',
+        'ico',
+        'ppm',
+        'pgm',
+        'pbm',
         'pcx',
         'heif',
         'heic',
-        'svg'
+        'svg',
+        'tga',
+        'jp2',
+        'sgi',
+        # Extended formats
+        'icns',
+        'dds',
+        'psd',  # read-only
+        'blp',
+        'cur',  # read-only
+        'dcx',
+        'fli',
+        'flc',
+        'xbm',
+        'xpm',  # read-only
+        'msp',
+        'qoi',
+        'dib',
+        'avif',
+        'jxl',
     }
-    supported_output_formats: set = set(supported_input_formats)
+    supported_output_formats: set = {
+        'jpeg',
+        'png',
+        'gif',
+        'bmp',
+        'tiff',
+        'tif',
+        'webp',
+        'ico',
+        'ppm',
+        'pgm',
+        'pbm',
+        'pcx',
+        'heif',
+        'heic',
+        'tga',
+        'jp2',
+        'sgi',
+        'pdf',
+        # Extended formats (all writable; psd/cur/xpm are read-only and excluded)
+        'icns',
+        'dds',
+        'blp',
+        'dcx',
+        'fli',
+        'flc',
+        'xbm',
+        'msp',
+        'qoi',
+        'dib',
+        'avif',
+        'jxl',
+    }
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
         """
         Initialize Pillow converter.
@@ -52,7 +106,7 @@ class PillowConverter(ConverterInterface):
         super().__init__(input_file, output_dir, input_type, output_type)
         HeifImagePlugin.register_heif_opener()
     
-    def __can_convert(self) -> bool:
+    def can_convert(self) -> bool:
         """
         Check if the input file can be converted to the output format.
         
@@ -82,10 +136,14 @@ class PillowConverter(ConverterInterface):
         base_formats = super().get_formats_compatible_with(format_type)
         # Can convert FROM SVG but not TO SVG (rasterization only)
         base_formats.discard('svg')
+        # Read-only formats cannot be output targets
+        for ro_fmt in ('psd', 'cur', 'xpm'):
+            base_formats.discard(ro_fmt)
         # SVG input requires cairosvg
         if format_type.lower() == 'svg' and not _CAIROSVG_AVAILABLE:
             return set()
         return base_formats
+
     
     def convert(self, overwrite: bool = True, quality: Optional[str] = None) -> list[str]:
         """
@@ -104,7 +162,7 @@ class PillowConverter(ConverterInterface):
             RuntimeError: If image conversion fails
         """
         # Validate conversion is possible
-        if not self.__can_convert():
+        if not self.can_convert():
             raise ValueError(
                 f"Cannot convert {self.input_type} to {self.output_type}. "
                 f"Unsupported image format."
@@ -138,10 +196,16 @@ class PillowConverter(ConverterInterface):
                 # Open the image
                 img = Image.open(self.input_file)
             
-            # Handle transparency for formats that don't support it
+            # Handle transparency for formats that don't support alpha
             output_fmt = self.output_type.lower()
-            if output_fmt in ['jpg', 'jpeg'] and img.mode in ['RGBA', 'LA', 'P']:
-                # Convert RGBA to RGB for JPEG (add white background)
+
+            # BLP only supports P (palette) mode
+            if output_fmt == 'blp' and img.mode != 'P':
+                img = img.convert('P')
+
+            _no_alpha_formats = {'jpg', 'jpeg', 'pdf', 'sgi', 'bmp', 'ppm', 'pcx', 'gif', 'tga',
+                                    'dib', 'msp', 'xbm', 'fli', 'flc', 'dcx'}
+            if output_fmt in _no_alpha_formats and img.mode in ['RGBA', 'LA', 'P']:
                 if img.mode == 'P':
                     img = img.convert('RGBA')
                 if img.mode in ['RGBA', 'LA']:
@@ -150,21 +214,30 @@ class PillowConverter(ConverterInterface):
                         img = img.convert('RGBA')
                     background.paste(img, mask=img.split()[-1])  # Use alpha channel as mask
                     img = background
-            
+
             # Set quality parameters
             save_kwargs = {}
-            if output_fmt in ['jpg', 'jpeg', 'webp']:
+            if output_fmt in ['jpg', 'jpeg', 'webp', 'avif', 'jxl']:
                 if quality == 'high':
                     save_kwargs['quality'] = 95
                 elif quality == 'low':
                     save_kwargs['quality'] = 60
                 else:  # medium or None
                     save_kwargs['quality'] = 85
-            
+
+            # JPEG 2000 uses quality_layers instead of quality
+            if output_fmt == 'jp2':
+                if quality == 'high':
+                    save_kwargs['quality_layers'] = [100]
+                elif quality == 'low':
+                    save_kwargs['quality_layers'] = [30]
+                else:
+                    save_kwargs['quality_layers'] = [80]
+
             # For PNG, handle optimization
             if output_fmt == 'png':
                 save_kwargs['optimize'] = True
-            
+
             # Save the image
             img.save(output_file, **save_kwargs)
             

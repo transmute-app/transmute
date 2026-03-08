@@ -1,11 +1,30 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { FaArrowRightArrowLeft, FaClockRotateLeft, FaBook, FaFile, FaGear } from 'react-icons/fa6'
+import { FaArrowRightArrowLeft, FaChevronDown, FaClockRotateLeft, FaFile, FaGear, FaRightFromBracket, FaUser, FaUsers } from 'react-icons/fa6'
+import { useAuth } from '../AuthContext'
+import { useTheme } from '../ThemeContext'
 
 function Header() {
+  const { keepOriginals } = useTheme()
+  const { user, isAdmin, logout } = useAuth()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => document.removeEventListener('mousedown', handlePointerDown)
+  }, [])
+
   return (
     <header className="bg-surface-dark">
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex h-16 items-center justify-between gap-4">
           <Link to="/" className="flex items-center">
             <svg
               viewBox="284 186 632 828"
@@ -20,56 +39,114 @@ function Header() {
             </svg>
             <span className="text-2xl font-bold text-primary">Transmute</span>
           </Link>
-          <div className="flex space-x-8">
-            <NavLink
-              to="/"
-              end
-              className={({ isActive }) =>
-                `px-3 py-2 rounded-md text-xl font-medium transition duration-200 ${isActive ? 'text-primary' : 'text-text hover:text-primary'}`
-              }
-              title="Converter"
-              aria-label="Converter"
-            >
-              <FaArrowRightArrowLeft />
-            </NavLink>
-            <NavLink
-              to="/files"
-              className={({ isActive }) =>
-                `px-3 py-2 rounded-md text-xl font-medium transition duration-200 ${isActive ? 'text-primary' : 'text-text hover:text-primary'}`
-              }
-              title="Files"
-              aria-label="Files"
-            >
-              <FaFile />
-            </NavLink>
-            <NavLink
-              to="/history"
-              className={({ isActive }) =>
-                `px-3 py-2 rounded-md text-xl font-medium transition duration-200 ${isActive ? 'text-primary' : 'text-text hover:text-primary'}`
-              }
-              title="History"
-              aria-label="History"
-            >
-              <FaClockRotateLeft />
-            </NavLink>
-            <a
-              href="/api/docs"
-              className="text-text hover:text-primary px-3 py-2 rounded-md text-xl font-medium transition duration-200"
-              title="API Docs"
-              aria-label="API Docs"
-            >
-              <FaBook />
-            </a>
-            <NavLink
-              to="/settings"
-              className={({ isActive }) =>
-                `px-3 py-2 rounded-md text-xl font-medium transition duration-200 ${isActive ? 'text-primary' : 'text-text hover:text-primary'}`
-              }
-              title="Settings"
-              aria-label="Settings"
-            >
-              <FaGear />
-            </NavLink>
+          <div className="flex items-center gap-3 md:gap-5">
+            <div className="flex items-center gap-2 md:gap-3">
+              <NavLink
+                to="/"
+                end
+                className={({ isActive }) =>
+                  `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition duration-200 ${isActive ? 'bg-primary/10 text-primary-light' : 'text-text hover:bg-surface-light hover:text-primary'}`
+                }
+                title="Converter"
+                aria-label="Converter"
+              >
+                <FaArrowRightArrowLeft className="text-base" />
+                <span className="hidden sm:inline">Convert</span>
+              </NavLink>
+              {keepOriginals && (
+                <NavLink
+                  to="/files"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition duration-200 ${isActive ? 'bg-primary/10 text-primary-light' : 'text-text hover:bg-surface-light hover:text-primary'}`
+                  }
+                  title="Files"
+                  aria-label="Files"
+                >
+                  <FaFile className="text-base" />
+                  <span className="hidden sm:inline">Files</span>
+                </NavLink>
+              )}
+              <NavLink
+                to="/history"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition duration-200 ${isActive ? 'bg-primary/10 text-primary-light' : 'text-text hover:bg-surface-light hover:text-primary'}`
+                }
+                title="History"
+                aria-label="History"
+              >
+                <FaClockRotateLeft className="text-base" />
+                <span className="hidden sm:inline">History</span>
+              </NavLink>
+            </div>
+
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setMenuOpen(open => !open)}
+                className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-medium text-primary-light transition duration-200 hover:bg-primary/15"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                aria-label="Open account menu"
+              >
+                <FaUser className="text-sm" />
+                <span className="hidden sm:inline max-w-28 truncate">{user?.username}</span>
+                <FaChevronDown className={`text-xs transition-transform duration-200 ${menuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border border-surface-light bg-surface-dark shadow-xl">
+                  <div className="border-b border-surface-light px-4 py-3">
+                    <p className="truncate text-sm font-semibold text-text">{user?.username}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-text-muted">{user?.role}</p>
+                  </div>
+                  <div className="p-2">
+                    <NavLink
+                      to="/account"
+                      onClick={() => setMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition duration-200 ${isActive ? 'bg-primary/10 text-primary-light' : 'text-text hover:bg-surface-light hover:text-primary'}`
+                      }
+                    >
+                      <FaUser className="text-sm" />
+                      My Account
+                    </NavLink>
+                    <NavLink
+                      to="/settings"
+                      onClick={() => setMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition duration-200 ${isActive ? 'bg-primary/10 text-primary-light' : 'text-text hover:bg-surface-light hover:text-primary'}`
+                      }
+                    >
+                      <FaGear className="text-sm" />
+                      Settings
+                    </NavLink>
+                    {isAdmin && (
+                      <NavLink
+                        to="/admin/users"
+                        onClick={() => setMenuOpen(false)}
+                        className={({ isActive }) =>
+                          `mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition duration-200 ${isActive ? 'bg-primary/10 text-primary-light' : 'text-text hover:bg-surface-light hover:text-primary'}`
+                        }
+                      >
+                        <FaUsers className="text-sm" />
+                        User Management
+                      </NavLink>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false)
+                        logout()
+                      }}
+                      className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-text transition duration-200 hover:bg-surface-light hover:text-primary"
+                    >
+                      <FaRightFromBracket className="text-sm" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </nav>

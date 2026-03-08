@@ -82,12 +82,14 @@ class BatchDownloadRequest(BaseModel):
 
 
 ThemeValue = Literal["rubedo", "citrinitas", "viriditas", "nigredo", "albedo", "aurora", "caelum"]
+UserRoleValue = Literal["admin", "member"]
 
 
 class AppSettingsResponse(BaseModel):
     theme: ThemeValue = Field(..., example="rubedo", description="Active UI theme")
     auto_download: bool = Field(..., example=False, description="Auto-download converted files on completion")
     keep_originals: bool = Field(..., example=True, description="Retain uploaded source files after conversion")
+    cleanup_enabled: bool = Field(..., example=True, description="Enable automatic cleanup of old files")
     cleanup_ttl_minutes: int = Field(..., example=60, description="Time-to-live in minutes for cleanup")
 
 
@@ -95,4 +97,98 @@ class AppSettingsUpdate(BaseModel):
     theme: Optional[ThemeValue] = Field(None, example="rubedo", description="UI theme to apply")
     auto_download: Optional[bool] = Field(None, example=False, description="Auto-download on completion")
     keep_originals: Optional[bool] = Field(None, example=True, description="Keep original files after conversion")
+    cleanup_enabled: Optional[bool] = Field(None, example=True, description="Enable automatic cleanup of old files")
     cleanup_ttl_minutes: Optional[int] = Field(None, example=60, description="Time-to-live in minutes for cleanup")
+
+
+class DefaultFormatMapping(BaseModel):
+    input_format: str = Field(..., example="png", description="Input file format")
+    output_format: str = Field(..., example="jpeg", description="Default output format")
+
+
+class DefaultFormatListResponse(BaseModel):
+    defaults: list[DefaultFormatMapping] = Field(..., description="List of default format mappings")
+    aliases: dict[str, str] = Field(..., description="Format alias map (e.g. jpg -> jpeg)")
+
+
+class UserResponse(BaseModel):
+    uuid: str = Field(..., example="123e4567-e89b-12d3-a456-426614174000", description="Stable user UUID")
+    username: str = Field(..., example="alice", description="Unique account username")
+    email: Optional[str] = Field(None, example="alice@example.com", description="Optional email address")
+    full_name: Optional[str] = Field(None, example="Alice Example", description="Optional full name")
+    role: UserRoleValue = Field(..., example="member", description="Assigned role")
+    disabled: bool = Field(..., example=False, description="Whether the account is disabled")
+
+
+class UserListResponse(BaseModel):
+    users: list[UserResponse] = Field(..., description="List of users")
+
+
+class UserCreateRequest(BaseModel):
+    username: str = Field(..., min_length=1, example="alice", description="Unique account username")
+    email: Optional[str] = Field(None, example="alice@example.com", description="Optional email address")
+    full_name: Optional[str] = Field(None, example="Alice Example", description="Optional full name")
+    password: str = Field(..., min_length=8, example="correct horse battery staple", description="Plain-text password (min 8 characters)")
+    role: UserRoleValue = Field("member", example="member", description="Assigned role")
+    disabled: bool = Field(False, example=False, description="Whether the account starts disabled")
+
+
+class UserUpdateRequest(BaseModel):
+    username: Optional[str] = Field(None, min_length=1, example="alice", description="Unique account username")
+    email: Optional[str] = Field(None, example="alice@example.com", description="Optional email address")
+    full_name: Optional[str] = Field(None, example="Alice Example", description="Optional full name")
+    password: Optional[str] = Field(None, min_length=8, example="new secure password", description="New plain-text password (min 8 characters)")
+    role: Optional[UserRoleValue] = Field(None, example="admin", description="Assigned role")
+    disabled: Optional[bool] = Field(None, example=False, description="Whether the account is disabled")
+
+
+class UserAuthRequest(BaseModel):
+    username: str = Field(..., min_length=1, example="alice", description="Username to authenticate")
+    password: str = Field(..., min_length=1, example="correct horse battery staple", description="Plain-text password to verify")
+
+
+class UserAuthResponse(BaseModel):
+    access_token: str = Field(..., example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", description="Signed JWT access token")
+    token_type: str = Field(..., example="bearer", description="OAuth2 token type")
+    expires_in: int = Field(..., example=3600, description="Token lifetime in seconds")
+    user: UserResponse = Field(..., description="Authenticated user details")
+
+
+class UserDeleteResponse(BaseModel):
+    message: str = Field(..., example="User deleted successfully", description="Deletion status message")
+
+
+class UserBootstrapStatusResponse(BaseModel):
+    requires_setup: bool = Field(..., example=True, description="Whether the first admin account still needs to be created")
+    user_count: int = Field(..., example=0, description="Current number of users")
+
+
+class UserSelfUpdateRequest(BaseModel):
+    username: Optional[str] = Field(None, min_length=1, example="alice", description="Unique account username")
+    email: Optional[str] = Field(None, example="alice@example.com", description="Optional email address")
+    full_name: Optional[str] = Field(None, example="Alice Example", description="Optional full name")
+    password: Optional[str] = Field(None, min_length=8, example="new secure password", description="New plain-text password (min 8 characters)")
+
+
+class ApiKeyCreateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100, example="CI pipeline", description="Human-readable label for the key")
+
+
+class ApiKeyResponse(BaseModel):
+    id: str = Field(..., description="Unique key identifier")
+    user_uuid: str = Field(..., description="Owning user UUID")
+    name: str = Field(..., description="Human-readable label")
+    prefix: str = Field(..., description="First 8 characters of the key for identification")
+    created_at: Optional[str] = Field(None, description="Creation timestamp")
+
+
+class ApiKeyCreatedResponse(ApiKeyResponse):
+    raw_key: str = Field(..., description="Full API key (shown only once)")
+
+
+class ApiKeyListResponse(BaseModel):
+    api_keys: list[ApiKeyResponse] = Field(..., description="List of API keys for the user")
+
+
+class ApiKeyDeleteResponse(BaseModel):
+    message: str = Field(..., description="Deletion status message")

@@ -20,7 +20,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
-          python-version: '3.11'
+          python-version: '3.13'
       
       - name: Install Dependencies
         run: |
@@ -31,12 +31,15 @@ jobs:
         run: |
           python backend/export_openapi.py --output openapi.json
       
-      - name: Trigger Repository Dispatch
+      - name: Commit to DIFFERENT repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.TRANSMUTE_AUTOMATED_COMMITS }}
         run: |
-          schema_content=$(cat openapi.json | jq -c .)
-          payload=$(jq -n --arg sha "${{ github.sha }}" --argjson schema "$schema_content" \
-              '{"event_type":"openapi_schema_generated", "client_payload": {"sha": $sha, "schema": $schema}}')
-          curl -X POST -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: token ${{ secrets.TRANSMUTE_OPENAPI_DISPATCH_TOKEN }}" \
-          https://api.github.com/repos/transmute-app/openapi-specifications/dispatches \
-          -d "$payload"
+          git clone https://x-access-token:${GITHUB_TOKEN}@github.com/transmute-app/openapi-specifications.git target-repo
+          cp openapi.json target-repo/openapi.json
+          cd target-repo
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add openapi.json
+          git diff --cached --quiet || git commit -m "chore: update openapi.json"
+          git push

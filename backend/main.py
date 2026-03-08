@@ -30,10 +30,15 @@ def create_app() -> FastAPI:
             routes=app.routes,
             servers=app.servers,
         )
-        # Explicitly declare no authentication is required.
-        # This satisfies OpenAPI linters that require security to be defined
-        # at the root level or per-operation.
-        schema.setdefault("security", [])
+        schema["components"] = schema.get("components", {})
+        schema["components"]["securitySchemes"] = {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+        schema["security"] = [{"BearerAuth": []}]
         app.openapi_schema = schema
         return app.openapi_schema
 

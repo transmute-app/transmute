@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import FileListItem, { FileInfo } from '../components/FileListItem'
+import FileTable, { FileInfo } from '../components/FileTable'
+import PreviewModal, { isPreviewable } from '../components/PreviewModal'
+import { authFetch as fetch } from '../utils/api'
 
 function Files() {
   const [files, setFiles] = useState<FileInfo[]>([])
@@ -9,6 +11,7 @@ function Files() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [deletingSelected, setDeletingSelected] = useState(false)
+  const [previewFile, setPreviewFile] = useState<FileInfo | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -69,19 +72,30 @@ function Files() {
     if (selectedIds.size === 0) return
     
     setDeletingSelected(true)
+    setError(null)
     const idsToDelete = Array.from(selectedIds)
     
-    for (const fileId of idsToDelete) {
-      try {
+    const results = await Promise.allSettled(
+      idsToDelete.map(async (fileId) => {
         const response = await fetch(`/api/files/${fileId}`, { method: 'DELETE' })
-        if (!response.ok) throw new Error('Delete failed')
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Delete failed')
-      }
+        if (!response.ok) throw new Error(`Delete failed for ${fileId}`)
+        setFiles(prev => prev.filter(f => f.id !== fileId))
+        setSelectedIds(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(fileId)
+          return newSet
+        })
+      })
+    )
+
+    const errors = results
+      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+      .map(r => (r.reason instanceof Error ? r.reason.message : 'Delete failed'))
+
+    if (errors.length > 0) {
+      setError(errors.join('; '))
     }
-    
-    setFiles(prev => prev.filter(f => !selectedIds.has(f.id)))
-    setSelectedIds(new Set())
+
     setDeletingSelected(false)
   }
 
@@ -91,7 +105,7 @@ function Files() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-surface-dark to-surface-light p-8">
+    <div className="min-h-full bg-gradient-to-br from-surface-dark to-surface-light p-8 pb-12">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6 min-h-[4rem]">
           <h1 className="text-3xl font-bold text-primary">Files</h1>
@@ -131,30 +145,29 @@ function Files() {
         )}
 
         {!loading && files.length > 0 && (
-          <>
-            <div className="mb-4 flex justify-start">
-              <button
-                onClick={toggleSelectAll}
-                className="bg-surface-light hover:bg-surface-dark text-text-muted hover:text-text text-sm font-medium py-1.5 px-4 rounded-lg transition duration-200"
-              >
-                {selectedIds.size === files.length ? 'Deselect All' : 'Select All'}
-              </button>
-            </div>
-            <div className="space-y-3">
-              {files.map(file => (
-                <FileListItem
-                  key={file.id}
-                  file={file}
-                  onDelete={() => handleDelete(file.id)}
-                  isDeleting={deletingId === file.id}
-                  isPending={true}
-                  showCheckbox={true}
-                  isSelected={selectedIds.has(file.id)}
-                  onToggleSelect={() => toggleSelection(file.id)}
-                />
-              ))}
-            </div>
-          </>
+          <FileTable
+            rows={files.map(file => ({
+              id: file.id,
+              file,
+              onDelete: () => handleDelete(file.id),
+              onPreview: isPreviewable(file.media_type) ? () => setPreviewFile(file) : undefined,
+              isDeleting: deletingId === file.id,
+            }))}
+            isPending={true}
+            showCheckbox={true}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelection}
+            onToggleSelectAll={toggleSelectAll}
+          />
+        )}
+
+        {previewFile && (
+          <PreviewModal
+            fileId={previewFile.id}
+            filename={previewFile.original_filename}
+            mediaType={previewFile.media_type}
+            onClose={() => setPreviewFile(null)}
+          />
         )}
       </div>
     </div>

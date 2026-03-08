@@ -13,11 +13,14 @@ services:
       # - ./data/:/app/data       # Uncomment this line to make the data volume available on the host for debugging.
       - transmute_data:/app/data  # Comment this line if you uncomment the line above to make the data volume available on the host for debugging.
     healthcheck:
-      test: 
+      test:
         - "CMD"
-        - "curl"
-        - "-f"
-        - "http://localhost:3319/api/health/ready"
+        - "wget"
+        - "-q"
+        - "-O"
+        - "/dev/null"
+        - "--tries=1"
+        - "http://localhost:3313/api/health/ready"
       interval: 30s
       timeout: 10s
       retries: 3

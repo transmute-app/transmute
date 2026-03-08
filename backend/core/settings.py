@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     conversion_table_name: str = "CONVERSIONS_METADATA"
     conversion_relations_table_name: str = "CONVERSION_RELATIONS"
     app_settings_table_name: str = "APP_SETTINGS"
+    user_table_name: str = "USERS"
+
+    # ===== Authentication =====
+    auth_secret_key: str = ""
+    auth_algorithm: str = "HS256"
+    auth_access_token_expire_minutes: int = 60
 
     # ===== Redis =====
 
@@ -58,6 +64,10 @@ class Settings(BaseSettings):
 
     def model_post_init(self, __context):
         """Compute derived paths after initialization."""
+
+        if not self.auth_secret_key:
+            import secrets
+            object.__setattr__(self, 'auth_secret_key', secrets.token_urlsafe(64))
 
         self.db_path = self.data_dir / "db" / "app.db"
         self.upload_dir = self.data_dir / "uploads"

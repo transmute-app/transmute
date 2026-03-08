@@ -1,6 +1,8 @@
 import os
 import re
+import sqlite3
 import mimetypes
+import hashlib
 import magic
 
 from typing import TYPE_CHECKING
@@ -11,6 +13,91 @@ if TYPE_CHECKING:
     from db import FileDB
     
 from core.settings import get_settings
+
+
+def compute_sha256_checksum(file_path: str | Path, chunk_size: int = 1024 * 1024) -> str:
+    """Compute a SHA-256 checksum without loading the full file into memory.
+
+    Args:
+        file_path: Path to the file to hash
+        chunk_size: Number of bytes to read per iteration
+
+    Returns:
+        Hex-encoded SHA-256 digest
+    """
+    hasher = hashlib.sha256()
+    with Path(file_path).open("rb") as file_handle:
+        while chunk := file_handle.read(chunk_size):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def assign_orphaned_rows_to_admin(
+    conn: sqlite3.Connection,
+    table_name: str,
+    user_table_name: str = "USERS",
+) -> None:
+    """Assign rows with NULL user_id to the first admin user.
+
+    During migration from a pre-auth version of the database, existing rows
+    will have no user_id.  This finds the earliest admin account and claims
+    those orphaned rows so they are not invisible after the upgrade.
+
+    Args:
+        conn: An open SQLite connection.
+        table_name: The (already-validated) table name to update.
+        user_table_name: The name of the users table to query for the
+            first admin.  Defaults to ``"USERS"``.
+    """
+    # Check if there are any orphaned rows first to avoid unnecessary work
+    cursor = conn.execute(
+        f"SELECT 1 FROM {table_name} WHERE user_id IS NULL LIMIT 1"  # nosec B608
+    )
+    if cursor.fetchone() is None:
+        return
+
+    # Find the first admin user by rowid
+    cursor = conn.execute(
+        f"SELECT uuid FROM {user_table_name} WHERE role = 'admin' ORDER BY rowid LIMIT 1"  # nosec B608
+    )
+    row = cursor.fetchone()
+    if row is None:
+        return
+
+    admin_uuid = row[0]
+    with conn:
+        conn.execute(
+            f"UPDATE {table_name} SET user_id = ? WHERE user_id IS NULL",  # nosec B608
+            (admin_uuid,)
+        )
+
+
+def migrate_table_columns(
+    conn: sqlite3.Connection,
+    table_name: str,
+    expected_columns: dict[str, str],
+) -> None:
+    """Add any missing columns to an existing SQLite table.
+
+    Compares the columns currently present in *table_name* against
+    *expected_columns* and issues ``ALTER TABLE … ADD COLUMN`` for each
+    one that is absent.  This allows older databases to be transparently
+    upgraded when new columns are introduced.
+
+    Args:
+        conn: An open SQLite connection.
+        table_name: The (already-validated) table name to inspect.
+        expected_columns: A mapping of ``column_name`` to its full SQL
+            column definition (e.g. ``"INTEGER NOT NULL DEFAULT 1"``).
+    """
+    cursor = conn.execute(f"PRAGMA table_info({table_name})")  # nosec B608
+    existing = {row[1] for row in cursor.fetchall()}
+    with conn:
+        for col_name, col_def in expected_columns.items():
+            if col_name not in existing:
+                conn.execute(
+                    f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_def}"  # nosec B608
+                )
 
 
 def validate_sql_identifier(identifier: str) -> str:

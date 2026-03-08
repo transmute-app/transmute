@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import FileListItem, { FileInfo, ConversionInfo } from '../components/FileListItem'
+import FileTable, { FileInfo, ConversionInfo } from '../components/FileTable'
+import PreviewModal, { isPreviewable } from '../components/PreviewModal'
+import { authFetch as fetch } from '../utils/api'
 
 interface OriginalFileInfo {
   id: string
@@ -29,6 +31,7 @@ function History() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deletingSelected, setDeletingSelected] = useState(false)
   const [downloadingSelected, setDownloadingSelected] = useState(false)
+  const [previewConversion, setPreviewConversion] = useState<ConversionRecord | null>(null)
 
   useEffect(() => {
     const fetchConversions = async () => {
@@ -102,10 +105,10 @@ function History() {
   }
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === sortedConversions.length) {
+    if (selectedIds.size === conversions.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(sortedConversions.map(c => c.id)))
+      setSelectedIds(new Set(conversions.map(c => c.id)))
     }
   }
 
@@ -115,17 +118,28 @@ function History() {
     setError(null)
 
     const idsToDelete = Array.from(selectedIds)
-    for (const conversionId of idsToDelete) {
-      try {
+
+    const results = await Promise.allSettled(
+      idsToDelete.map(async (conversionId) => {
         const response = await fetch(`/api/conversions/${conversionId}`, { method: 'DELETE' })
-        if (!response.ok) throw new Error('Delete failed')
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Delete failed')
-      }
+        if (!response.ok) throw new Error(`Delete failed for ${conversionId}`)
+        setConversions(prev => prev.filter(c => c.id !== conversionId))
+        setSelectedIds(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(conversionId)
+          return newSet
+        })
+      })
+    )
+
+    const errors = results
+      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+      .map(r => (r.reason instanceof Error ? r.reason.message : 'Delete failed'))
+
+    if (errors.length > 0) {
+      setError(errors.join('; '))
     }
 
-    setConversions(prev => prev.filter(c => !selectedIds.has(c.id)))
-    setSelectedIds(new Set())
     setDeletingSelected(false)
   }
 
@@ -163,11 +177,8 @@ function History() {
     }
   }
 
-  const sortedConversions = conversions
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-surface-dark to-surface-light p-8">
+    <div className="min-h-full bg-gradient-to-br from-surface-dark to-surface-light p-8 pb-12">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6 min-h-[4rem]">
           <h1 className="text-3xl font-bold text-primary">History</h1>
@@ -203,23 +214,13 @@ function History() {
           <p className="text-text-muted text-sm">Loading conversions...</p>
         )}
 
-        {!loading && sortedConversions.length === 0 && (
+        {!loading && conversions.length === 0 && (
           <p className="text-text-muted text-sm">No converted files yet.</p>
         )}
 
-        {!loading && sortedConversions.length > 0 && (
-          <>
-            <div className="mb-4 flex justify-start">
-              <button
-                onClick={toggleSelectAll}
-                className="bg-surface-light hover:bg-surface-dark text-text-muted hover:text-text text-sm font-medium py-1.5 px-4 rounded-lg transition duration-200"
-              >
-                {selectedIds.size === sortedConversions.length ? 'Deselect All' : 'Select All'}
-              </button>
-            </div>
-            <div className="space-y-3">
-              {sortedConversions.map(conversion => {
-              // Use original file metadata if available, otherwise use conversion metadata
+        {!loading && conversions.length > 0 && (
+          <FileTable
+            rows={conversions.map(conversion => {
               const originalFile = conversion.original_file
               const fileInfo: FileInfo = {
                 id: originalFile?.id || conversion.id,
@@ -237,24 +238,31 @@ function History() {
                 size_bytes: conversion.size_bytes,
                 created_at: conversion.created_at,
               }
-              return (
-                <FileListItem
-                  key={conversion.id}
-                  file={fileInfo}
-                  conversion={conversionInfo}
-                  onDownload={() => handleDownload(conversion)}
-                  onDelete={() => handleDelete(conversion.id)}
-                  isDeleting={deletingId === conversion.id}
-                  isDownloading={downloadingId === conversion.id}
-                  isPending={false}
-                  showCheckbox={true}
-                  isSelected={selectedIds.has(conversion.id)}
-                  onToggleSelect={() => toggleSelection(conversion.id)}
-                />
-              )
+              return {
+                id: conversion.id,
+                file: fileInfo,
+                conversion: conversionInfo,
+                onDownload: () => handleDownload(conversion),
+                onDelete: () => handleDelete(conversion.id),
+                onPreview: isPreviewable(conversion.media_type) ? () => { const name = conversion.original_filename || 'download'; const dot = name.lastIndexOf('.'); const base = dot > 0 ? name.substring(0, dot) : name; setPreviewConversion({ ...conversion, original_filename: base + (conversion.extension || '') }) } : undefined,
+                isDeleting: deletingId === conversion.id,
+                isDownloading: downloadingId === conversion.id,
+              }
             })}
-            </div>
-          </>
+            showCheckbox={true}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelection}
+            onToggleSelectAll={toggleSelectAll}
+          />
+        )}
+
+        {previewConversion && (
+          <PreviewModal
+            fileId={previewConversion.id}
+            filename={previewConversion.original_filename}
+            mediaType={previewConversion.media_type}
+            onClose={() => setPreviewConversion(null)}
+          />
         )}
       </div>
     </div>

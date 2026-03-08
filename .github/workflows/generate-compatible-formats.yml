@@ -1,0 +1,46 @@
+name: Generate Compatible Formats
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  bandit-scan:
+    name: Generate Compatible Formats
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+      
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.13'
+      
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Export Compatible Formats
+        run: |
+          python backend/export_supported_conversions.py --output supported_conversions.json
+      
+      - name: Commit to DIFFERENT repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.TRANSMUTE_AUTOMATED_COMMITS }}
+        run: |
+          git clone https://x-access-token:${GITHUB_TOKEN}@github.com/transmute-app/conversion-compatibility.git target-repo
+          cp supported_conversions.json target-repo/supported_conversions.json
+          cd target-repo
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add supported_conversions.json
+          git diff --cached --quiet || git commit -m "chore: update supported_conversions.json"
+          git push
+

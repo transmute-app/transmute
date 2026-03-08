@@ -27,7 +27,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("./openapi.json"),
+        default=Path("openapi.json"),
         help="Destination file path (default: ./openapi.json)",
     )
     args = parser.parse_args()

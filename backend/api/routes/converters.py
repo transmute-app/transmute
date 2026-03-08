@@ -1,10 +1,12 @@
 from typing import Type
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from api.deps import get_current_active_user
 from api.schemas import ConverterMetadataListResponse
 from converters import ConverterInterface
 from registry import registry
 
-router = APIRouter(prefix="/converters", tags=["converters"])
+router = APIRouter(prefix="/converters", tags=["converters"], dependencies=[Depends(get_current_active_user)])
 
 @router.get(
     "",

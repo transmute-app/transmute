@@ -6,13 +6,33 @@ from .converter_interface import ConverterInterface
 
 class PandasConverter(ConverterInterface):
     supported_input_formats: set = {
-        'csv', 
-        'xlsx', 
-        'json', 
-        'parquet', 
-        'yaml'
+        'csv',
+        'xlsx',
+        'json',
+        'parquet',
+        'yaml',
+        'feather',
+        'orc',
+        'tsv',
+        'xml',
+        'html',
+        'ods',
+        'xls',   # read-only
+        'dta',   # read-only
     }
-    supported_output_formats: set = set(supported_input_formats)
+    supported_output_formats: set = {
+        'csv',
+        'xlsx',
+        'json',
+        'parquet',
+        'yaml',
+        'feather',
+        'orc',
+        'tsv',
+        'xml',
+        'html',
+        'ods',
+    }
 
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
         """
@@ -26,7 +46,7 @@ class PandasConverter(ConverterInterface):
         """
         super().__init__(input_file, output_dir, input_type, output_type)
     
-    def __can_convert(self) -> bool:
+    def can_convert(self) -> bool:
         """
         Check if conversion between the specified formats is possible.
         
@@ -53,7 +73,7 @@ class PandasConverter(ConverterInterface):
         Returns:
             List of paths to the converted output files.
         """
-        if not self.__can_convert():
+        if not self.can_convert():
             raise ValueError(f"Conversion from {self.input_type} to {self.output_type} is not supported.")
         
         # Prepare output file path
@@ -99,6 +119,23 @@ class PandasConverter(ConverterInterface):
                 df = pd.json_normalize(data)
         elif self.input_type == 'parquet':
             df = pd.read_parquet(self.input_file)
+        elif self.input_type == 'feather':
+            df = pd.read_feather(self.input_file)
+        elif self.input_type == 'orc':
+            df = pd.read_orc(self.input_file)
+        elif self.input_type == 'tsv':
+            df = pd.read_csv(self.input_file, sep='\t')
+        elif self.input_type == 'xml':
+            df = pd.read_xml(self.input_file)
+        elif self.input_type == 'html':
+            tables = pd.read_html(self.input_file)
+            df = tables[0]
+        elif self.input_type == 'ods':
+            df = pd.read_excel(self.input_file, engine='odf')
+        elif self.input_type == 'xls':
+            df = pd.read_excel(self.input_file, engine='xlrd')
+        elif self.input_type == 'dta':
+            df = pd.read_stata(self.input_file)
         elif self.input_type == 'yaml':
             with open(self.input_file, 'r') as f:
                 data = yaml.safe_load(f)
@@ -118,8 +155,24 @@ class PandasConverter(ConverterInterface):
             df.to_json(output_file, orient='records', indent=2)
         elif self.output_type == 'parquet':
             df.to_parquet(output_file, index=False)
+        elif self.output_type == 'feather':
+            df.to_feather(output_file)
+        elif self.output_type == 'orc':
+            df.to_orc(output_file, index=False)
+        elif self.output_type == 'tsv':
+            df.to_csv(output_file, sep='\t', index=False)
+        elif self.output_type == 'xml':
+            df.to_xml(output_file, index=False)
+        elif self.output_type == 'html':
+            from lxml import etree
+            html_str = df.to_html(index=False)
+            root = etree.fromstring(html_str.encode(), etree.HTMLParser())
+            with open(output_file, 'wb') as f:
+                f.write(etree.tostring(root, pretty_print=True, method='html'))
+        elif self.output_type == 'ods':
+            df.to_excel(output_file, engine='odf', index=False)
         elif self.output_type == 'yaml':
             with open(output_file, 'w') as f:
                 yaml.dump(df.to_dict(orient='records'), f, default_flow_style=False)
-        
+
         return [output_file]
