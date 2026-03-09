@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import FileTable, { FileInfo, ConversionInfo } from '../components/FileTable'
 import PreviewModal, { isPreviewable } from '../components/PreviewModal'
@@ -356,6 +356,51 @@ function Converter() {
   const hasCompletedConversions = completedConversions.length > 0
   const hasStarted = hasPendingFiles || hasCompletedConversions
 
+  const filePickerRef1 = useRef<HTMLInputElement>(null)
+  const filePickerRef2 = useRef<HTMLInputElement>(null)
+  const handleConvertAllRef = useRef(handleConvertAll);
+
+  const hotkeys : Record<string, Function> = {
+    'CTRL+O': () => {
+      if(filePickerRef1.current) {
+        filePickerRef1.current.click()
+        return
+      }
+      if(filePickerRef2.current) {
+        filePickerRef2.current.click()
+      }
+    },
+    'CTRL+ENTER': () => {
+      handleConvertAllRef.current();
+    },
+    'ESCAPE': () => {
+      setPendingFiles([])
+    },
+  }
+
+  const keydownHandler = (event: KeyboardEvent) => {
+      let shortcut = '';
+      if(event.ctrlKey) shortcut += 'CTRL+'
+      if(event.shiftKey) shortcut += 'SHIFT+'
+      if(event.altKey) shortcut += 'ALT+'
+      shortcut += event.key.toUpperCase()
+
+      console.log(shortcut);
+
+      if(hotkeys[shortcut]) {
+        event.preventDefault()
+        hotkeys[shortcut]()
+      }
+  }
+
+  useEffect(() => {
+    window.addEventListener('keydown', keydownHandler);
+  }, [])
+
+  useEffect(() => {
+    handleConvertAllRef.current = handleConvertAll;
+  })
+
   // Initial landing page - shown before any files are selected
   if (!hasStarted && !uploading) {
     return (
@@ -390,6 +435,7 @@ function Converter() {
               </div>
               <input
                 type="file"
+                ref={filePickerRef1}
                 multiple
                 onChange={handleFileSelect}
                 disabled={uploading}
@@ -438,6 +484,7 @@ function Converter() {
             </div>
             <input
               type="file"
+              ref={filePickerRef2}
               multiple
               onChange={handleFileSelect}
               disabled={uploading || converting}
