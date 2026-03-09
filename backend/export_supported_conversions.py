@@ -22,6 +22,15 @@ def get_supported_conversions():
 
     return supported_conversions
 
+def get_supported_formats():
+    formats = set()
+    registry = ConverterRegistry(skip_unregisterable=False)
+    
+    for converter_class in registry.converters.values():
+        formats.update(converter_class.supported_input_formats)
+        formats.update(converter_class.supported_output_formats)
+    return formats
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Export OpenAPI schema to JSON")
     parser.add_argument(
@@ -30,9 +39,18 @@ if __name__ == "__main__":
         default=Path("supported_conversions.json"),
         help="Destination file path (default: ./openapi.json)",
     )
+    parser.add_argument(
+        "--report-only",
+        action="store_true",
+        help="Only print the total count of supported conversions without exporting to a file"
+    )
     args = parser.parse_args()
 
     supported_conversions = get_supported_conversions()
-    with open(args.output, "w") as f:
-        json.dump(supported_conversions, f, indent=4)
+    supported_formats = get_supported_formats()
+    if not args.report_only:
+        with open(args.output, "w") as f:
+            json.dump(supported_conversions, f, indent=4)
+    
+    print(f"Total supported formats: {len(supported_formats)}")
     print(f"Total combinations: {len(supported_conversions)}")

@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 from fastapi.openapi.utils import get_openapi
 from textwrap import dedent
 from api import router
-from core import get_settings
+from core import build_logging_config, configure_logging, get_settings
 from background import get_upload_cleanup_thread
 import uvicorn
 
@@ -33,6 +33,7 @@ def build_api_description(app_name: str) -> str:
     """).strip()
 
 def create_app() -> FastAPI:
+    configure_logging()
     settings = get_settings()
     app = FastAPI(
         title=f"{settings.app_name} API",
@@ -95,4 +96,4 @@ if __name__ == "__main__":
     app = create_app()
     cleanup_thread = get_upload_cleanup_thread()
     cleanup_thread.start()
-    uvicorn.run(app, host=settings.host, port=settings.port)
+    uvicorn.run(app, host=settings.host, port=settings.port, log_config=build_logging_config())

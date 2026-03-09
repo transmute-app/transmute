@@ -41,7 +41,7 @@ jobs:
       - name: Run bandit scan
         id: bandit-scan
         run: |
-          bandit -r backend/ -f sarif -o ${{ runner.temp }}/bandit-report.sarif
+          bandit -r backend/ -x backend/tests -f sarif -o ${{ runner.temp }}/bandit-report.sarif
         continue-on-error: true
         
       - name: Upload bandit results to GitHub Advanced Security

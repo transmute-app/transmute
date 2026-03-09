@@ -1,9 +1,13 @@
+import logging
 import calendar
 import threading
 import time
 
 from db import FileDB, ConversionDB, ConversionRelationsDB, SettingsDB
 from core import delete_file_and_metadata
+
+
+logger = logging.getLogger(__name__)
 
 def file_cleanup_logic(file_db: FileDB, conversion_relations_db: ConversionRelationsDB = None) -> None:
     """Delete files that have exceeded the configured cleanup TTL.
@@ -44,8 +48,8 @@ def file_cleanup_task() -> None:
         try:
             file_cleanup_logic(FileDB())
             file_cleanup_logic(ConversionDB(), ConversionRelationsDB())
-        except Exception as e:
-            print(f"Cleanup error: {e}")
+        except Exception:
+            logger.exception("Cleanup error")
         time.sleep(60) # Sleep for 1 minute
 
 def get_upload_cleanup_thread() -> threading.Thread:
