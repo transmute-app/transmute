@@ -30,14 +30,7 @@ export async function downloadFromResponse(response: Response, fallbackFilename:
   const blob = await response.blob()
   const filename = extractFilename(response, fallbackFilename)
   
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  window.URL.revokeObjectURL(url)
+  downloadBlob(blob, filename)
   
   return filename
 }

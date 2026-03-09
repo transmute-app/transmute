@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import FileTable, { FileInfo, ConversionInfo } from '../components/FileTable'
 import PreviewModal, { isPreviewable } from '../components/PreviewModal'
 import { authFetch as fetch } from '../utils/api'
+import { downloadBlob } from '../utils/download'
 
 interface PendingFile {
   file: FileInfo
@@ -300,15 +301,9 @@ function Converter() {
           body: JSON.stringify({ file_ids: conversionIds }),
         })
         if (!response.ok) throw new Error('Batch download failed')
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `transmute_batch_${new Date().toISOString().split('T')[0]}.zip`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
+        const filename = `transmute_batch_${new Date().toISOString().split('T')[0]}.zip`; 
+        const blob = await response.blob();
+        downloadBlob(blob, filename);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Batch download failed')
       } finally {
@@ -323,23 +318,15 @@ function Converter() {
       const response = await fetch(`/api/files/${conversion.id}`)
       if (!response.ok) throw new Error('Download failed')
 
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-
       let filename = conversion.original_filename || 'download'
       const lastDotIndex = filename.lastIndexOf('.')
       if (lastDotIndex > 0) {
         filename = filename.substring(0, lastDotIndex)
       }
       filename += conversion.extension || ''
-
-      a.download = filename
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      
+      const blob = await response.blob();
+      downloadBlob(blob, filename);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Download failed')
     } finally {
