@@ -18,7 +18,6 @@ class FFmpegConverter(ConverterInterface):
         'webm',
         'flv',
         'wmv',
-        'mpg',
         'mpeg',
         'm4v',
         'gif',
