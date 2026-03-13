@@ -10,4 +10,5 @@ media_type_aliases = {
     'toons': 'toon',
     'htm': 'html',
     'mpg': 'mpeg',
+    'asciidoc': 'adoc',
 }
