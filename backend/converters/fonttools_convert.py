@@ -240,8 +240,8 @@ class FonttoolsConverter(ConverterInterface):
             0: 'copyright', 1: 'familyName', 2: 'styleName',
             3: 'uniqueFontIdentifier', 4: 'fullName', 5: 'version',
             6: 'psName', 7: 'trademark', 8: 'manufacturer',
-            9: 'designer', 10: 'description', 11: 'urlVendor',
-            12: 'urlDesigner', 13: 'licenseDescription', 14: 'licenseInfoUrl',
+            9: 'designer', 10: 'description', 11: 'vendorURL',
+            12: 'designerURL', 13: 'licenseDescription', 14: 'licenseInfoURL',
         }
         if name_table:
             for name_id, key in _name_ids.items():
@@ -268,6 +268,7 @@ class FonttoolsConverter(ConverterInterface):
         fb.setupPost()
 
         return fb.font
+
     def convert(self, overwrite: bool = True, quality: Optional[str] = None) -> list[str]:
         """
         Convert the input font file to the output format using fontTools.
