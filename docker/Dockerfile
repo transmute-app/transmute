@@ -12,6 +12,7 @@ RUN npm run build
 FROM python:3.13-slim
 
 ARG BUILD_VERSION="dev"
+ARG PANDOC_VERSION="3.9"
 
 # Set working directory
 WORKDIR /app
@@ -37,10 +38,25 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     libcairo2 \
     librsvg2-bin \
-    pandoc \
+    tar \
     libreoffice-impress \
     libreoffice-common \
     && rm -rf /var/lib/apt/lists/*
+
+# Install upstream Pandoc to keep reader/writer support consistent across
+# local development and container builds.
+RUN ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" && \
+    case "$ARCH" in \
+      amd64) PANDOC_ARCH="amd64" ;; \
+      arm64) PANDOC_ARCH="arm64" ;; \
+      *) echo "Unsupported architecture for pandoc: $ARCH" >&2; exit 1 ;; \
+    esac && \
+    PANDOC_URL="https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-linux-${PANDOC_ARCH}.tar.gz" && \
+    wget -q "$PANDOC_URL" -O /tmp/pandoc.tar.gz && \
+    tar -xzf /tmp/pandoc.tar.gz -C /tmp && \
+    cp /tmp/pandoc-${PANDOC_VERSION}/bin/pandoc /usr/local/bin/pandoc && \
+    chmod +x /usr/local/bin/pandoc && \
+    rm -rf /tmp/pandoc.tar.gz /tmp/pandoc-${PANDOC_VERSION}
 
 
 # Install Draw.io
@@ -66,6 +82,9 @@ RUN apt-get update && \
 
 # Copy backend code
 COPY backend/ ./backend/
+
+# Remove tests from backend to reduce image size
+RUN rm -rf /app/backend/tests
 
 # Copy built frontend from builder stage
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
