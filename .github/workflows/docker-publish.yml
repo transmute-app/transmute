@@ -158,7 +158,7 @@ jobs:
           ref: ${{ inputs.version_tag != '' && format('refs/tags/{0}', inputs.version_tag) || github.ref }}
 
       - name: Download digests
-        uses: actions/download-artifact@484a0b528fb4d7bd804637ccb632e47a0e638317  # v8.0.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           path: /tmp/digests
           pattern: digests-*
