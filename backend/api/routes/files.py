@@ -24,15 +24,16 @@ TMP_DIR = settings.tmp_dir
 
 def build_zip_entry_name(file_metadata: dict, is_converted_file: bool) -> str:
     """Build a safe ZIP entry name, preserving converted output extensions."""
-    original_name = file_metadata.get("original_filename") or "download"
+    original_name = file_metadata.get("original_filename", "download")
+    original_extension = get_file_extension(original_name)
 
     if not is_converted_file:
         return sanitize_filename(original_name)
 
     output_extension = sanitize_extension(
-        file_metadata.get("extension") or Path(file_metadata.get("storage_path", "")).suffix
+        file_metadata.get("extension") or get_file_extension(file_metadata.get("storage_path", ""))
     )
-    base_name = Path(original_name).stem or original_name
+    base_name = original_name.removesuffix(f".{original_extension}") if original_extension else original_name
     converted_name = f"{base_name}.{output_extension}" if output_extension else base_name
     return sanitize_filename(converted_name)
 
