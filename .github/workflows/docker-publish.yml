@@ -283,7 +283,7 @@ jobs:
           TAG: ${{ inputs.version_tag != '' && steps.meta_release.outputs.version || steps.meta_push.outputs.version }}
           REPOSITORY: ${{ github.repository }}
         run: |
-          DIGEST=$(docker buildx imagetools inspect "ghcr.io/${REPOSITORY}:${TAG}" --format '{{.Manifest.Digest}}')
+          DIGEST=$(docker buildx imagetools inspect "ghcr.io/${REPOSITORY}:${TAG}" --format '{{.Digest}}')
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
       - name: Generate artifact attestation
