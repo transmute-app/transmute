@@ -17,6 +17,8 @@
 
 **Transmute** is a **free, open source, self-hosted file converter** built for privacy and flexibility. Convert **images, video, audio, documents, spreadsheets, subtitles, and fonts** entirely locally, with no file size limits and no third-party access to your files. Deploy in seconds with Docker.
 
+Full documentation on [our website](https://transmute.sh/docs/)!
+
 ## Screenshots
 | Converter / Home | Uploaded Files | Previously Converted | Settings |
 | --- | --- | --- | --- |
@@ -27,7 +29,7 @@ This application is currently in early beta. Want to support us or follow along?
 > [!NOTE]
 > **This project is human-led and maintainer-reviewed.**
 >
-> AI tools assist during development (autocomplete, some boilerplate, help with tests) but all code is intentionally written, reviewed, and validated by a human who understands and takes responsibility for the result. This is not an autonomously generated project, and fully AI-generated or agent-submitted contributions are not accepted. See the [contributing guide](https://github.com/transmute-app/transmute?tab=contributing-ov-file#no-autonomous-agents-or-ai-assistants) for more details
+> AI tools assist during development (autocomplete, some boilerplate, help with tests) but all code is intentionally written, reviewed, and validated by a human who understands and takes responsibility for the result. This is not an autonomously generated project, and fully AI-generated or agent-submitted contributions are not accepted. See the [contributing guide](https://github.com/transmute-app/transmute?tab=contributing-ov-file#no-autonomous-agents-or-unreviewed-ai-contributions) for more details
 
 ## Demo
 Want to see a video demo? Check out our [YouTube](https://www.youtube.com/watch?v=lod7Fze9oPY).
@@ -57,6 +59,9 @@ Want to see a video demo? Check out our [YouTube](https://www.youtube.com/watch?
 ```bash
 wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/docker-compose.yml" && docker compose up -d
 ```
+Then visit [localhost:3313](http://localhost:3313)
+
+Full "Getting Started" guide: https://transmute.sh/docs/getting-started/
 
 ## What Does Transmute Replace?
 *For the record, I love all of these services and use them all frequently. Transmute is not up to par with any of them yet. But it will be!*
