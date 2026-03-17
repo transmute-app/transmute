@@ -85,13 +85,10 @@ class PillowConverter(ConverterInterface):
         'jp2',
         'sgi',
         'pdf',
-        # Extended formats (all writable; psd/cur/xpm are read-only and excluded)
+        # Extended formats (all writable; psd/cur/xpm/dcx/fli/flc are read-only and excluded)
         'icns',
         'dds',
         'blp',
-        'dcx',
-        'fli',
-        'flc',
         'xbm',
         'msp',
         'qoi',
@@ -244,6 +241,10 @@ class PillowConverter(ConverterInterface):
                         img = img.convert('RGBA')
                     background.paste(img, mask=img.split()[-1])  # Use alpha channel as mask
                     img = background
+
+            # MSP and XBM only support 1-bit pixels
+            if output_fmt in ('msp', 'xbm') and img.mode != '1':
+                img = img.convert('1')
 
             # Set quality parameters
             save_kwargs = {}
