@@ -45,7 +45,6 @@ class PillowConverter(ConverterInterface):
         'tga',
         'jp2',
         'sgi',
-        # Extended formats
         'icns',
         'dds',
         'psd',  # read-only
@@ -85,7 +84,6 @@ class PillowConverter(ConverterInterface):
         'jp2',
         'sgi',
         'pdf',
-        # Extended formats (all writable; psd/cur/xpm/dcx/fli/flc are read-only and excluded)
         'icns',
         'dds',
         'blp',
