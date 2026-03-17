@@ -113,6 +113,12 @@ class FFmpegConverter(ConverterInterface):
         if input_is_audio and output_is_video:
             return False
         
+        # Animated image formats (apng, gif) contain no audio stream.
+        # Extracting audio from them is not possible.
+        _animated_image_only_formats = {'apng', 'gif'}
+        if self.input_type in _animated_image_only_formats and self.output_type in self.audio_formats:
+            return False
+        
         # All other conversions are valid:
         # - Video to Video (convert)
         # - Video to Audio (extract audio)
@@ -251,6 +257,10 @@ class FFmpegConverter(ConverterInterface):
         if format_type.lower() in cls.audio_formats:
             # For audio formats, compatible formats are other audio formats
             return cls.audio_formats - {format_type.lower()}
+        _animated_image_only_formats = {'apng', 'gif'}
+        if format_type.lower() in _animated_image_only_formats:
+            # Animated images have no audio stream — only video targets
+            return (cls.video_formats - {format_type.lower()})
         else:
             return cls.supported_output_formats - {format_type.lower()}
     
@@ -311,6 +321,14 @@ class FFmpegConverter(ConverterInterface):
                 cmd.extend(['-crf', '23', '-preset', 'medium'])
             elif quality == 'low':
                 cmd.extend(['-crf', '28', '-preset', 'fast'])
+
+        # Animated image formats encode every frame as a full image.  Without
+        # constraints a long or high-resolution video produces enormous output
+        # and takes extremely long.  Cap the frame rate and resolution so the
+        # conversion stays practical.
+        _animated_image_formats = {'apng', 'gif'}
+        if self.output_type in _animated_image_formats and self.input_type not in _animated_image_formats:
+            cmd.extend(['-vf', 'fps=10,scale=320:-1:flags=lanczos', '-plays', '0'])
 
         # 3GP/3G2 default to H.263 video (limited to specific small resolutions)
         # and amr_nb audio (requires libopencore-amrnb, not in standard FFmpeg builds).
