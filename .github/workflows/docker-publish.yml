@@ -266,9 +266,18 @@ jobs:
         env:
           METADATA_JSON: ${{ inputs.version_tag != '' && steps.meta_release.outputs.json || steps.meta_push.outputs.json }}
         run: |
-          docker buildx imagetools create \
-            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$METADATA_JSON") \
-            $(printf 'ghcr.io/${{ github.repository }}@sha256:%s ' *)
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt of 3"
+            if docker buildx imagetools create \
+              $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$METADATA_JSON") \
+              $(printf 'ghcr.io/${{ github.repository }}@sha256:%s ' *); then
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 10 seconds..."
+            sleep 10
+          done
+          echo "All 3 attempts failed"
+          exit 1
 
       - name: Inspect image
         env:
