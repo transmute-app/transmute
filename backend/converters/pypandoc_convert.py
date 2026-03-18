@@ -266,7 +266,14 @@ class PyPandocConverter(ConverterInterface):
                 return match.group(0)
             return label or ''
 
+        def replace_bare_image(match: re.Match[str]) -> str:
+            target = match.group(1)
+            if self._resource_exists(target, input_dir):
+                return match.group(0)
+            return ''
+
         content = re.sub(r'\[\[(?!URL:)([^\]\[]+?\.(?:png|jpe?g|gif|svg))\]\[([^\]]*)\]\]', replace_link, content, flags=re.IGNORECASE)
+        content = re.sub(r'\[\[(?!URL:)([^\]\[]+?\.(?:png|jpe?g|gif|svg))\]\]', replace_bare_image, content, flags=re.IGNORECASE)
         content = re.sub(r'\[\[URL:(https?://[^\]]+\.(?:png|jpe?g|gif|svg))\]\]', '', content, flags=re.IGNORECASE)
         return content
 

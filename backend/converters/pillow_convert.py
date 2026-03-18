@@ -223,6 +223,10 @@ class PillowConverter(ConverterInterface):
             # Handle transparency for formats that don't support alpha
             output_fmt = self.output_type.lower()
 
+            # Normalize mode 1 (binary) — most encoders need at least L
+            if img.mode == '1' and output_fmt not in ('pbm', 'msp', 'xbm'):
+                img = img.convert('L')
+
             # BLP is a game texture format — its encoder is extremely slow on
             # large images.  Cap at 512×512 (typical max texture size) and
             # convert to palette mode which BLP requires.
@@ -232,6 +236,15 @@ class PillowConverter(ConverterInterface):
                     img.thumbnail((max_blp, max_blp), Image.LANCZOS)
                 if img.mode != 'P':
                     img = img.quantize(colors=256, method=Image.Quantize.FASTOCTREE)
+
+            # Normalize mode P (palette) for formats that can't write it
+            if img.mode == 'P':
+                if output_fmt == 'pbm':
+                    img = img.convert('1')
+                elif output_fmt == 'pgm':
+                    img = img.convert('L')
+                elif output_fmt in ('dds', 'jp2', 'jxl', 'qoi'):
+                    img = img.convert('RGBA')
 
             _no_alpha_formats = {'jpg', 'jpeg', 'pdf', 'sgi', 'bmp', 'ppm', 'pcx', 'gif', 'tga',
                                     'dib', 'msp', 'xbm', 'fli', 'flc', 'dcx', 'eps', 'mpo',
@@ -249,6 +262,10 @@ class PillowConverter(ConverterInterface):
             # MSP and XBM only support 1-bit pixels
             if output_fmt in ('msp', 'xbm') and img.mode != '1':
                 img = img.convert('1')
+
+            # QOI only supports RGB and RGBA
+            if output_fmt == 'qoi' and img.mode not in ('RGB', 'RGBA'):
+                img = img.convert('RGB')
 
             # Set quality parameters
             save_kwargs = {}
