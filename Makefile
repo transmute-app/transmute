@@ -90,6 +90,8 @@ check: lint ## Run all checks (alias for lint)
 # Testing
 # ----------------------------------------------------------------------------
 
+test: test-backend test-frontend
+
 test-backend: ## Run Python backend tests with pytest
 	$(PYTHON) -m pytest backend --ignore=backend/tests/converters/test_all_conversions.py
 
