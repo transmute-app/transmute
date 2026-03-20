@@ -65,24 +65,18 @@ Full "Getting Started" guide: https://transmute.sh/docs/getting-started/
 
 ## What Does Transmute Replace?
 *For the record, I love all of these services and use them all frequently. Transmute is not up to par with any of them yet. But it will be!*
-| Service | Why Replace? |
-| ------- | --------------- |
-| [cloudconvert.com](https://cloudconvert.com/) |  File size limits, API is paid only, 3rd-party gets my files |
-| [freeconvert.com](https://www.freeconvert.com/) | File size limits, 3rd-party gets my files |
-| [convertio.co](https://convertio.co/) | File size limits, 3rd-party gets my files |
+| Service | No Size Limits | Private | Free API |
+| ------- | -------------- | ------- | -------- |
+| [CloudConvert.com](https://cloudconvert.com/) | ❌ | ❌ | ❌ |
+| [FreeConvert.com](https://www.freeconvert.com/) | ❌ | ❌ | ❌ |
+| [Convertio.co](https://convertio.co/) | ❌ | ❌ | ❌ |
+| [Vert.sh](https://vert.sh/) | ✅ | ✅ | ❌ |
+| [ConvertX](https://github.com/C4illin/ConvertX) | ✅ | ✅ | ❌ |
+| [Transmute](https://transmute.sh) | ✅ | ✅ | ✅ |
 
 ## Supported Formats
 
-| Category | Formats |
-| -------- | ------- |
-| Images | JPEG, PNG, WebP, AVIF, HEIC/HEIF, JXL, GIF, BMP, TIFF, SVG, ICO, PSD, and more |
-| Video | MP4, MKV, MOV, WebM, AVI, FLV, WMV, TS, 3GP, and more |
-| Audio | MP3, WAV, FLAC, AAC, M4A, OPUS, OGG, AIFF, WMA, and more |
-| Documents | Markdown, HTML, DOCX, PDF, EPUB, ODT, RST, LaTeX, RTF, PPTX, and more |
-| Data / Spreadsheets | CSV, XLSX, JSON, TOON, Parquet, YAML, TSV, XML, ODS, and more |
-| Subtitles | SRT, ASS, SSA, VTT, SUB |
-| Fonts | TTF, OTF, WOFF, WOFF2 |
-| Diagrams | DrawIO |
+Transmute supports conversion across a wide range of file types, including images, video, audio, documents, structured data and spreadsheets, subtitles, fonts, and diagrams. The full list of supported formats and conversion pairs is maintained at [transmute.sh/conversions](https://transmute.sh/conversions)
 
 ## Themes
 
@@ -98,7 +92,7 @@ When the app is running the API docs are available at http://TRANSMUTE_IP:3313/a
 
 ## Contributing
 
-Contributions are welcome! This project is human-driven - autonomous agents and AI assistants are not welcome contributors and such submissions will be rejected. See the [contributing guide](https://github.com/transmute-app/transmute?tab=contributing-ov-file#no-autonomous-agents-or-ai-assistants) for details.
+Contributions are welcome! See the [contributing guide](https://github.com/transmute-app/transmute?tab=contributing-ov-file) for details.
 
 ### Our Awesome Contributors
 
