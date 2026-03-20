@@ -15,7 +15,7 @@
 ![GitHub repo size](https://img.shields.io/github/repo-size/transmute-app/transmute?logo=github&logoColor=white&color=gray&cacheSeconds=14400)
 
 
-**Transmute** is a **free, open source, self-hosted file converter** built for privacy and flexibility. Convert **images, video, audio, documents, spreadsheets, subtitles, and fonts** entirely locally, with no file size limits and no third-party access to your files. Deploy in seconds with Docker.
+**Transmute** is a free, open source, self-hosted file converter built for privacy and automation. Convert images, video, audio, documents, spreadsheets, subtitles, and fonts entirely locally, with no file size limits and no third-party access to your files. Deploy in seconds with Docker.
 
 Full documentation on [our website](https://transmute.sh/docs/)!
 
