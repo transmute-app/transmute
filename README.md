@@ -99,3 +99,11 @@ Contributions are welcome! See the [contributing guide](https://github.com/trans
 <a href="https://github.com/transmute-app/transmute/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=transmute-app/transmute" alt="Image with all contributors"/>
 </a>
+
+## Star History
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=transmute-app/transmute&type=Date&theme=dark" />
+  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=transmute-app/transmute&type=Date" />
+  <img alt="Star History Chart" src="https://api.star-history.com/image?repos=transmute-app/transmute&type=Date" />
+</picture>
