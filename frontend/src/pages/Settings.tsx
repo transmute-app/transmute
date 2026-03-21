@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTheme, type ThemeName } from '../ThemeContext'
 import { useAuth } from '../AuthContext'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import FormatDropdown from '../components/FormatDropdown'
 import { authFetch as fetch } from '../utils/api'
 
 interface Theme {
@@ -488,15 +489,13 @@ function Settings() {
                       <tr key={d.input_format} className="border-t border-surface-dark">
                         <td className="px-4 py-2.5 text-text font-mono">{d.input_format}</td>
                         <td className="px-4 py-2.5">
-                          <select
+                          <FormatDropdown
                             value={d.output_format}
-                            onChange={e => handleUpdateDefaultFormat(d.input_format, e.target.value)}
-                            className="bg-surface-dark text-text border border-surface-light rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                          >
-                            {(conversionMap[d.input_format] || [d.output_format]).map(fmt => (
-                              <option key={fmt} value={fmt}>{fmt}</option>
-                            ))}
-                          </select>
+                            formats={conversionMap[d.input_format] || [d.output_format]}
+                            onChange={(format) => handleUpdateDefaultFormat(d.input_format, format)}
+                            title={`${d.input_format} -> ${d.output_format}`}
+                            triggerClassName="w-full max-w-[12rem] border border-surface-light bg-surface-dark px-3 py-1.5 text-text"
+                          />
                         </td>
                         <td className="px-2 py-2.5 text-center">
                           <button
@@ -517,31 +516,27 @@ function Settings() {
             )}
 
             {availableInputFormats.length > 0 ? (
-              <div className="flex items-center gap-3">
-                <select
+              <div className="flex flex-wrap items-center gap-3">
+                <FormatDropdown
                   value={newInputFormat}
-                  onChange={e => { setNewInputFormat(e.target.value); setNewOutputFormat('') }}
-                  className="bg-surface-dark text-text border border-surface-light rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 min-w-[140px]"
-                >
-                  <option value="">Input format...</option>
-                  {availableInputFormats.map(f => (
-                    <option key={f} value={f}>{f}</option>
-                  ))}
-                </select>
+                  formats={availableInputFormats}
+                  onChange={(format) => { setNewInputFormat(format); setNewOutputFormat('') }}
+                  placeholder="Input format..."
+                  title={newInputFormat || 'Select input format'}
+                  triggerClassName="min-w-[10rem] border border-surface-light bg-surface-dark px-3 py-2 text-text"
+                />
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
-                <select
+                <FormatDropdown
                   value={newOutputFormat}
-                  onChange={e => setNewOutputFormat(e.target.value)}
+                  formats={newOutputOptions}
+                  onChange={setNewOutputFormat}
+                  placeholder="Output format..."
+                  title={newOutputFormat || 'Select output format'}
                   disabled={!newInputFormat}
-                  className="bg-surface-dark text-text border border-surface-light rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 min-w-[140px] disabled:opacity-50"
-                >
-                  <option value="">Output format...</option>
-                  {newOutputOptions.map(f => (
-                    <option key={f} value={f}>{f}</option>
-                  ))}
-                </select>
+                  triggerClassName="min-w-[10rem] border border-surface-light bg-surface-dark px-3 py-2 text-text"
+                />
                 <button
                   onClick={handleAddDefaultFormat}
                   disabled={!newInputFormat || !newOutputFormat}

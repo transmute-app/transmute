@@ -7,9 +7,20 @@ interface FormatDropdownProps {
   formats: string[]
   onChange: (format: string) => void
   title?: string
+  placeholder?: string
+  disabled?: boolean
+  triggerClassName?: string
 }
 
-function FormatDropdown({ value, formats, onChange, title }: FormatDropdownProps) {
+function FormatDropdown({
+  value,
+  formats,
+  onChange,
+  title,
+  placeholder = 'Select...',
+  disabled = false,
+  triggerClassName = '',
+}: FormatDropdownProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -41,6 +52,7 @@ function FormatDropdown({ value, formats, onChange, title }: FormatDropdownProps
     const dropUp = spaceBelow < 220
     const panel = panelRef.current
     panel.style.left = `${left}px`
+    panel.style.width = `${Math.max(rect.width, 160)}px`
     if (dropUp) {
       panel.style.top = ''
       panel.style.bottom = `${window.innerHeight - top + 4}px`
@@ -135,10 +147,12 @@ function FormatDropdown({ value, formats, onChange, title }: FormatDropdownProps
     setSearch('')
   }
 
+  const displayValue = value || placeholder
+
   const panel = open && createPortal(
     <div
       ref={panelRef}
-      className="fixed z-[9999] w-[160px] bg-surface-light border border-surface-dark rounded-lg shadow-xl overflow-hidden"
+      className="fixed z-[9999] bg-surface-light border border-surface-dark rounded-lg shadow-xl overflow-hidden"
       style={{
         opacity: positioned ? 1 : 0,
         pointerEvents: positioned ? 'auto' : 'none',
@@ -192,11 +206,14 @@ function FormatDropdown({ value, formats, onChange, title }: FormatDropdownProps
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => setOpen(prev => !prev)}
-        className="flex items-center gap-1.5 text-xs font-mono uppercase bg-primary/20 px-2 py-0.5 rounded text-primary hover:bg-primary/30 transition duration-200 cursor-pointer"
+        onClick={() => {
+          if (!disabled) setOpen(prev => !prev)
+        }}
+        disabled={disabled}
+        className={`flex items-center justify-between gap-1.5 text-xs font-mono uppercase bg-primary/20 px-2 py-0.5 rounded text-primary hover:bg-primary/30 transition duration-200 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${triggerClassName}`}
         title={title}
       >
-        {value}
+        <span className={value ? '' : 'text-text-muted'}>{displayValue}</span>
         <FaChevronDown className={`text-[0.5rem] transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
       {panel}
