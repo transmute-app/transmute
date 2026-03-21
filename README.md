@@ -32,7 +32,7 @@ This application is currently in early beta. Want to support us or follow along?
 > AI tools assist during development (autocomplete, some boilerplate, help with tests) but all code is intentionally written, reviewed, and validated by a human who understands and takes responsibility for the result. This is not an autonomously generated project, and fully AI-generated or agent-submitted contributions are not accepted. See the [contributing guide](https://github.com/transmute-app/transmute?tab=contributing-ov-file#no-autonomous-agents-or-unreviewed-ai-contributions) for more details
 
 ## Demo
-Want to see a video demo? Check out our [YouTube](https://www.youtube.com/watch?v=lod7Fze9oPY).
+Want to see a video demo? Check out our [YouTube](https://www.youtube.com/watch?v=Gmh7gm2z6mk).
 
 ## Features
 
@@ -43,13 +43,6 @@ Want to see a video demo? Check out our [YouTube](https://www.youtube.com/watch?
 - **Docker ready**: Deploy with a single command, no complex setup required
 - **REST API**: Automate and integrate file conversions via the built-in OpenAPI-documented API
 - **Multiple themes**: Seven built-in light and dark UI themes
-
-<!-- PRE_GIF_MARKER 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/demos/demo.gif" alt="GIF showind the Transmute workflow" width=75%>
-  <p><i>Fun fact, this gif was created by converting a screen recording using Transmute!</i></p>
-</div>
- POST_GIF_MARKER -->
 
 > [!WARNING]
 > **Think carefully before exposing Transmute to the public internet / WAN.**
