@@ -1,7 +1,7 @@
 Pillow==12.1.1
 PyJWT==2.12.0
 PyMuPDF==1.27.2
-authlib==1.6.0
+authlib==1.6.9
 bcrypt==5.0.0
 brotli==1.2.0
 cairosvg==2.9.0
