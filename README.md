@@ -37,7 +37,7 @@ Want to see a video demo? Check out our [YouTube](https://www.youtube.com/watch?
 ## Features
 
 - **Privacy first**: Files are processed on your own server and never sent to third parties
-- **OiDC / SSO support**: Login and account creation via OIDC providers such as Authentik and Authelia, see the [docs](https://transmute.sh/docs/oidc/)
+- **OiDC / SSO support**: Login and account creation via OIDC providers such as Authentik, see the [docs](https://transmute.sh/docs/oidc/)
 - **No file size limits**: Convert files as large as your storage allows
 - **100+ formats supported**: Images, video, audio, documents, spreadsheets, subtitles, and fonts
 - **Built-in authentication**: User accounts, role-based access, and API key support out of the box
