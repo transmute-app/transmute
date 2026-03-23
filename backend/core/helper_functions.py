@@ -168,7 +168,7 @@ def sanitize_extension(extension: str) -> str:
     """
     # Keep alphanumerics plus _, -, and ., normalize case.
     cleaned = extension.strip().lstrip(".")
-    return "".join(ch for ch in cleaned if ch.isalnum() or ch in {"_", "-", "."}).lower()
+    return "".join(ch for ch in cleaned if ch.isalnum() or ch in {"_", "-", ".", "/"}).lower()
 
 def get_file_extension(filename: str) -> str:
     """

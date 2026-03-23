@@ -27,3 +27,11 @@ media_type_aliases = {
     'txz': 'tar.xz',
     'tzst': 'tar.zst',
 }
+
+media_type_extensions = {
+    'pdf/a': 'pdf',
+    'pdf/x': 'pdf',
+    'pdf/e': 'pdf',
+    'pdf/ua': 'pdf',
+    'pdf/vt': 'pdf',
+}
