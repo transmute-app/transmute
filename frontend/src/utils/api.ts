@@ -18,6 +18,13 @@ function getErrorDetail(payload: unknown, fallback: string) {
   if (payload && typeof payload === 'object') {
     const maybeDetail = (payload as { detail?: unknown }).detail
     if (typeof maybeDetail === 'string' && maybeDetail.trim()) return maybeDetail
+
+    if (typeof maybeDetail === 'object' && Array.isArray(maybeDetail)) {
+      for(const item of maybeDetail) {
+        const maybePydanticError = (item as {msg?: unknown, type?:unknown, loc?:unknown}).msg
+        if(typeof maybePydanticError === 'string' && maybePydanticError.trim()) return maybePydanticError
+      }
+    }
   }
   return fallback
 }
