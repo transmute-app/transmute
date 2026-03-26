@@ -1,0 +1,9 @@
+id,name,category,price,stock
+1,Laptop,Electronics,999.99,15
+2,Mouse,Electronics,29.99,50
+3,Keyboard,Electronics,79.99,35
+4,Monitor,Electronics,299.99,20
+5,Desk Chair,Furniture,199.99,12
+6,Standing Desk,Furniture,449.99,8
+7,Coffee Mug,Kitchen,12.99,100
+8,Water Bottle,Kitchen,24.99,75

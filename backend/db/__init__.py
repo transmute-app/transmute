@@ -5,6 +5,7 @@ from .settings_db import SettingsDB, Theme
 from .default_formats_db import DefaultFormatsDB
 from .user_db import UserDB, UserRole
 from .api_key_db import ApiKeyDB
+from .user_identity_db import UserIdentityDB
 
 __all__ = [
 	"FileDB",
@@ -16,4 +17,5 @@ __all__ = [
 	"UserDB",
 	"UserRole",
 	"ApiKeyDB",
+	"UserIdentityDB",
 ]

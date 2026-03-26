@@ -123,10 +123,7 @@ function Account() {
     <div className="min-h-full bg-gradient-to-br from-surface-dark to-surface-light p-8 pb-12">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6 min-h-[4rem]">
-          <div>
-            <h1 className="text-3xl font-bold text-primary">My Account</h1>
-            <p className="mt-1 text-text-muted text-sm">Update your username, contact fields, and password. Your role stays server-controlled.</p>
-          </div>
+          <h1 className="text-3xl font-bold text-primary">My Account</h1>
           <div className="rounded-lg border border-primary/20 bg-primary/10 px-4 py-2 text-sm text-primary-light">
             Signed in as <span className="font-semibold">{user.role}</span>
           </div>

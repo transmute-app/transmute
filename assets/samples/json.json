@@ -1,0 +1,30 @@
+[
+  {
+    "employee_id": 101,
+    "name": "Alice Johnson",
+    "department": "Engineering",
+    "salary": 95000,
+    "hire_date": "2020-03-15"
+  },
+  {
+    "employee_id": 102,
+    "name": "Bob Smith",
+    "department": "Marketing",
+    "salary": 75000,
+    "hire_date": "2021-06-01"
+  },
+  {
+    "employee_id": 103,
+    "name": "Carol Williams",
+    "department": "Engineering",
+    "salary": 105000,
+    "hire_date": "2019-11-20"
+  },
+  {
+    "employee_id": 104,
+    "name": "David Brown",
+    "department": "Sales",
+    "salary": 82000,
+    "hire_date": "2022-01-10"
+  }
+]

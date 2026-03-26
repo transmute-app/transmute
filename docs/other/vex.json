@@ -1,0 +1,27 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://github.com/transmute-app/transmute/blob/main/docs/other/vex.json",
+  "author": "transmute-app",
+  "timestamp": "2026-03-24T00:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": { 
+        "@id": "CVE-2025-69720" 
+      },
+      "products": [
+        { 
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            { 
+              "@id": "pkg:deb/debian/ncurses@6.5%2B20250216-2?os_distro=trixie\u0026os_name=debian\u0026os_version=13" 
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Transmute does not use progs/infocmp.c, function analyze_string(), which is the vulnerable code path. The vulnerable code is not in the execute path of Transmute, and cannot be reached by an attacker."
+    }
+  ]
+}

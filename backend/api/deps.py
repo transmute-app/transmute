@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
 
 from core.auth import decode_access_token, verify_password
-from db import FileDB, ConversionDB, ConversionRelationsDB, SettingsDB, DefaultFormatsDB, UserDB, ApiKeyDB
+from db import FileDB, ConversionDB, ConversionRelationsDB, SettingsDB, DefaultFormatsDB, UserDB, ApiKeyDB, UserIdentityDB
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/token")
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/users/token", auto_error=False)
@@ -70,6 +70,16 @@ def _api_key_db() -> ApiKeyDB:
 def get_api_key_db() -> ApiKeyDB:
     """Dependency that provides a shared ApiKeyDB instance."""
     return _api_key_db()
+
+
+@lru_cache(maxsize=1)
+def _user_identity_db() -> UserIdentityDB:
+    return UserIdentityDB()
+
+
+def get_user_identity_db() -> UserIdentityDB:
+    """Dependency that provides a shared UserIdentityDB instance."""
+    return _user_identity_db()
 
 
 def _resolve_user_from_api_key(raw_key: str, api_key_db: ApiKeyDB, user_db: UserDB) -> dict | None:

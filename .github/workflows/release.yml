@@ -45,7 +45,6 @@ jobs:
       version_tag: ${{ needs.bump-version.outputs.new_version }}
     secrets: 
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PUBLIC_RO_TOKEN: ${{ secrets.DOCKER_PUBLIC_RO_TOKEN }}
       DOCKER_PUBLIC_RW_TOKEN: ${{ secrets.DOCKER_PUBLIC_RW_TOKEN }}
     permissions:
       contents: read

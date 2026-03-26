@@ -40,7 +40,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 )
 def get_bootstrap_status(db: UserDB = Depends(get_user_db)):
     """Return whether the application still needs its first admin account."""
-    user_count = db.count_users()
+    user_count = db.count_non_guest_users()
     return {"requires_setup": user_count == 0, "user_count": user_count}
 
 
@@ -53,6 +53,7 @@ def _serialize_user(user: dict) -> dict:
         "full_name": user["full_name"],
         "role": user["role"],
         "disabled": user["disabled"],
+        "is_guest": user.get("is_guest", False),
     }
 
 
@@ -119,15 +120,15 @@ def create_user(
     if db.username_exists(payload.username):
         raise HTTPException(status_code=409, detail=f"Username '{payload.username}' already exists")
 
-    has_existing_users = db.has_users()
+    has_existing_users = db.has_non_guest_users()
     if has_existing_users:
         if current_user is None:
             raise HTTPException(status_code=401, detail="Authentication is required to create additional users")
         if current_user["role"] != "admin":
             raise HTTPException(status_code=403, detail="Admin privileges are required")
 
-    role = "admin" if not has_existing_users else payload.role
-    disabled = False if not has_existing_users else payload.disabled
+    role = "admin" if not db.has_non_guest_users() else payload.role
+    disabled = False if not db.has_non_guest_users() else payload.disabled
 
     try:
         created_user = db.insert_user({

@@ -132,3 +132,19 @@
     background-color: rgb(var(--color-surface-dark));
   }
 }
+
+/* Thin scrollbar for custom dropdowns */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--color-text-muted) / 0.3) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-text-muted) / 0.3);
+  border-radius: 2px;
+}

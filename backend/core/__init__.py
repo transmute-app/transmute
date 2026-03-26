@@ -1,6 +1,6 @@
 from .settings import get_settings
 from .logging import build_logging_config, configure_logging
-from .media_types import media_type_aliases
+from .media_types import media_type_aliases, media_type_extensions
 
 from .helper_functions import (
     assign_orphaned_rows_to_admin,
@@ -13,6 +13,7 @@ from .helper_functions import (
     validate_safe_path,
     validate_hexadecimal_filename,
     migrate_table_columns,
+    get_file_extension
 )
 
 __all__ = [
@@ -26,8 +27,10 @@ __all__ = [
     "sanitize_filename",
     "delete_file_and_metadata", 
     "media_type_aliases",
+    "media_type_extensions",
     "validate_sql_identifier",
     "validate_safe_path",
     "validate_hexadecimal_filename",
     "migrate_table_columns",
+    "get_file_extension",
 ]

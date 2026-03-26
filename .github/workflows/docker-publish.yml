@@ -10,8 +10,6 @@ on:
     secrets:
       DOCKER_USERNAME:
         required: true
-      DOCKER_PUBLIC_RO_TOKEN:
-        required: true
       DOCKER_PUBLIC_RW_TOKEN:
         required: true
   push:
@@ -24,7 +22,7 @@ on:
       - 'docker/**'
       - 'frontend/**'
       - 'backend/**'
-      - 'docker/**'
+      - 'docs/other/vex.json'
       - 'requirements.txt'
 
 env:
@@ -36,25 +34,118 @@ concurrency:
   cancel-in-progress: ${{ inputs.version_tag == '' && !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
-  security-scan:
-    name: Security Scan
-    uses: ./.github/workflows/scout-scan.yml
-    secrets:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PUBLIC_RO_TOKEN: ${{ secrets.DOCKER_PUBLIC_RO_TOKEN }}
+  build:
+    name: Build (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
-      security-events: write
+      packages: write
 
-  build-and-push:
-    name: Build and Push
-    needs: security-scan
+    steps:
+      - name: Prepare platform pair
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.version_tag != '' && format('refs/tags/{0}', inputs.version_tag) || github.ref }}
+
+      - name: Resolve build version
+        id: release_context
+        env:
+          INPUT_VERSION_TAG: ${{ inputs.version_tag }}
+        shell: bash
+        run: |
+          if [[ -n "$INPUT_VERSION_TAG" ]]; then
+            BUILD_VERSION="$INPUT_VERSION_TAG"
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            BUILD_VERSION="${GITHUB_REF_NAME}"
+          else
+            BUILD_VERSION="${GITHUB_SHA::7}"
+          fi
+          echo "build_version=$BUILD_VERSION" >> "$GITHUB_OUTPUT"
+          echo "build_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051  # v5.10.0
+        with:
+          images: ghcr.io/${{ github.repository }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3.12.0
+        with:
+          platforms: ${{ matrix.platform }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3.7.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PUBLIC_RW_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8  # v6.19.2
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: ${{ matrix.platform }}
+          build-args: |
+            BUILD_VERSION=${{ steps.release_context.outputs.build_version }}
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ steps.release_context.outputs.build_date }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,oci-mediatypes=true,push=true
+          cache-from: type=gha,scope=${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+          provenance: false
+          sbom: false
+
+      - name: Export digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p /tmp/digests
+          digest="$DIGEST"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: Merge and Push
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
       id-token: write
       attestations: write
+      security-events: write
 
     steps:
       - name: Checkout Repository
@@ -63,6 +154,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
           ref: ${{ inputs.version_tag != '' && format('refs/tags/{0}', inputs.version_tag) || github.ref }}
+
+      - name: Download digests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
 
       - name: Resolve release context
         id: release_context
@@ -92,9 +190,6 @@ jobs:
           echo "v_major_minor=v$MAJOR.$MINOR" >> "$GITHUB_OUTPUT"
           echo "v_major=v$MAJOR" >> "$GITHUB_OUTPUT"
           echo "build_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3.12.0
 
       - name: Determine if latest version tag
         id: check_latest
@@ -151,6 +246,9 @@ jobs:
             type=raw,value=${{ steps.release_context.outputs.v_major }}
             type=raw,value=latest,enable=${{ steps.check_latest.outputs.is_latest == 'true' }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3.12.0
+
       - name: Log in to Docker Hub
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3.7.0
         with:
@@ -164,27 +262,71 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
-        id: build
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8  # v6.19.2
-        with:
-          context: .
-          file: docker/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          build-args: |
-            BUILD_VERSION=${{ steps.release_context.outputs.build_version }}
-            VCS_REF=${{ github.sha }}
-            BUILD_DATE=${{ steps.release_context.outputs.build_date }}
-          tags: ${{ inputs.version_tag != '' && steps.meta_release.outputs.tags || steps.meta_push.outputs.tags }}
-          labels: ${{ inputs.version_tag != '' && steps.meta_release.outputs.labels || steps.meta_push.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: true
-          sbom: true
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        env:
+          METADATA_JSON: ${{ inputs.version_tag != '' && steps.meta_release.outputs.json || steps.meta_push.outputs.json }}
+        run: |
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt of 3"
+            if docker buildx imagetools create \
+              $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$METADATA_JSON") \
+              $(printf 'ghcr.io/${{ github.repository }}@sha256:%s ' *); then
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 10 seconds..."
+            sleep 10
+          done
+          echo "All 3 attempts failed"
+          exit 1
+
+      - name: Inspect image
+        env:
+          TAG: ${{ inputs.version_tag != '' && steps.meta_release.outputs.version || steps.meta_push.outputs.version }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          docker buildx imagetools inspect "ghcr.io/${REPOSITORY}:${TAG}"
+
+      - name: Get manifest digest
+        id: manifest
+        env:
+          TAG: ${{ inputs.version_tag != '' && steps.meta_release.outputs.version || steps.meta_push.outputs.version }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          DIGEST=$(docker buildx imagetools inspect "ghcr.io/${REPOSITORY}:${TAG}" --format '{{println .Manifest.Digest}}')
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f  # v3.2.0
         with:
           subject-name: ghcr.io/${{ github.repository }}
-          subject-digest: ${{ steps.build.outputs.digest }}
+          subject-digest: ${{ steps.manifest.outputs.digest }}
+
+      - name: Attach VEX attestation
+        id: scout-vex-attach
+        uses: docker/scout-action@f8c776824083494ab0d56b8105ba2ca85c86e4de  # v1.18.2
+        with:
+          command: attestation-add
+          image: ghcr.io/${{ github.repository }}:${{ inputs.version_tag != '' && steps.meta_release.outputs.version || steps.meta_push.outputs.version }}
+          file: docs/other/vex.json
+          predicate-type: https://openvex.dev/ns/v0.2.0
+      
+      - name: Run Docker Scout Scan
+        id: scout-scan
+        uses: docker/scout-action@f8c776824083494ab0d56b8105ba2ca85c86e4de  # v1.18.2
+        with:
+          command: cves
+          image: ghcr.io/${{ github.repository }}:${{ inputs.version_tag != '' && steps.meta_release.outputs.version || steps.meta_push.outputs.version }}
+          sarif-file: ${{ runner.temp }}/scout-critical-high-medium.sarif
+          write-comment: false
+          only-severities: critical,high,medium
+          vex-location: docs/other/vex.json
+          vex-author: transmute-app
+          only-vex-affected: true
+
+      - name: Upload Scout results to GitHub Advanced Security
+        uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6  # v4.32.3
+        if: steps.scout-scan.outcome != 'skipped' && steps.scout-scan.outcome != 'cancelled'
+        with:
+          sarif_file: ${{ runner.temp }}/scout-critical-high-medium.sarif
+          category: docker-scout-critical-high-medium

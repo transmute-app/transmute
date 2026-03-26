@@ -16,6 +16,11 @@ class PyMuPDFConverter(ConverterInterface):
 
     supported_input_formats: set = {
         'pdf',
+        'pdf/a',
+        'pdf/x',
+        'pdf/e',
+        'pdf/ua',
+        'pdf/vt',
     }
     supported_output_formats: set = {
         'txt',

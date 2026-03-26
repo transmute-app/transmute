@@ -9,16 +9,19 @@ First off, thank you for your interest in contributing ❤️
 
 This project is intended to be a reliable, self-hosted tool, and contributions of all kinds are welcome: code, documentation, bug reports, ideas, and feedback.
 
+Want to instead contribute to our [website](https://transmute.sh)? Check out [transmute-app/transmute-app.github.io](https://github.com/transmute-app/transmute-app.github.io).
+
 > [!CAUTION]
+>
 > ## No Autonomous Agents or Unreviewed AI Contributions
 >
-> This repository does not accept contributions submitted by autonomous agents or by AI systems acting without direct human authorship, review, and accountability.
+> This repository does not accept contributions submitted by autonomous agents or AI systems without direct human authorship, review, and accountability.
 >
-> Pull requests must come from a human contributor who has meaningfully reviewed, understood, and validated the proposed changes. Contributors are responsible for the code they submit.
+> All pull requests must come from a human contributor who understands, validates, and takes responsibility for the proposed changes.
 >
-> AI-assisted development is not prohibited, but unreviewed, blindly accepted, or fully agent-generated contributions are not acceptable. If you use AI tooling, you are expected to verify correctness, understand the implementation, and stand behind the final submission.
+> AI-assisted development is allowed, but blindly accepted or fully agent-generated contributions are not. If you use AI tooling, you are expected to verify correctness, understand the implementation, and stand behind the final submission.
 >
-> Maintainers may reject contributions without review if they appear to be primarily autonomous, low-effort AI output, or otherwise lack clear human ownership. (i.e. direct commits from OpenClaw, or other AI assistants)
+> Maintainers may reject contributions without review if they appear to be primarily autonomous, low-effort AI output, or otherwise lack clear human ownership. (25k line PRs, etc.)
 
 ---
 

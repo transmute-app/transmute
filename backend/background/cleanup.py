@@ -3,7 +3,7 @@ import calendar
 import threading
 import time
 
-from db import FileDB, ConversionDB, ConversionRelationsDB, SettingsDB
+from db import FileDB, ConversionDB, ConversionRelationsDB, SettingsDB, DefaultFormatsDB, UserDB, ApiKeyDB
 from core import delete_file_and_metadata
 
 
@@ -37,6 +37,34 @@ def file_cleanup_logic(file_db: FileDB, conversion_relations_db: ConversionRelat
                     # Additional cleanup logic for conversion relations
                     conversion_relations_db.delete_relation_by_converted(file['id'])
 
+def guest_cleanup_logic() -> None:
+    """Delete expired guest users and all their associated data."""
+    user_db = UserDB()
+    expired_guests = user_db.list_expired_guests()
+    if not expired_guests:
+        return
+
+    file_db = FileDB()
+    conversion_db = ConversionDB()
+    conversion_relations_db = ConversionRelationsDB()
+    settings_db = SettingsDB()
+    default_formats_db = DefaultFormatsDB()
+    api_key_db = ApiKeyDB()
+
+    for guest in expired_guests:
+        guest_uuid = guest["uuid"]
+        api_key_db.delete_all_keys_for_user(guest_uuid)
+        for f in file_db.list_files(user_id=guest_uuid):
+            delete_file_and_metadata(f["id"], file_db, raise_if_not_found=False)
+        for c in conversion_db.list_files(user_id=guest_uuid):
+            delete_file_and_metadata(c["id"], conversion_db, raise_if_not_found=False)
+            conversion_relations_db.delete_relation_by_converted(c["id"])
+        settings_db.delete_settings(guest_uuid)
+        default_formats_db.delete_all(guest_uuid)
+        user_db.delete_user(guest_uuid)
+        logger.info("Deleted expired guest user %s", guest_uuid)
+
+
 def file_cleanup_task() -> None:
     """Periodically run cleanup logic for uploaded and converted files.
 
@@ -48,6 +76,7 @@ def file_cleanup_task() -> None:
         try:
             file_cleanup_logic(FileDB())
             file_cleanup_logic(ConversionDB(), ConversionRelationsDB())
+            guest_cleanup_logic()
         except Exception:
             logger.exception("Cleanup error")
         time.sleep(60) # Sleep for 1 minute

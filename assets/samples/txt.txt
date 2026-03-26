@@ -1,0 +1,8 @@
+Here is a sample text file.
+
+It doesn't really support any styling, bullets, etc.
+
+Benefits:
+- Lightweight I guess
+- Simple to write in haha
+- Here is some other benefit

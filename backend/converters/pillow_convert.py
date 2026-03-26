@@ -22,6 +22,9 @@ try:
 except (ImportError, OSError):
     _CAIROSVG_AVAILABLE = False
 
+import shutil
+_GHOSTSCRIPT_AVAILABLE = shutil.which('gs') is not None or shutil.which('gswin32c') is not None
+
 
 class PillowConverter(ConverterInterface):
     supported_input_formats: set = {
@@ -30,7 +33,6 @@ class PillowConverter(ConverterInterface):
         'gif',
         'bmp',
         'tiff',
-        'tif',
         'webp',
         'ico',
         'ppm',
@@ -43,7 +45,6 @@ class PillowConverter(ConverterInterface):
         'tga',
         'jp2',
         'sgi',
-        # Extended formats
         'icns',
         'dds',
         'psd',  # read-only
@@ -59,6 +60,11 @@ class PillowConverter(ConverterInterface):
         'dib',
         'avif',
         'jxl',
+        'eps',
+        'apng',
+        'mpo',
+        'pnm',
+        'pfm',
     }
     supported_output_formats: set = {
         'jpeg',
@@ -66,7 +72,6 @@ class PillowConverter(ConverterInterface):
         'gif',
         'bmp',
         'tiff',
-        'tif',
         'webp',
         'ico',
         'ppm',
@@ -79,19 +84,20 @@ class PillowConverter(ConverterInterface):
         'jp2',
         'sgi',
         'pdf',
-        # Extended formats (all writable; psd/cur/xpm are read-only and excluded)
         'icns',
         'dds',
         'blp',
-        'dcx',
-        'fli',
-        'flc',
         'xbm',
         'msp',
         'qoi',
         'dib',
         'avif',
         'jxl',
+        'eps',
+        'apng',
+        'mpo',
+        'pnm',
+        'pfm',
     }
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
         """
@@ -142,6 +148,12 @@ class PillowConverter(ConverterInterface):
         # SVG input requires cairosvg
         if format_type.lower() == 'svg' and not _CAIROSVG_AVAILABLE:
             return set()
+        # EPS input requires Ghostscript
+        if format_type.lower() == 'eps' and not _GHOSTSCRIPT_AVAILABLE:
+            return set()
+        # EPS output requires Ghostscript (for reading back)
+        if not _GHOSTSCRIPT_AVAILABLE:
+            base_formats.discard('eps')
         return base_formats
 
     
@@ -192,19 +204,51 @@ class PillowConverter(ConverterInterface):
                 # Convert SVG to PNG with transparency using cairosvg
                 png_data = cairosvg.svg2png(url=self.input_file)
                 img = Image.open(BytesIO(png_data))
+            elif input_fmt == 'eps':
+                if not _GHOSTSCRIPT_AVAILABLE:
+                    raise RuntimeError(
+                        "Ghostscript is required for EPS conversion but could not be found. "
+                        "Install Ghostscript (e.g. `brew install ghostscript` or `apt-get install ghostscript`)."
+                    )
+                img = Image.open(self.input_file)
             else:
                 # Open the image
                 img = Image.open(self.input_file)
+
+            # PSD files can expose broken sequence state to some encoders
+            # (notably AVIF). Saving a detached raster copy avoids frame seeks.
+            if input_fmt == 'psd':
+                img = img.copy()
             
             # Handle transparency for formats that don't support alpha
             output_fmt = self.output_type.lower()
 
-            # BLP only supports P (palette) mode
-            if output_fmt == 'blp' and img.mode != 'P':
-                img = img.convert('P')
+            # Normalize mode 1 (binary) — most encoders need at least L
+            if img.mode == '1' and output_fmt not in ('pbm', 'msp', 'xbm'):
+                img = img.convert('L')
+
+            # BLP is a game texture format — its encoder is extremely slow on
+            # large images.  Cap at 512×512 (typical max texture size) and
+            # convert to palette mode which BLP requires.
+            if output_fmt == 'blp':
+                max_blp = 512
+                if img.width > max_blp or img.height > max_blp:
+                    img.thumbnail((max_blp, max_blp), Image.LANCZOS)
+                if img.mode != 'P':
+                    img = img.quantize(colors=256, method=Image.Quantize.FASTOCTREE)
+
+            # Normalize mode P (palette) for formats that can't write it
+            if img.mode == 'P':
+                if output_fmt == 'pbm':
+                    img = img.convert('1')
+                elif output_fmt == 'pgm':
+                    img = img.convert('L')
+                elif output_fmt in ('dds', 'jp2', 'jxl', 'qoi'):
+                    img = img.convert('RGBA')
 
             _no_alpha_formats = {'jpg', 'jpeg', 'pdf', 'sgi', 'bmp', 'ppm', 'pcx', 'gif', 'tga',
-                                    'dib', 'msp', 'xbm', 'fli', 'flc', 'dcx'}
+                                    'dib', 'msp', 'xbm', 'fli', 'flc', 'dcx', 'eps', 'mpo',
+                                    'pnm', 'pfm'}
             if output_fmt in _no_alpha_formats and img.mode in ['RGBA', 'LA', 'P']:
                 if img.mode == 'P':
                     img = img.convert('RGBA')
@@ -214,6 +258,14 @@ class PillowConverter(ConverterInterface):
                         img = img.convert('RGBA')
                     background.paste(img, mask=img.split()[-1])  # Use alpha channel as mask
                     img = background
+
+            # MSP and XBM only support 1-bit pixels
+            if output_fmt in ('msp', 'xbm') and img.mode != '1':
+                img = img.convert('1')
+
+            # QOI only supports RGB and RGBA
+            if output_fmt == 'qoi' and img.mode not in ('RGB', 'RGBA'):
+                img = img.convert('RGB')
 
             # Set quality parameters
             save_kwargs = {}

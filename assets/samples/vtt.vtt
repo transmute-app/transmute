@@ -1,0 +1,13 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:05.000
+This is the first caption, displayed for 5 seconds.
+
+00:00:06.000 --> 00:00:10.000 align:middle line:90%
+This caption is positioned differently, near the bottom of the screen.
+
+Note: This is a comment and will be ignored by the player.
+
+00:00:11.000 --> 00:00:15.000
+- Speaker A: Hello!
+- Speaker B: Hi there!

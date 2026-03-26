@@ -1,0 +1,51 @@
+name: Security Scans
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  bandit-scan:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+      
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.11'
+          
+      - name: Install bandit
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit bandit-sarif-formatter
+          
+      - name: Run bandit scan
+        # Bandit is a security linter for Python code that identifies common security issues in Python codebases.
+        id: bandit-scan
+        run: |
+          bandit -r backend/ -x backend/tests -f sarif -o ${{ runner.temp }}/bandit-report.sarif
+        continue-on-error: true
+        
+      - name: Upload bandit results to GitHub Advanced Security
+        uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6  # v4.32.3
+        if: steps.bandit-scan.outcome != 'skipped' && steps.bandit-scan.outcome != 'cancelled'
+        with:
+          sarif_file: ${{ runner.temp }}/bandit-report.sarif
+          category: bandit-python-security
+
+      - name: Run zizmor  # Uploads results to GitHub Advanced Security automatically
+        # Zizmor is a static analysis tool that detects potential vulnerabilities in GitHub actions and workflows.
+        uses: zizmorcore/zizmor-action@0dce2577a4760a2749d8cfb7a84b7d5585ebcb7d  # v0.5.0

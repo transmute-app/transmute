@@ -365,6 +365,25 @@ class LibreOfficeConverter(ConverterInterface):
         # Step 3: stitch all pages into a single tall image
         total_width = max(img.width for img in page_images)
         total_height = sum(img.height for img in page_images)
+
+        # libjpeg cannot handle dimensions > 65500 pixels.  Scale the
+        # combined image down when the stitched height would exceed that.
+        max_dim = 65500
+        if total_height > max_dim or total_width > max_dim:
+            scale = min(max_dim / total_height, max_dim / total_width)
+            new_w = int(total_width * scale)
+            new_h = int(total_height * scale)
+            resized: list[Image.Image] = []
+            for img in page_images:
+                resized.append(
+                    img.resize(
+                        (int(img.width * scale), int(img.height * scale)),
+                        Image.LANCZOS,
+                    )
+                )
+            page_images = resized
+            total_width, total_height = new_w, new_h
+
         combined = Image.new('RGB', (total_width, total_height), 'white')
 
         y_offset = 0

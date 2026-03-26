@@ -3,6 +3,7 @@ import FileTable, { FileInfo, ConversionInfo } from '../components/FileTable'
 import PreviewModal, { isPreviewable } from '../components/PreviewModal'
 import { authFetch as fetch } from '../utils/api'
 import { downloadBlob } from '../utils/download'
+import { stripExtension } from '../utils/filename'
 
 interface OriginalFileInfo {
   id: string
@@ -56,11 +57,7 @@ function History() {
       const response = await fetch(`/api/files/${conversion.id}`)
       if (!response.ok) throw new Error('Download failed')
 
-      let filename = conversion.original_filename || 'download'
-      const lastDotIndex = filename.lastIndexOf('.')
-      if (lastDotIndex > 0) {
-        filename = filename.substring(0, lastDotIndex)
-      }
+      let filename = stripExtension(conversion.original_filename || 'download')
       filename += conversion.extension || ''
 
       const blob = await response.blob();
@@ -231,7 +228,7 @@ function History() {
                 conversion: conversionInfo,
                 onDownload: () => handleDownload(conversion),
                 onDelete: () => handleDelete(conversion.id),
-                onPreview: isPreviewable(conversion.media_type) ? () => { const name = conversion.original_filename || 'download'; const dot = name.lastIndexOf('.'); const base = dot > 0 ? name.substring(0, dot) : name; setPreviewConversion({ ...conversion, original_filename: base + (conversion.extension || '') }) } : undefined,
+                onPreview: isPreviewable(conversion.media_type) ? () => { const name = conversion.original_filename || 'download'; const base = stripExtension(name); setPreviewConversion({ ...conversion, original_filename: base + (conversion.extension || '') }) } : undefined,
                 isDeleting: deletingId === conversion.id,
                 isDownloading: downloadingId === conversion.id,
               }

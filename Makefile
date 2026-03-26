@@ -61,11 +61,18 @@ dev-frontend: ## Run the Vite frontend dev server
 	cd frontend && npm run dev
 
 # ----------------------------------------------------------------------------
+# Reporting
+# ----------------------------------------------------------------------------
+conv-count: ## Count total conversations in the database
+	$(PYTHON) backend/export_supported_conversions.py --report-only
+# ----------------------------------------------------------------------------
 # Build
 # ----------------------------------------------------------------------------
 
-build: ## Build the frontend for production
+build-frontend: ## Build the frontend for production
 	cd frontend && npm run build
+
+build: build-frontend ## Build all components (currently just frontend)
 
 # ----------------------------------------------------------------------------
 # Linting & Formatting
@@ -76,7 +83,20 @@ lint: lint-frontend ## Run all linters
 lint-frontend: ## Lint frontend code with ESLint
 	cd frontend && npm run lint
 
+
 check: lint ## Run all checks (alias for lint)
+
+# ----------------------------------------------------------------------------
+# Testing
+# ----------------------------------------------------------------------------
+
+test: test-backend test-frontend
+
+test-backend: ## Run Python backend tests with pytest
+	$(PYTHON) -m pytest backend --ignore=backend/tests/converters/test_all_conversions.py
+
+test-frontend: ## Run frontend tests with Vitest (not yet implemented) - cd frontend && npm run test
+	echo "Frontend tests not yet implemented. Tracked in issue #60."
 
 # ----------------------------------------------------------------------------
 # Docker

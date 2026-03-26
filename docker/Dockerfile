@@ -12,11 +12,16 @@ RUN npm run build
 FROM python:3.13-slim
 
 ARG BUILD_VERSION="dev"
+ARG CALIBRE_VERSION="9.5.0"
+ARG PANDOC_VERSION="3.9"
+ARG DRAWIO_VERSION="29.6.1"
 
 # Set working directory
 WORKDIR /app
 
 ENV APP_VERSION=$BUILD_VERSION
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 # Install python dependencies
 COPY requirements.txt .
@@ -24,10 +29,14 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Install additional system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     ffmpeg \
+    ghostscript \
+    tesseract-ocr \
     libsm6 \
     libxext6 \
+    libopengl0 \
     libmagic1 \
     wget \
     xvfb \
@@ -37,30 +46,73 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     libcairo2 \
     librsvg2-bin \
-    pandoc \
+    tar \
+    xz-utils \
+    unar \
     libreoffice-impress \
     libreoffice-common \
     && rm -rf /var/lib/apt/lists/*
 
 
-# Install Draw.io
-# Use TARGETARCH to determine the architecture and download the appropriate 
-# Draw.io .deb package, fall back to dpkg --print-architecture if TARGETARCH is 
-# not set (for older Docker versions)
+# Install Pandoc from upstream GitHub releases to avoid stale distro packages.
 RUN ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" && \
-    if [ "$ARCH" = "amd64" ]; then \
-      DRAWIO_URL="https://github.com/jgraph/drawio-desktop/releases/download/v29.3.6/drawio-amd64-29.3.6.deb"; \
-    else \
-      DRAWIO_URL="https://github.com/jgraph/drawio-desktop/releases/download/v29.3.6/drawio-arm64-29.3.6.deb"; \
-    fi && \
+    case "$ARCH" in \
+      amd64) PANDOC_ARCH="amd64" ;; \
+      arm64) PANDOC_ARCH="arm64" ;; \
+      *) echo "Unsupported architecture for pandoc: $ARCH" >&2; exit 1 ;; \
+    esac && \
+    PANDOC_URL="https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-linux-${PANDOC_ARCH}.tar.gz" && \
+    wget -q "$PANDOC_URL" -O /tmp/pandoc.tar.gz && \
+    tar -xzf /tmp/pandoc.tar.gz -C /tmp && \
+    cp /tmp/pandoc-${PANDOC_VERSION}/bin/pandoc /usr/local/bin/pandoc && \
+    chmod +x /usr/local/bin/pandoc && \
+    rm -rf /tmp/pandoc.tar.gz /tmp/pandoc-${PANDOC_VERSION}
+
+
+# Install Draw.io from upstream GitHub releases to avoid stale distro packages.
+RUN ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" && \
+    case "$ARCH" in \
+      amd64) DRAWIO_ARCH="amd64" ;; \
+      arm64) DRAWIO_ARCH="arm64" ;; \
+      *) echo "Unsupported architecture for drawio: $ARCH" >&2; exit 1 ;; \
+    esac && \
+    DRAWIO_URL="https://github.com/jgraph/drawio-desktop/releases/download/v${DRAWIO_VERSION}/drawio-${DRAWIO_ARCH}-${DRAWIO_VERSION}.deb"; \
     wget -q "$DRAWIO_URL" -O /tmp/drawio.deb && \
     apt-get update && apt-get install -y /tmp/drawio.deb && \
     rm /tmp/drawio.deb && \
-    apt-get install -y --only-upgrade libnss3 && \
     rm -rf /var/lib/apt/lists/*
+
+# Install Calibre from upstream GitHub releases to avoid stale distro packages.
+RUN ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" && \
+    case "$ARCH" in \
+      amd64) CALIBRE_ARCH="x86_64" ;; \
+      arm64) CALIBRE_ARCH="arm64" ;; \
+      *) echo "Unsupported architecture for calibre: $ARCH" >&2; exit 1 ;; \
+    esac && \
+    CALIBRE_URL="https://github.com/kovidgoyal/calibre/releases/download/v${CALIBRE_VERSION}/calibre-${CALIBRE_VERSION}-${CALIBRE_ARCH}.txz" && \
+    wget -q "$CALIBRE_URL" -O /tmp/calibre.txz && \
+    mkdir -p /opt/calibre && \
+    tar -xJf /tmp/calibre.txz -C /opt/calibre && \
+    ln -sf /opt/calibre/ebook-convert /usr/bin/ebook-convert && \
+    rm -f /tmp/calibre.txz
+
+# Security patches: upgrade vulnerable packages to patched versions
+RUN apt-get update && \
+    apt-get install -y --only-upgrade \
+    libnss3 \
+    && apt-get purge -y \
+    imagemagick \
+    imagemagick-7-common \
+    libmagickcore-7.q16-10 \
+    libmagickcore-7.q16-10-extra \
+    libmagickwand-7.q16-10 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy backend code
 COPY backend/ ./backend/
+
+# Remove tests from backend to reduce image size
+RUN rm -rf /app/backend/tests
 
 # Copy built frontend from builder stage
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist

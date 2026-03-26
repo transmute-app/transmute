@@ -1,19 +1,33 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { FaKey, FaUserPlus } from 'react-icons/fa6'
+import { FaKey, FaUserPlus, FaArrowUpRightFromSquare } from 'react-icons/fa6'
 import { useAuth } from '../AuthContext'
+import { apiJson } from '../utils/api'
 import PasswordField from '../components/PasswordField'
+
+interface OidcConfig {
+  enabled: boolean
+  display_name: string
+  allow_unauthenticated: boolean
+}
 
 function Auth() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { bootstrapStatus, login, createBootstrapUser } = useAuth()
+  const { bootstrapStatus, login, createBootstrapUser, loginAsGuest } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [oidcConfig, setOidcConfig] = useState<OidcConfig | null>(null)
+
+  useEffect(() => {
+    apiJson<OidcConfig>('/api/oidc/config', {}, { auth: false })
+      .then(setOidcConfig)
+      .catch(() => setOidcConfig({ enabled: false, display_name: '', allow_unauthenticated: false }))
+  }, [])
 
   const returnTo = typeof location.state === 'object' && location.state && 'from' in location.state
     ? String(location.state.from)
@@ -35,6 +49,19 @@ function Auth() {
       navigate(returnTo, { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleGuestLogin = async () => {
+    setSubmitting(true)
+    setError(null)
+    try {
+      await loginAsGuest()
+      navigate(returnTo, { replace: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create guest session')
     } finally {
       setSubmitting(false)
     }
@@ -119,6 +146,37 @@ function Auth() {
             >
               {submitting ? 'Working...' : requiresSetup ? 'Create Admin Account' : 'Sign In'}
             </button>
+
+            {(oidcConfig?.enabled || (oidcConfig?.allow_unauthenticated && !requiresSetup)) && (
+              <>
+                <div className="mt-6 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-white/10" />
+                  <span className="text-xs text-text-muted">or</span>
+                  <div className="h-px flex-1 bg-white/10" />
+                </div>
+                <div className={`mt-4 flex gap-3 ${oidcConfig?.enabled && oidcConfig?.allow_unauthenticated ? 'flex-row' : 'flex-col'}`}>
+                  {oidcConfig?.enabled && (
+                    <a
+                      href="/api/oidc/login"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-light/70 px-5 py-3.5 font-semibold text-text transition hover:border-primary/40 hover:bg-surface-light"
+                    >
+                      <FaArrowUpRightFromSquare size={14} />
+                      {requiresSetup ? `Bootstrap with ${oidcConfig.display_name}` : `Sign in with ${oidcConfig.display_name}`}
+                    </a>
+                  )}
+                  {oidcConfig?.allow_unauthenticated && !requiresSetup && (
+                    <button
+                      type="button"
+                      onClick={handleGuestLogin}
+                      disabled={submitting}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-light/70 px-5 py-3.5 font-semibold text-text transition hover:border-primary/40 hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Use as Guest
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
           </form>
         </section>
       </div>

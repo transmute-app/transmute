@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { AUTH_EXPIRED_EVENT, apiJson, getStoredToken, setStoredToken } from './utils/api'
 
-export type UserRole = 'admin' | 'member'
+export type UserRole = 'admin' | 'member' | 'guest'
 
 export interface AuthUser {
   uuid: string
@@ -10,6 +10,7 @@ export interface AuthUser {
   full_name: string | null
   role: UserRole
   disabled: boolean
+  is_guest: boolean
 }
 
 interface BootstrapStatus {
@@ -41,6 +42,7 @@ interface AuthContextValue {
   isAdmin: boolean
   login: (input: LoginInput) => Promise<void>
   createBootstrapUser: (input: BootstrapInput) => Promise<void>
+  loginAsGuest: () => Promise<void>
   logout: () => void
   refreshUser: () => Promise<void>
   replaceUser: (user: AuthUser) => void
@@ -53,6 +55,7 @@ const AuthContext = createContext<AuthContextValue>({
   isAdmin: false,
   login: async () => {},
   createBootstrapUser: async () => {},
+  loginAsGuest: async () => {},
   logout: () => {},
   refreshUser: async () => {},
   replaceUser: () => {},
@@ -112,6 +115,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await login({ username, password })
   }
 
+  const loginAsGuest = async () => {
+    const payload = await apiJson<AuthResponse>(
+      '/api/guest/session',
+      { method: 'POST' },
+      { auth: false },
+    )
+    applyAuthResponse(payload)
+  }
+
   useEffect(() => {
     let active = true
 
@@ -123,6 +135,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         if (!active) return
         setBootstrapStatus({ requires_setup: false, user_count: 0 })
+      }
+
+      // Pick up a one-time code returned by the OIDC callback redirect
+      // and exchange it for a JWT. The real token never appears in URLs or logs.
+      const params = new URLSearchParams(window.location.search)
+      const oidcCode = params.get('oidc_code')
+      if (oidcCode) {
+        params.delete('oidc_code')
+        const clean = params.toString()
+        window.history.replaceState({}, '', window.location.pathname + (clean ? `?${clean}` : ''))
+        try {
+          const { access_token } = await apiJson<{ access_token: string }>(
+            '/api/oidc/exchange',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: oidcCode }),
+            },
+            { auth: false },
+          )
+          setStoredToken(access_token)
+        } catch {
+          // Code was invalid or expired — fall through to unauthenticated
+        }
       }
 
       const token = getStoredToken()
@@ -164,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin: user?.role === 'admin',
         login,
         createBootstrapUser,
+        loginAsGuest,
         logout,
         refreshUser,
         replaceUser,

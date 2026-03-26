@@ -10,6 +10,7 @@ This folder contains static assets that Vite serves directly without passing thr
 ## Contents
 
 - `icons/`: icon files used by the app shell and browser integration points.
+- `site.webmanifest`: install metadata for browsers and home-screen launches.
 
 ## How To Work In This Folder
 

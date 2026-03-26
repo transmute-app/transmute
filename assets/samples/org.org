@@ -1,0 +1,601 @@
+#+TITLE: Example of Emacs Org-Mode Document
+#+AUTHOR: Elmar Lee
+#+EMAIL: elmarlee AT Gmail.com
+#+HTML_HEAD: <link rel="stylesheet" href="http://dakrone.github.io/org.css" type="text/css" />
+#+LANGUAGE:  en
+#+OPTIONS:   H:3 num:t   toc:3 \n:nil @:t ::t |:t ^:nil -:t f:t *:t <:nil
+#+OPTIONS:   TeX:t LaTeX:nil skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+OPTIONS:   author:t creator:t timestamp:t email:t
+#+DESCRIPTION: Example of Emacs Org-mode Document
+#+KEYWORDS:  Emacs Org-Mode Template
+
+This is a document created by [[https://www.orgmode.org/][Org-mode]], which is a part of [[https://www.gnu.org/software/emacs/][GNU Emacs]].
+
+This document uses a lot of materials as listed in the section [[References]].
+
+This document uses the CSS stylesheet [[http://dakrone.github.io/org.css][here]].
+
+* How To Use This Document
+:PROPERTIES:
+:CUSTOM_ID: HowToUseThisDocument
+:END:
+
+This document is expected to be helpful when you are interested in composing a
+document like this document itself. It serves as an example and template of the
+Org-mode document. This document is available as an [[https://github.com/elmarlee/org-mode-template/blob/master/org-mode-template.org][org file]] which is text
+format and can be edited in GNU Emacs, and also a [[https://github.com/elmarlee/org-mode-template/blob/master/org-mode-template.html][html file]] associated with some
+png image files, which are the output of that org file and exported via GNU
+Emacs Org-Mode.
+
+This document assumes you've had some experience of GNU Emacs so the concepts
+like the modifier keys =C=, =M=, the way to type the keys like =C-c C-c=, etc.
+won't be completely foreign to you. You don't need to know too much of the
+Org-mode now though it's helpful if you do. More information about GNU Emacs can
+be found in [[https://www.gnu.org/software/emacs/manual/html_node/emacs/index.html][The Emacs Manual]], that about org-mode can be in the [[http://orgmode.org/index.html#sec-4.1][Org-Mode Manual]]
+and [[http://orgmode.org/worg/][Worg Site]].
+
+* License
+:PROPERTIES:
+:CUSTOM_ID: License
+:END:
+
+#+begin_example
+Copyright (C)  2020 Elmar Lee
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
+  
+Code in this document is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation, either
+version 3 of the License, or (at your option) any later version.
+  
+This code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+#+end_example
+* Getting Started
+:PROPERTIES:
+:CUSTOM_ID: GettingStarted
+:END:
+
+Most of this document except the section [[Playing with PlantUML]] needs the
+official GNU Emacs only as Org-mode is already a part of it. For the section
+[[Playing with PlantUML]], please install PlantUML and integate it with GNU Emacs
+Org-mode.
+
+** GNU Emacs
+Follow the [[https://www.gnu.org/software/emacs/download.html][official instructions]] to install GNU Emacs.
+
+** PlantUML
+Follow the [[https://plantuml.com/en/starting][official instructions]] to install PlantUML locally:
+- Install java
+- Install Graphviz
+- Download plantuml.jar
+
+** Integrate PlantUML and GNU Emacs
+*** Follow the the instruction [[https://plantuml.com/emacs][here]] to configure Org-Babel.
+*** Set more for Org-Babel
+#+begin_example
+(custom-set-variables
+ '(org-babel-load-languages
+   (quote
+    ((emacs-lisp . t)
+     (org . t)
+     (plantuml . t))))
+ '(org-html-htmlize-output-type (quote css))
+)
+#+end_example
+** Try this template
+- Right click the [[https://raw.githubusercontent.com/elmarlee/org-mode-template/master/org-mode-template.org][org-file]] and save it to for example
+  ~c:\temp\org-mode-template.org~.
+- Run GNU Emacs.
+- Type =C-x C-f= on Emacs, then type ~c:\temp\org-mode-template.org~ and =Enter=
+  to open the org file.
+- Make any changes, then type =C-x C-s= to save the file.
+- Type =C-c C-e h h= to export the org file to html file.
+- Open ~c:\temp\org-mode-template.html~ to check the final output.
+
+* Tables
+Type =| Column A | Column B | Column C |= then type =C-c Enter=, try to type
+multiple =Tab=. If the contents exceed the cell, type =C-c C-c= inside the table
+to re-asign it.
+#+begin_src org
+| Column A       | Column B         | Column C       |
+|----------------+------------------+----------------|
+| Try to         | Type =Tab= key   | in a cell      |
+| Type =C-c C-c= | inside the table | to re-asign it |
+#+end_src
+| Column A       | Column B         | Column C       |
+|----------------+------------------+----------------|
+| Try to         | Type =Tab= key   | in a cell      |
+| Type =C-c C-c= | inside the table | to re-asign it |
+
+More skills of the Org-mode table, please see [[https://orgmode.org/org.html][The Org Manual]].
+
+* Diagrams
+:PROPERTIES:
+:CUSTOM_ID: Publishing
+:END:
+** Playing with PlantUML
+:PROPERTIES:
+:CUSTOM_ID: PlantUML
+:END:
+[[http://plantuml.sourceforge.net/][PlantUML]] is built on top of [[http://www.graphviz.org/][Graphviz]].
+
+The source for a PlantUML graphic looks like this in org-mode:
+#+begin_src org :exports src
+,#+begin_src plantuml :file somefile.png
+  <context of PlantUML source goes here>
+,#+end_src
+#+end_src
+*** Sequence Diagram
+:PROPERTIES:
+:CUSTOM_ID: PlantUMLSequence
+:END:
+
+#+begin_src plantuml :file sequence.png :exports both
+title Example Sequence Diagram
+activate Client
+Client -> Server: Session Initiation
+note right: Client requests new session
+activate Server
+Client <-- Server: Authorization Request
+note left: Server requires authentication
+Client -> Server: Authorization Response
+note right: Client provides authentication details
+Server --> Client: Session Token
+note left: Session established
+deactivate Server
+Client -> Client: Saves token
+deactivate Client
+#+end_src
+
+#+results[9b612e0e68cd747fc032d949b739f4c5b06dee21]:
+[[file:sequence.png]]
+
+*** Activity Diagram
+:PROPERTIES:
+:CUSTOM_ID: PlantUMLActivity
+:END:
+
+#+begin_src plantuml :file activity.png :exports both
+title Example Activity Diagram
+note right: Example Function
+(*)--> "Step 1"
+--> "Step 2"
+-> "Step 3"
+--> "Step 4"
+--> === STARTLOOP ===
+note top: For each element in the array
+if "Are we done?" then
+  -> [no] "Do this"
+  -> "Do that"
+  note bottom: Important note\ngoes here
+  -up-> "Increment counters"
+  --> === STARTLOOP ===
+else
+  --> [yes] === ENDLOOP ===
+endif
+--> "Last Step"
+--> (*)
+#+end_src
+
+#+results[d5646e42c69b25b55eb1699a43c5d9547c019c5e]:
+[[file:activity.png]]
+
+*** Usecase Diagram
+:PROPERTIES:
+:CUSTOM_ID: PlantUMLUseCase
+:END:
+
+#+begin_src plantuml :file usecase.png :exports both
+LabUser --> (Runs Simulation)
+LabUser --> (Analyses Results)
+#+end_src
+
+#+results[b7079ee21eb099b19ca524bf62e84edb7c317890]:
+[[file:usecase.png]]
+
+*** Object Diagram
+:PROPERTIES:
+:CUSTOM_ID: PlantUMLObject
+:END:
+
+#+begin_src plantuml :file object.png :exports both
+object Object01
+object Object02
+object Object03
+object Object04
+object Object05
+object Object06
+object Object07
+object Object08 {
+  name = "Object08"
+  id = 08
+}
+
+Object01 <|-- Object02
+Object03 *-- Object04
+Object05 o-- "4" Object06
+Object07 .. Object08 : some labels
+#+end_src
+
+#+results[12eb2caa1043195361ca1953b474932e796e80f5]:
+[[file:object.png]]
+
+*** State Diagram
+:PROPERTIES:
+:CUSTOM_ID: PlantUMLState
+:END:
+
+#+begin_src plantuml :file plantuml_example_states.png :exports both
+[*] --> Start
+Start -> State2
+State2 -> State3
+note right of State3: Notes can be\nattached to states
+State2 --> State4
+State4 -> Finish
+State3 --> Finish
+Finish --> [*]
+#+end_src
+
+#+results[5faa6c28383266f9e8b76f4a8c70012f7ab70753]:
+[[file:plantuml_example_states.png]]
+*** Ditaa Diagram
+:PROPERTIES:
+:CUSTOM_ID: playingwithditaa
+:END:
+
+[[http://ditaa.sourceforge.net/][ditaa]] is a great tool for quickly generating graphics to convey ideas
+and =ditaa= is distributed with org-mode!  All of the graphics in this
+document are automatically generated by org-mode using plain text
+source.
+
+Artist mode (=M-x artist-mode=) makes it easy to create boxes and lines for ditaa
+graphics.
+
+The source for a ditaa graphic looks like this in org-mode:
+#+begin_src org :exports src
+,#+begin_src ditaa :file some_filename.png :cmdline -r -s 0.8
+  <context of ditaa source goes here>
+,#+end_src
+#+end_src
+
+Now PlantUML also supports ditaa diagram:
+#+begin_src plantuml :file communication.png :exports both
+@startditaa
+    +-----------+        +---------+  
+    |    PLC    |        |         |                
+    |  Network  +<------>+   PLC   +<---=---------+ 
+    |    cRED   |        |  c707   |              | 
+    +-----------+        +----+----+              | 
+                              ^                   | 
+                              |                   | 
+                              |  +----------------|-----------------+
+                              |  |                |                 |
+                              v  v                v                 v
+      +----------+       +----+--+--+      +-------+---+      +-----+-----+       Windows clients
+      |          |       |          |      |           |      |           |      +----+      +----+
+      | Database +<----->+  Shared  +<---->+ Executive +<-=-->+ Operator  +<---->|cYEL| . . .|cYEL|
+      |   c707   |       |  Memory  |      |   c707    |      | Server    |      |    |      |    |
+      +--+----+--+       |{d} cGRE  |      +------+----+      |   c707    |      +----+      +----+
+         ^    ^          +----------+             ^           +-------+---+
+         |    |                                   |                        
+         |    +--------=--------------------------+                    
+         v                                                             
++--------+--------+                                                         
+|                 |                                                         
+| Millwide System |            -------- Data ---------                      
+| cBLU            |            --=----- Signals ---=--                      
++-----------------+                                                         
+@endditaa
+#+end_src
+#+attr_html: :width 80%
+#+attr_html: :height 80%
+#+RESULTS:
+[[file:communication.png]]
+
+*** DOT Diagram
+Since PlantUML uses [[http://www.graphviz.org/documentation/][Graphviz/DOT]], it is possible to directly use DOT language. This means that you can use Graphviz/DOT with all tools that support PlantUML.
+#+begin_src plantuml :file dot.png :exports both
+@startdot
+digraph foo {
+  node [style=rounded]
+  node1 [shape=box]
+  node2 [fillcolor=yellow, style="rounded,filled", shape=diamond]
+  node3 [shape=record, label="{ a | b | c }"]
+
+  node1 -> node2 -> node3
+}
+@enddot
+#+end_src
+* Math
+** Math expressions
+#+begin_src org
+The /Euler theorem/:
+
+\[
+\int_0^\infty e^{-x^2} dx = {{\sqrt{\pi}} \over {2}}
+\]
+
+\(\LaTeX\ \) allows to inline such ~\[...\]~ constructs (/quadratic formula/):
+\[ \frac{-b \pm \sqrt{b^2 - 4 a c}}{2a} \]
+#+end_src
+
+The /Euler theorem/:
+
+\[
+\int_0^\infty e^{-x^2} dx = {{\sqrt{\pi}} \over {2}}
+\]
+
+\(\LaTeX\ \) allows to inline such ~\[...\]~ constructs (/quadratic formula/):
+\[ \frac{-b \pm \sqrt{b^2 - 4 a c}}{2a} \]
+
+#+begin_src org
+The /sinus theorem/ can be written as the equation:
+
+\begin{equation}
+\frac{\sin\alpha}{a}=\frac{\sin\beta}{b}
+\end{equation}
+#+end_src
+
+The /sinus theorem/ can be written as the equation:
+
+\begin{equation}
+\frac{\sin\alpha}{a}=\frac{\sin\beta}{b}
+\end{equation}
+
+** Inline math expressions
+#+begin_src org
+The formula \(a^2 + b^2 = c^2\) has been discovered by Pythagoras.
+
+Let \(a=\sin(x) + \cos(x)\). Then \(a^2 = 2\sin(x)\cos(x)\) because \(\sin^2x +
+\cos^2x = 1\).
+#+end_src
+
+The formula \(a^2 + b^2 = c^2\) has been discovered by Pythagoras.
+
+Let \(a=\sin(x) + \cos(x)\). Then \(a^2 = 2\sin(x)\cos(x) +1\) because \(\sin^2x +
+\cos^2x = 1\).
+** Equation numbers
+#+begin_src org
+The /Pythagoras theorem/:
+
+#+name: pythag
+\begin{equation}
+a^2 + b^2 = c^2
+\end{equation}
+
+See equation [[pythag]].
+#+end_src
+
+The /Pythagoras theorem/:
+
+#+name: pythag
+\begin{equation}
+a^2 + b^2 = c^2
+\end{equation}
+
+See equation [[pythag]].
+
+* Special Characters
+** Accents
+#+begin_src org
+- \Agrave \Aacute
+#+end_src
+- \Agrave \Aacute
+
+** Punctuation
+#+begin_src org
+- Dash: \ndash \mdash
+- Marks: \iexcl \iquest
+- Quotations: \laquo \raquo
+- Miscellaneous: \para \ordf
+#+end_src
+- Dash: \ndash \mdash
+- Marks: \iexcl \iquest
+- Quotations: \laquo \raquo
+- Miscellaneous: \para \ordf
+
+** Commercial symbols
+#+begin_src org
+- Property marks: \copy \reg
+- Currency: \cent \EUR \yen \pound
+#+end_src
+- Property marks: \copy \reg
+- Currency: \cent \EUR \yen \pound
+
+** Greek characters
+#+begin_src org
+The Greek letters \alpha, \beta, and \gamma are used to denote angles.
+#+end_src
+The Greek letters \alpha, \beta, and \gamma are used to denote angles.
+
+** Math characters
+#+begin_src org
+- Science: \pm \div
+- Arrows: \to \rarr \larr \harr \rArr \lArr \hArr
+- Function names: \arccos \cos
+- Signs and symbols: \bull \star
+#+end_src
+- Science: \pm \div
+- Arrows: \to \rarr \larr \harr \rArr \lArr \hArr
+- Function names: \arccos \cos
+- Signs and symbols: \bull \star
+
+** Misc
+#+begin_src org
+- Smilies: \smiley \sad
+- Suits: \clubs \spades
+- Zero-width non-joiner: \zwnj
+#+end_src
+- Smilies: \smiley \sad
+- Suits: \clubs \spades
+- Zero-width non-joiner: \zwnj
+
+* Admonitions
+** Python code
+#+begin_src python -n
+# foo function
+def foo(x):
+  if x > 0:
+    return x + 1
+
+  else:
+    return x - 1
+
+return foo(5)
+#+end_src
+
+** C/C++ code
+#+begin_src C++ -n
+  #include <iostream>
+
+  int main()
+  {
+      // Print "Hello World!"
+      std::cout << "Hello World!\n";
+  }
+#+end_src
+** Note
+#+begin_src org
+#+begin_note
+This is a useful note.
+#+end_note
+#+end_src
+
+#+begin_note
+This is a useful note.
+#+end_note
+
+** Warning
+#+begin_src org
+#+begin_warning
+Be careful!  Check that you have...
+#+end_note
+#+end_src
+
+#+begin_warning
+Be careful!  Check that you have...
+#+end_warning
+** Tip
+#+begin_src org
+#+begin_tip
+Try doing it this way...
+#+end_tip
+#+end_src
+
+#+begin_tip
+Try doing it this way...
+#+end_tip
+** Caution
+#+begin_src org
+#+begin_caution
+Caution
+#+end_caution
+#+end_src
+
+#+begin_caution
+Caution
+#+end_caution
+** Sidebar
+
+#+begin_src org
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+#+begin_sidebar
+Org mode was first released by Carsten Dominik in 2004 as an outlining and
+project planning tool.  Further development turned it into a general tool that
+can be used to author professional documents like LaTeX.
+#+end_sidebar
+
+Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac
+turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor
+sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies
+mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien
+ullamcorper pharetra. Vestibulum erat wisi...
+
+Phasellus ut libero. Nulla in libero non enim tristique sollicitudin. Ut
+tempor. Phasellus pellentesque augue eget ante. Mauris malesuada. Donec sit
+amet diam sit amet dolor placerat blandit. Morbi enim purus, imperdiet in,
+molestie sit amet, pellentesque eu, mauris. In vel erat vel ipsum bibendum
+commodo. Curabitur accumsan. Nam sed metus. Etiam tristique bibendum justo.
+#+end_src
+
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+#+begin_sidebar
+Org mode was first released by Carsten Dominik in 2004 as an outlining and
+project planning tool.  Further development turned it into a general tool that
+can be used to author professional documents like LaTeX.
+#+end_sidebar
+
+Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac
+turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor
+sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies
+mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien
+ullamcorper pharetra. Vestibulum erat wisi...
+
+Phasellus ut libero. Nulla in libero non enim tristique sollicitudin. Ut
+tempor. Phasellus pellentesque augue eget ante. Mauris malesuada. Donec sit
+amet diam sit amet dolor placerat blandit. Morbi enim purus, imperdiet in,
+molestie sit amet, pellentesque eu, mauris. In vel erat vel ipsum bibendum
+commodo. Curabitur accumsan. Nam sed metus. Etiam tristique bibendum justo.
+** Quote
+#+begin_src org
+#+begin_quote
+Everything should be made as simple as possible,
+but not any simpler. -- Albert Einstein
+#+end_quote
+#+end_src
+
+#+begin_quote
+Everything should be made as simple as possible,
+but not any simpler. -- Albert Einstein
+#+end_quote
+
+** Verse
+#+begin_src org
+#+begin_verse
+>>  The meeting has been postponed to next Friday.
+>
+> Has the deadline for the report been moved too?
+
+Yes.  And chekout http://www.doodle.com/ for rescheduling the meeting.
+
+In the text body,
+   indentation is
+preserved.
+#+end_verse
+#+end_src
+
+#+begin_verse
+>>  The meeting has been postponed to next Friday.
+>
+> Has the deadline for the report been moved too?
+
+Yes.  And chekout http://www.doodle.com/ for rescheduling the meeting.
+
+In the text body,
+   indentation is
+preserved.
+#+end_verse
+
+* References
+- <<OrganizeYourLifeInPlainText>>[[http://doc.norang.ca/org-mode.html][Org Mode - Organize Your Life In Plain Text!]]
+- <<refcard>>[[https://github.com/fniessen/refcard-org-mode][The Org Reference Card]]
+- <<TheOrgManual>>[[https://orgmode.org/org.html][The Org Manual]]
+- <<OrgHtmlThemes>>[[https://github.com/fniessen/org-html-themes][Org HTML Themes]]

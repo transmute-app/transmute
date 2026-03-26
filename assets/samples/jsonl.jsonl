@@ -1,0 +1,8 @@
+{"id": 1, "name": "Laptop", "category": "Electronics", "price": 999.99, "stock": 15}
+{"id": 2, "name": "Mouse", "category": "Electronics", "price": 29.99, "stock": 50}
+{"id": 3, "name": "Keyboard", "category": "Electronics", "price": 79.99, "stock": 35}
+{"id": 4, "name": "Monitor", "category": "Electronics", "price": 299.99, "stock": 20}
+{"id": 5, "name": "Desk Chair", "category": "Furniture", "price": 199.99, "stock": 12}
+{"id": 6, "name": "Standing Desk", "category": "Furniture", "price": 449.99, "stock": 8}
+{"id": 7, "name": "Coffee Mug", "category": "Kitchen", "price": 12.99, "stock": 100}
+{"id": 8, "name": "Water Bottle", "category": "Kitchen", "price": 24.99, "stock": 75}

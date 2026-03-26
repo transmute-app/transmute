@@ -85,7 +85,7 @@ class BatchDownloadRequest(BaseModel):
 
 
 ThemeValue = Literal["rubedo", "citrinitas", "viriditas", "nigredo", "albedo", "aurora", "caelum", "argentum"]
-UserRoleValue = Literal["admin", "member"]
+UserRoleValue = Literal["admin", "member", "guest"]
 
 
 class AppSettingsResponse(BaseModel):
@@ -121,6 +121,7 @@ class UserResponse(BaseModel):
     full_name: Optional[str] = Field(None, example="Alice Example", description="Optional full name")
     role: UserRoleValue = Field(..., example="member", description="Assigned role")
     disabled: bool = Field(..., example=False, description="Whether the account is disabled")
+    is_guest: bool = Field(False, example=False, description="Whether this is a guest account")
 
 
 class UserListResponse(BaseModel):
@@ -195,3 +196,18 @@ class ApiKeyListResponse(BaseModel):
 
 class ApiKeyDeleteResponse(BaseModel):
     message: str = Field(..., description="Deletion status message")
+
+
+class UserStatsItem(BaseModel):
+    user_uuid: str = Field(..., example="123e4567-e89b-12d3-a456-426614174000", description="User UUID")
+    username: str = Field(..., example="alice", description="Username")
+    files_uploaded: int = Field(..., example=12, description="Number of files uploaded")
+    conversions: int = Field(..., example=8, description="Number of conversions performed")
+    storage_bytes: int = Field(..., example=10485760, description="Total storage used in bytes (uploads + conversions)")
+
+
+class StatsResponse(BaseModel):
+    total_files_uploaded: int = Field(..., example=42, description="Total files uploaded across all users")
+    total_conversions: int = Field(..., example=30, description="Total conversions across all users")
+    total_storage_bytes: int = Field(..., example=104857600, description="Total storage used in bytes across all users")
+    users: list[UserStatsItem] = Field(..., description="Per-user breakdown of stats")

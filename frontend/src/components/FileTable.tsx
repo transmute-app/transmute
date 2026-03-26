@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { FaCheckSquare, FaSquare, FaSort, FaSortUp, FaSortDown, FaDownload, FaTrash, FaEye } from 'react-icons/fa'
+import { stripExtension } from '../utils/filename'
+import FormatDropdown from './FormatDropdown'
 
 export interface FileInfo {
   id: string
@@ -119,8 +121,7 @@ function FileTable({
   const getDisplayFilename = (row: FileTableRow) => {
     const name = row.file.original_filename || 'download'
     if (isPending || !row.conversion) return name
-    const dot = name.lastIndexOf('.')
-    const base = dot > 0 ? name.substring(0, dot) : name
+    const base = stripExtension(name)
     return base + (row.conversion.extension || '')
   }
 
@@ -146,30 +147,50 @@ function FileTable({
                 )}
               </th>
             )}
-            <th
-              className="px-4 py-3 cursor-pointer select-none hover:text-text transition"
-              onClick={() => handleSort('filename')}
+            <th 
+              className="px-4 py-3"
+              aria-sort={sortColumn === 'filename' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
-              Filename <SortIcon column="filename" />
+              <button
+                onClick={() => handleSort('filename')}
+                className="flex items-center gap-1 hover:text-text transition uppercase"
+              >
+                Filename <SortIcon column="filename" />
+              </button>
             </th>
             <th
-              className="px-4 py-3 cursor-pointer select-none hover:text-text transition"
-              onClick={() => handleSort('type')}
+              className="px-4 py-3"
+              aria-sort={sortColumn=== 'type' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
-              Format <SortIcon column="type" />
+              <button
+                onClick={() => handleSort('type')}
+                className="flex items-center gap-1 hover:text-text transition uppercase"
+              >
+                Format <SortIcon column="type" />
+              </button>
             </th>
             <th
-              className="px-4 py-3 cursor-pointer select-none hover:text-text transition"
-              onClick={() => handleSort('size')}
+              className="px-4 py-3"
+              aria-sort={sortColumn=== 'size' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
-              Size <SortIcon column="size" />
+              <button
+                onClick={() => handleSort('size')}
+                className="flex items-center gap-1 hover:text-text transition uppercase"
+              >
+                Size <SortIcon column="size" />
+              </button>
             </th>
             {showDate && (
               <th
-                className="px-4 py-3 cursor-pointer select-none hover:text-text transition"
-                onClick={() => handleSort('date')}
+                className="px-4 py-3"
+                aria-sort={sortColumn=== 'date' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
               >
-                Date <SortIcon column="date" />
+                <button
+                  onClick={() => handleSort('date')}
+                  className="flex items-center gap-1 hover:text-text transition uppercase"
+                >
+                  Date <SortIcon column="date" />
+                </button>
               </th>
             )}
             {hasActions && (
@@ -223,16 +244,12 @@ function FileTable({
               <td className="px-4 py-3 whitespace-nowrap">
                   {(row.conversion || row.selectedFormat) ? (
                     isPending && row.file.compatible_formats && row.file.compatible_formats.length > 0 && row.onFormatChange ? (
-                      <select
+                      <FormatDropdown
                         value={row.selectedFormat || ''}
-                        onChange={(e) => row.onFormatChange!(e.target.value)}
-                        className="text-xs font-mono uppercase bg-primary/20 px-2 py-0.5 rounded text-primary border-none focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                        formats={row.file.compatible_formats!}
+                        onChange={(format) => row.onFormatChange!(format)}
                         title={`${row.file.media_type} → ${row.selectedFormat || ''}`}
-                      >
-                        {[...row.file.compatible_formats].sort().map(format => (
-                          <option key={format} value={format}>{format}</option>
-                        ))}
-                      </select>
+                      />
                     ) : (
                       <span
                         className="text-xs font-mono uppercase bg-primary/20 px-2 py-0.5 rounded text-primary"

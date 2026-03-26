@@ -1,0 +1,8 @@
+{0}{90}{y:b}Bold text in MicroDVD format!
+{100}{190}{y:i}Italic text works too.
+{200}{290}{y:u}And underlined text, of course.
+{300}{390}{y:b,i}Bold AND italic combined!
+{400}{490}{c:$0000FF}This text would appear in red.
+{500}{590}{c:$00FF00}And this one in green.
+{600}{690}{f:Arial}{s:24}Custom font and size!
+{700}{800}{y:b}MicroDVD styling is simple but effective.|Visit convertico.com for more subtitle tools.

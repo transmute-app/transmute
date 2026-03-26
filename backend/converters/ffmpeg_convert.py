@@ -18,15 +18,22 @@ class FFmpegConverter(ConverterInterface):
         'webm',
         'flv',
         'wmv',
-        'mpg',
         'mpeg',
         'm4v',
         'gif',
+        'apng',
         'ts',
         '3gp',
         'ogv',
         'asf',
         'f4v',
+        'fli',
+        'flc',
+    }
+    # Formats FFmpeg can decode but not encode
+    _decode_only_formats: set = {
+        'fli',
+        'flc',
     }
     audio_formats: set = {
         'mp3',
@@ -47,7 +54,7 @@ class FFmpegConverter(ConverterInterface):
         'mka',
     }
     supported_input_formats: set = video_formats | audio_formats
-    supported_output_formats: set = set(supported_input_formats)
+    supported_output_formats: set = (video_formats | audio_formats) - _decode_only_formats
 
     ffmpeg_paths = {
         'darwin': '/opt/homebrew/bin/ffmpeg',
@@ -111,6 +118,12 @@ class FFmpegConverter(ConverterInterface):
         # Invalid: Cannot convert audio-only to video format
         # (would need video content, not just audio)
         if input_is_audio and output_is_video:
+            return False
+        
+        # Animated image formats contain no audio stream.
+        # Extracting audio from them is not possible.
+        _animated_image_only_formats = {'apng', 'gif', 'fli', 'flc'}
+        if self.input_type in _animated_image_only_formats and self.output_type in self.audio_formats:
             return False
         
         # All other conversions are valid:
@@ -251,6 +264,10 @@ class FFmpegConverter(ConverterInterface):
         if format_type.lower() in cls.audio_formats:
             # For audio formats, compatible formats are other audio formats
             return cls.audio_formats - {format_type.lower()}
+        _animated_image_only_formats = {'apng', 'gif', 'fli', 'flc'}
+        if format_type.lower() in _animated_image_only_formats:
+            # Animated images have no audio stream — only video targets
+            return (cls.video_formats - cls._decode_only_formats - {format_type.lower()})
         else:
             return cls.supported_output_formats - {format_type.lower()}
     
@@ -311,6 +328,28 @@ class FFmpegConverter(ConverterInterface):
                 cmd.extend(['-crf', '23', '-preset', 'medium'])
             elif quality == 'low':
                 cmd.extend(['-crf', '28', '-preset', 'fast'])
+
+        # Animated image formats encode every frame as a full image.  Without
+        # constraints a long or high-resolution video produces enormous output
+        # and takes extremely long.  Cap the frame rate and resolution so the
+        # conversion stays practical.
+        _animated_image_formats = {'apng', 'gif', 'fli', 'flc'}
+        if self.output_type in _animated_image_formats and self.input_type not in _animated_image_formats:
+            cmd.extend(['-vf', 'fps=10,scale=320:-1:flags=lanczos', '-plays', '0'])
+
+        # FLI/FLC files can have non-standard framerates (e.g. 14 fps) that
+        # strict codecs like mpeg1video reject.  Force 25 fps output which is
+        # universally accepted by all video codecs.
+        _flic_formats = {'fli', 'flc'}
+        if self.input_type in _flic_formats:
+            cmd.extend(['-r', '25'])
+
+        # Most video codecs/containers cannot handle RGBA input (e.g. from
+        # APNG).  Force yuv420p so the alpha channel is stripped before encoding.
+        # Animated image outputs that natively support transparency are excluded.
+        _alpha_safe_formats = {'apng', 'gif'}
+        if self.output_type in (self.video_formats - _alpha_safe_formats):
+            cmd.extend(['-pix_fmt', 'yuv420p'])
 
         # 3GP/3G2 default to H.263 video (limited to specific small resolutions)
         # and amr_nb audio (requires libopencore-amrnb, not in standard FFmpeg builds).

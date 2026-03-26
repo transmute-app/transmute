@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 from fastapi.openapi.utils import get_openapi
 from textwrap import dedent
 from api import router
+from api.routes.oidc import attach_session_middleware
 from core import build_logging_config, configure_logging, get_settings
 from background import get_upload_cleanup_thread
 import uvicorn
@@ -74,6 +75,9 @@ def create_app() -> FastAPI:
         return app.openapi_schema
 
     app.openapi = custom_openapi
+
+    # Session middleware is needed for the OIDC authorization round-trip
+    attach_session_middleware(app)
 
     app.include_router(router, prefix="/api")
     web_dir = settings.web_dir

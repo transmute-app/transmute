@@ -1,0 +1,5 @@
+[4]{employee_id,name,department,salary,hire_date}:
+  101,Alice Johnson,Engineering,95000,2020-03-15
+  102,Bob Smith,Marketing,75000,2021-06-01
+  103,Carol Williams,Engineering,105000,2019-11-20
+  104,David Brown,Sales,82000,2022-01-10

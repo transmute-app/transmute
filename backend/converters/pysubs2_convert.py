@@ -2,6 +2,7 @@ import os
 import pysubs2
 from pathlib import Path
 from typing import Optional
+from pysubs2.exceptions import UnknownFPSError
 
 from .converter_interface import ConverterInterface
 
@@ -25,6 +26,7 @@ class PySubs2Converter(ConverterInterface):
 
     supported_input_formats: set = set(_pysubs2_format_map.keys())
     supported_output_formats: set = set(_pysubs2_format_map.keys())
+    _default_microdvd_fps = 24
 
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
         """
@@ -71,6 +73,14 @@ class PySubs2Converter(ConverterInterface):
             return set()
         return cls.supported_output_formats - {fmt}
 
+    def _load_subtitles(self):
+        try:
+            return pysubs2.load(self.input_file)
+        except UnknownFPSError:
+            if self.input_type.lower() != 'sub':
+                raise
+            return pysubs2.load(self.input_file, fps=self._default_microdvd_fps)
+
     def convert(self, overwrite: bool = True, quality: Optional[str] = None) -> list[str]:
         """
         Convert the input subtitle file to the output format using pysubs2.
@@ -107,7 +117,7 @@ class PySubs2Converter(ConverterInterface):
 
         try:
             # Load the subtitle file
-            subs = pysubs2.load(self.input_file)
+            subs = self._load_subtitles()
 
             # Get the pysubs2 format identifier for the output
             output_format = self._pysubs2_format_map.get(self.output_type.lower())
@@ -117,7 +127,7 @@ class PySubs2Converter(ConverterInterface):
             # Save in the target format
             # MicroDVD (.sub) requires an fps value for timing; default to 24.
             if output_format == 'microdvd':
-                subs.save(output_file, format_=output_format, fps=24)
+                subs.save(output_file, format_=output_format, fps=self._default_microdvd_fps)
             else:
                 subs.save(output_file, format_=output_format)
 

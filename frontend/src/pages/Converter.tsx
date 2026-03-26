@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { FaSyncAlt, FaDownload, FaTimes } from 'react-icons/fa'
 import FileTable, { FileInfo, ConversionInfo } from '../components/FileTable'
 import PreviewModal, { isPreviewable } from '../components/PreviewModal'
 import { authFetch as fetch } from '../utils/api'
 import { downloadBlob } from '../utils/download'
+import { stripExtension } from '../utils/filename'
 
 interface PendingFile {
   file: FileInfo
@@ -15,6 +17,23 @@ interface PendingFile {
 interface CompletedConversion {
   file: FileInfo
   conversion: ConversionInfo
+}
+
+function getIsMacPlatform() {
+  if (typeof navigator === 'undefined') return false
+
+  const platform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform
+    || navigator.platform
+    || navigator.userAgent
+  return /mac|iphone|ipad|ipod/i.test(platform)
+}
+
+function HotkeyHint({ label, className = '' }: { label: string; className?: string }) {
+  return (
+    <span className={`text-[11px] tracking-[0.12em] ${className || 'text-text-muted/70'}`}>
+      {label}
+    </span>
+  )
 }
 
 function Converter() {
@@ -318,11 +337,7 @@ function Converter() {
       const response = await fetch(`/api/files/${conversion.id}`)
       if (!response.ok) throw new Error('Download failed')
 
-      let filename = conversion.original_filename || 'download'
-      const lastDotIndex = filename.lastIndexOf('.')
-      if (lastDotIndex > 0) {
-        filename = filename.substring(0, lastDotIndex)
-      }
+      let filename = stripExtension(conversion.original_filename || 'download')
       filename += conversion.extension || ''
       
       const blob = await response.blob();
@@ -345,7 +360,14 @@ function Converter() {
 
   const filePickerRef1 = useRef<HTMLInputElement>(null)
   const filePickerRef2 = useRef<HTMLInputElement>(null)
-  const handleConvertAllRef = useRef(handleConvertAll);
+  const handleConvertAllRef = useRef(handleConvertAll)
+  const isMacPlatform = getIsMacPlatform()
+
+  const hotkeyLabels = {
+    open: isMacPlatform ? '⌘O' : 'Ctrl+O',
+    convert: isMacPlatform ? '⌘↵' : 'Ctrl+Enter',
+    clear: 'Esc',
+  }
 
   const hotkeys : Record<string, Function> = {
     'CTRL+O': () => {
@@ -366,13 +388,11 @@ function Converter() {
   }
 
   const keydownHandler = (event: KeyboardEvent) => {
-      let shortcut = '';
+      let shortcut = ''
       if(event.ctrlKey || event.metaKey) shortcut += 'CTRL+'
       if(event.shiftKey) shortcut += 'SHIFT+'
       if(event.altKey) shortcut += 'ALT+'
       shortcut += event.key.toUpperCase()
-
-      console.log(shortcut);
 
       if(hotkeys[shortcut]) {
         event.preventDefault()
@@ -381,7 +401,11 @@ function Converter() {
   }
 
   useEffect(() => {
-    window.addEventListener('keydown', keydownHandler);
+    window.addEventListener('keydown', keydownHandler)
+
+    return () => {
+      window.removeEventListener('keydown', keydownHandler)
+    }
   }, [])
 
   useEffect(() => {
@@ -419,6 +443,7 @@ function Converter() {
                   {uploading ? `Uploading ${uploadCount} file${uploadCount > 1 ? 's' : ''}...` : 'Drop files here'}
                 </span>
                 <span className="text-xs opacity-60">or click to browse</span>
+                <HotkeyHint label={hotkeyLabels.open} />
               </div>
               <input
                 type="file"
@@ -443,7 +468,7 @@ function Converter() {
 
   // File list view - shown once files have been selected
   return (
-    <div className="min-h-screen bg-gradient-to-br from-surface-dark to-surface-light p-8">
+    <div className="min-h-screen bg-gradient-to-br from-surface-dark to-surface-light p-4 sm:p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-primary mb-6">Transmute</h1>
 
@@ -463,11 +488,14 @@ function Converter() {
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
               </svg>
-              <span className="text-sm">
-                {uploading
-                  ? `Uploading ${uploadCount} file${uploadCount > 1 ? 's' : ''}...`
-                  : 'Drop files here or click to browse'}
-              </span>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-sm">
+                  {uploading
+                    ? `Uploading ${uploadCount} file${uploadCount > 1 ? 's' : ''}...`
+                    : 'Drop files here or click to browse'}
+                </span>
+                <HotkeyHint label={hotkeyLabels.open} />
+              </div>
             </div>
             <input
               type="file"
@@ -489,26 +517,32 @@ function Converter() {
         {/* Pending conversions section */}
         {hasPendingFiles && (
           <div className="mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-text">
-                Pending Conversions ({pendingFiles.length})
+            <div className="flex justify-between items-center mb-4 gap-2">
+              <h2 className="text-base sm:text-xl font-semibold text-text whitespace-nowrap">
+                Pending ({pendingFiles.length})
               </h2>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={handleConvertAll}
                   disabled={converting || pendingFiles.length === 0}
-                  className="bg-primary hover:bg-primary-dark text-text font-semibold py-2 px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 sm:gap-2 bg-primary hover:bg-primary-dark text-text font-semibold py-2 px-3 sm:px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  {converting
-                    ? `Converting ${pendingFiles.length} file${pendingFiles.length > 1 ? 's' : ''}...`
-                    : `Convert ${pendingFiles.length} File${pendingFiles.length > 1 ? 's' : ''}`}
+                  <FaSyncAlt className={`text-xs sm:text-sm ${converting ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">
+                    {converting
+                      ? `Converting ${pendingFiles.length} file${pendingFiles.length > 1 ? 's' : ''}...`
+                      : `Convert ${pendingFiles.length} File${pendingFiles.length > 1 ? 's' : ''}`}
+                  </span>
+                  <HotkeyHint label={hotkeyLabels.convert} className="text-text/80 hidden sm:inline" />
                 </button>
                 <button
                   onClick={() => setPendingFiles([])}
                   disabled={converting}
-                  className="text-sm text-text-muted hover:text-text border border-surface-dark hover:border-text-muted py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 sm:gap-2 text-sm text-text-muted hover:text-text border border-surface-dark hover:border-text-muted py-2 px-3 sm:px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Clear
+                  <FaTimes className="text-xs sm:text-sm" />
+                  <span className="hidden sm:inline">Clear</span>
+                  <HotkeyHint label={hotkeyLabels.clear} className="hidden sm:inline" />
                 </button>
               </div>
             </div>
@@ -534,25 +568,32 @@ function Converter() {
         {/* Completed conversions section */}
         {hasCompletedConversions && (
           <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-text">
-                Completed Conversions ({completedConversions.length})
+            <div className="flex justify-between items-center mb-4 gap-2">
+              <h2 className="text-base sm:text-xl font-semibold text-text whitespace-nowrap">
+                Completed ({completedConversions.length})
               </h2>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 {completedConversions.length > 1 && (
                   <button
                     onClick={handleDownloadAll}
                     disabled={downloadingAll}
-                    className="bg-success hover:bg-success-dark text-white font-semibold py-2 px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1.5 sm:gap-2 bg-success hover:bg-success-dark text-white font-semibold py-2 px-3 sm:px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
-                    {downloadingAll ? 'Downloading...' : `Download All ${completedConversions.length} Files`}
+                    <FaDownload className="text-xs sm:text-sm" />
+                    <span className="hidden sm:inline">
+                      {downloadingAll ? 'Downloading...' : `Download All ${completedConversions.length} Files`}
+                    </span>
+                    <span className="sm:hidden">
+                      {downloadingAll ? '...' : 'All'}
+                    </span>
                   </button>
                 )}
                 <button
                   onClick={() => setCompletedConversions([])}
-                  className="text-sm text-text-muted hover:text-text border border-surface-dark hover:border-text-muted py-2 px-4 rounded-lg transition duration-200"
+                  className="flex items-center gap-1.5 sm:gap-2 text-sm text-text-muted hover:text-text border border-surface-dark hover:border-text-muted py-2 px-3 sm:px-4 rounded-lg transition duration-200"
                 >
-                  Clear
+                  <FaTimes className="text-xs sm:text-sm" />
+                  <span className="hidden sm:inline">Clear</span>
                 </button>
               </div>
             </div>
@@ -563,7 +604,7 @@ function Converter() {
                 conversion: cc.conversion,
                 onDownload: () => handleDownload(cc.conversion),
                 onDelete: () => handleDelete(cc.file.id, false),
-                onPreview: isPreviewable(cc.conversion.media_type) ? () => { const name = cc.file.original_filename || 'download'; const dot = name.lastIndexOf('.'); const base = dot > 0 ? name.substring(0, dot) : name; setPreviewFile({ id: cc.conversion.id, filename: base + (cc.conversion.extension || ''), mediaType: cc.conversion.media_type }) } : undefined,
+                onPreview: isPreviewable(cc.conversion.media_type) ? () => { const name = cc.file.original_filename || 'download'; const base = stripExtension(name); setPreviewFile({ id: cc.conversion.id, filename: base + (cc.conversion.extension || ''), mediaType: cc.conversion.media_type }) } : undefined,
                 isDeleting: deletingId === cc.file.id,
                 isDownloading: downloadingId === cc.conversion.id,
               }))}

@@ -17,6 +17,7 @@ class UserRole(str, Enum):
 
     ADMIN = "admin"
     MEMBER = "member"
+    GUEST = "guest"
 
 
 class UserDB:
@@ -59,6 +60,8 @@ class UserDB:
         """Validate and normalize a role value for storage."""
         return UserRole(role).value
 
+    _SELECT_COLS = "uuid, username, email, full_name, hashed_password, role, disabled, is_guest, expires_at"
+
     @staticmethod
     def _row_to_dict(row: sqlite3.Row) -> dict:
         """Normalize a raw database row into typed user data."""
@@ -70,6 +73,8 @@ class UserDB:
             "hashed_password": row["hashed_password"],
             "role": row["role"],
             "disabled": bool(row["disabled"]),
+            "is_guest": bool(row["is_guest"]),
+            "expires_at": row["expires_at"],
         }
 
     def create_tables(self) -> None:
@@ -83,7 +88,9 @@ class UserDB:
                     full_name TEXT,
                     hashed_password TEXT NOT NULL,
                     role TEXT NOT NULL DEFAULT '{UserRole.MEMBER.value}',
-                    disabled INTEGER NOT NULL DEFAULT 0
+                    disabled INTEGER NOT NULL DEFAULT 0,
+                    is_guest INTEGER NOT NULL DEFAULT 0,
+                    expires_at TEXT
                 )
             """)  # nosec B608
 
@@ -99,6 +106,8 @@ class UserDB:
             "hashed_password": "TEXT",  # nosec B105, false positive hardcoded password: 'TEXT'
             "role": f"TEXT NOT NULL DEFAULT '{UserRole.MEMBER.value}'",
             "disabled": "INTEGER NOT NULL DEFAULT 0",
+            "is_guest": "INTEGER NOT NULL DEFAULT 0",
+            "expires_at": "TEXT",
         })
 
     def insert_user(self, user_data: dict) -> dict:
@@ -130,11 +139,14 @@ class UserDB:
             "role",
             "disabled",
         }
-        if set(user_data.keys()) != required_fields:
-            diff = required_fields.symmetric_difference(user_data.keys())
+        optional_fields = {"is_guest", "expires_at"}
+        all_known = required_fields | optional_fields
+        missing = required_fields - set(user_data.keys())
+        extra = set(user_data.keys()) - all_known
+        if missing or extra:
             raise ValueError(
                 "User data must contain the following fields: "
-                f"{sorted(required_fields)}. Missing or extra fields: {diff}"
+                f"{sorted(required_fields)}. Missing: {missing or 'none'}, extra: {extra or 'none'}"
             )
 
         normalized_user = {
@@ -145,12 +157,14 @@ class UserDB:
             "hashed_password": user_data["hashed_password"],
             "role": self._normalize_role(user_data["role"]),
             "disabled": int(bool(user_data["disabled"])),
+            "is_guest": int(bool(user_data.get("is_guest", False))),
+            "expires_at": user_data.get("expires_at"),
         }
 
         with self.conn:
             self.conn.execute(
-                f"INSERT INTO {self.TABLE_NAME} (uuid, username, email, full_name, hashed_password, role, disabled) "  # nosec B608
-                f"VALUES (?, ?, ?, ?, ?, ?, ?)",
+                f"INSERT INTO {self.TABLE_NAME} (uuid, username, email, full_name, hashed_password, role, disabled, is_guest, expires_at) "  # nosec B608
+                f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     normalized_user["uuid"],
                     normalized_user["username"],
@@ -159,10 +173,13 @@ class UserDB:
                     normalized_user["hashed_password"],
                     normalized_user["role"],
                     normalized_user["disabled"],
+                    normalized_user["is_guest"],
+                    normalized_user["expires_at"],
                 )
             )
 
         normalized_user["disabled"] = bool(normalized_user["disabled"])
+        normalized_user["is_guest"] = bool(normalized_user["is_guest"])
         return normalized_user
 
     def get_user(self, user_uuid: str) -> Optional[dict]:
@@ -170,7 +187,7 @@ class UserDB:
         cursor = self.conn.cursor()
         cursor.row_factory = sqlite3.Row
         cursor.execute(
-            f"SELECT uuid, username, email, full_name, hashed_password, role, disabled FROM {self.TABLE_NAME} WHERE uuid = ?",  # nosec B608
+            f"SELECT {self._SELECT_COLS} FROM {self.TABLE_NAME} WHERE uuid = ?",  # nosec B608
             (user_uuid,)
         )
         row = cursor.fetchone()
@@ -183,7 +200,7 @@ class UserDB:
         cursor = self.conn.cursor()
         cursor.row_factory = sqlite3.Row
         cursor.execute(
-            f"SELECT uuid, username, email, full_name, hashed_password, role, disabled FROM {self.TABLE_NAME} WHERE username = ?",  # nosec B608
+            f"SELECT {self._SELECT_COLS} FROM {self.TABLE_NAME} WHERE username = ?",  # nosec B608
             (username,)
         )
         row = cursor.fetchone()
@@ -196,7 +213,7 @@ class UserDB:
         cursor = self.conn.cursor()
         cursor.row_factory = sqlite3.Row
         cursor.execute(
-            f"SELECT uuid, username, email, full_name, hashed_password, role, disabled FROM {self.TABLE_NAME} WHERE email = ?",  # nosec B608
+            f"SELECT {self._SELECT_COLS} FROM {self.TABLE_NAME} WHERE email = ?",  # nosec B608
             (email,)
         )
         row = cursor.fetchone()
@@ -235,7 +252,7 @@ class UserDB:
         cursor = self.conn.cursor()
         cursor.row_factory = sqlite3.Row
         cursor.execute(
-            f"SELECT uuid, username, email, full_name, hashed_password, role, disabled FROM {self.TABLE_NAME} ORDER BY username",  # nosec B608
+            f"SELECT {self._SELECT_COLS} FROM {self.TABLE_NAME} ORDER BY username",  # nosec B608
         )
         rows = cursor.fetchall()
         return [self._row_to_dict(row) for row in rows]
@@ -245,7 +262,7 @@ class UserDB:
 
         The UUID is immutable and cannot be updated.
         """
-        allowed = {"username", "email", "full_name", "hashed_password", "role", "disabled"}
+        allowed = {"username", "email", "full_name", "hashed_password", "role", "disabled", "expires_at"}
         filtered = {key: value for key, value in updates.items() if key in allowed}
 
         if not filtered:
@@ -277,6 +294,26 @@ class UserDB:
                 (user_uuid,)
             )
         return cursor.rowcount > 0
+
+    def count_non_guest_users(self) -> int:
+        """Return the total number of non-guest users in the database."""
+        cursor = self.conn.cursor()
+        cursor.execute(f"SELECT COUNT(*) FROM {self.TABLE_NAME} WHERE is_guest = 0")  # nosec B608
+        row = cursor.fetchone()
+        return int(row[0]) if row is not None else 0
+
+    def has_non_guest_users(self) -> bool:
+        """Return whether at least one non-guest user exists."""
+        return self.count_non_guest_users() > 0
+
+    def list_expired_guests(self) -> list[dict]:
+        """Return guest users whose expires_at has passed."""
+        cursor = self.conn.cursor()
+        cursor.row_factory = sqlite3.Row
+        cursor.execute(
+            f"SELECT {self._SELECT_COLS} FROM {self.TABLE_NAME} WHERE is_guest = 1 AND expires_at IS NOT NULL AND expires_at < datetime('now')",  # nosec B608
+        )
+        return [self._row_to_dict(row) for row in cursor.fetchall()]
 
     def close(self) -> None:
         """Close the current thread's database connection."""

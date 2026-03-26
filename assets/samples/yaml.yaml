@@ -1,0 +1,22 @@
+server:
+  host: localhost
+  port: 8080
+  ssl_enabled: true
+
+database:
+  host: db.example.com
+  port: 5432
+  name: production_db
+  username: admin
+  max_connections: 100
+
+features:
+  - authentication
+  - logging
+  - caching
+  - monitoring
+
+settings:
+  debug_mode: false
+  log_level: info
+  timeout_seconds: 30

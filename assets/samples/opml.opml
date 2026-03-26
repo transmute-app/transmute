@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<opml version="1.0">
+  <head>
+    <title>Feeds subscribed in ForumSurfer</title>
+  </head>
+  <body>
+    <outline text="http://dba.stackexchange.com/" title="dba.stackexchange.com">
+      <outline type="rss" text="Active questions tagged sql-server or sql-server-2008 or sql-server-2012 or sql-server-2008-r2 or sql-server-2014 - Database Administrators Stack Exchange" title="Active questions tagged sql-server or sql-server-2008 or sql-server-2012 or sql-server-2008-r2 or sql-server-2014 - Database Administrators Stack Exchange" xmlUrl="http://dba.stackexchange.com/feeds/tag/sql-server OR sql-server-2008 OR sql-server-2012 OR sql-server-2008-r2 OR sql-server-2014" />
+    </outline>
+    <outline text="http://www.sqlservercentral.com/" title="www.sqlservercentral.com">
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2005 / SS2K5 Replication " title="SQLServerCentral.com / SQL Server 2005 / SS2K5 Replication " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed291-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2008 / SQL Server 2008 Administration " title="SQLServerCentral.com / SQL Server 2008 / SQL Server 2008 Administration " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed1550-0-0-1.aspx" />
+      <outline type="rss" text="SQL Server 2005 / SQL Server 2005 Performance Tuning" title="SQL Server 2005 / SQL Server 2005 Performance Tuning" xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed360-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2008 / SQL Server Newbies " title="SQLServerCentral.com / SQL Server 2008 / SQL Server Newbies " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed1292-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Administering / SQL Server 2005 " title="SQLServerCentral.com / Administering / SQL Server 2005 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed146-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Certification / Career " title="SQLServerCentral.com / Certification / Career " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed10-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2008 / Data Corruption (SS2K8 / SS2K8 R2) " title="SQLServerCentral.com / SQL Server 2008 / Data Corruption (SS2K8 / SS2K8 R2) " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed2893-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2008 / T-SQL (SS2K8) " title="SQLServerCentral.com / SQL Server 2008 / T-SQL (SS2K8) " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed392-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2005 / T-SQL (SS2K5) " title="SQLServerCentral.com / SQL Server 2005 / T-SQL (SS2K5) " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed338-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2012 / SQL Server 2012 -  T-SQL " title="SQLServerCentral.com / SQL Server 2012 / SQL Server 2012 -  T-SQL " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed3077-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Business Intelligence / SQL Server 2005 " title="SQLServerCentral.com / Business Intelligence / SQL Server 2005 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed147-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / CLR Integration and Programming. / SQL Server 2005 " title="SQLServerCentral.com / CLR Integration and Programming. / SQL Server 2005 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed386-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2005 / SQL Server Express " title="SQLServerCentral.com / SQL Server 2005 / SQL Server Express " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed324-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2012 / SQL 2012 - General " title="SQLServerCentral.com / SQL Server 2012 / SQL 2012 - General " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed2799-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2005 Security / SQL Server 2005 " title="SQLServerCentral.com / SQL Server 2005 Security / SQL Server 2005 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed359-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Data Warehousing / Data Transformation Services (DTS) " title="SQLServerCentral.com / Data Warehousing / Data Transformation Services (DTS) " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed19-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Development / SQL Server 2005 " title="SQLServerCentral.com / Development / SQL Server 2005 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed145-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2008 / SQL Server 2008 High Availability " title="SQLServerCentral.com / SQL Server 2008 / SQL Server 2008 High Availability " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed1549-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2005 Strategies / SQL Server 2005 " title="SQLServerCentral.com / SQL Server 2005 Strategies / SQL Server 2005 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed361-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2008 / Security (SS2K8) " title="SQLServerCentral.com / SQL Server 2008 / Security (SS2K8) " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed1526-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2005 / SQL Server 2005 Integration Services " title="SQLServerCentral.com / SQL Server 2005 / SQL Server 2005 Integration Services " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed148-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2008 / Working with Oracle " title="SQLServerCentral.com / SQL Server 2008 / Working with Oracle " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed1044-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2005 General Discussion / SQL Server 2005 " title="SQLServerCentral.com / SQL Server 2005 General Discussion / SQL Server 2005 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed149-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2014 / Development - SQL Server 2014 " title="SQLServerCentral.com / SQL Server 2014 / Development - SQL Server 2014 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed3412-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Data Corruption / SQL Server 2005 " title="SQLServerCentral.com / Data Corruption / SQL Server 2005 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed266-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Working with Oracle / SQL Server 2005 " title="SQLServerCentral.com / Working with Oracle / SQL Server 2005 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed1042-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2005 / SQL Server Newbies " title="SQLServerCentral.com / SQL Server 2005 / SQL Server Newbies " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed1291-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2008 / SQL Server 2008 Performance Tuning " title="SQLServerCentral.com / SQL Server 2008 / SQL Server 2008 Performance Tuning " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed3387-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / General / Programming " title="SQLServerCentral.com / General / Programming " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed23-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2014 / Administration - SQL Server 2014 " title="SQLServerCentral.com / SQL Server 2014 / Administration - SQL Server 2014 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed3411-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SMO/RMO/DMO / Programming " title="SQLServerCentral.com / SMO/RMO/DMO / Programming " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed22-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Backups / SQL Server 2005 " title="SQLServerCentral.com / Backups / SQL Server 2005 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed357-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Connecting / Programming " title="SQLServerCentral.com / Connecting / Programming " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed20-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Programming / Powershell " title="SQLServerCentral.com / Programming / Powershell " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed1351-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Career / Presentations and Speaking " title="SQLServerCentral.com / Career / Presentations and Speaking " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed2889-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 2008 - General / SQL Server 2008 " title="SQLServerCentral.com / SQL Server 2008 - General / SQL Server 2008 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed391-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Database Design / Virtualization " title="SQLServerCentral.com / Database Design / Virtualization " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed1454-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / In The Enterprise / SQL Server 7,2000 " title="SQLServerCentral.com / In The Enterprise / SQL Server 7,2000 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed54-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 7,2000 / Replication " title="SQLServerCentral.com / SQL Server 7,2000 / Replication " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed7-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Backups / SQL Server 7,2000 " title="SQLServerCentral.com / Backups / SQL Server 7,2000 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed24-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server CE / SQL Server 7,2000 " title="SQLServerCentral.com / SQL Server CE / SQL Server 7,2000 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed137-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Strategies / SQL Server 7,2000 " title="SQLServerCentral.com / Strategies / SQL Server 7,2000 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed49-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 7,2000 / T-SQL " title="SQLServerCentral.com / SQL Server 7,2000 / T-SQL " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed8-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / General / SQL Server 7,2000 " title="SQLServerCentral.com / General / SQL Server 7,2000 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed9-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Service Packs / SQL Server 7,2000 " title="SQLServerCentral.com / Service Packs / SQL Server 7,2000 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed48-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Globalization / SQL Server 7,2000 " title="SQLServerCentral.com / Globalization / SQL Server 7,2000 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed230-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Security / SQL Server 7,2000 " title="SQLServerCentral.com / Security / SQL Server 7,2000 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed6-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 7,2000 / SQL Server Agent " title="SQLServerCentral.com / SQL Server 7,2000 / SQL Server Agent " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed110-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server 7,2000 / Performance Tuning " title="SQLServerCentral.com / SQL Server 7,2000 / Performance Tuning " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed65-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Working with Oracle / SQL Server 7,2000 " title="SQLServerCentral.com / Working with Oracle / SQL Server 7,2000 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed1043-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Data Corruption / SQL Server 7,2000 " title="SQLServerCentral.com / Data Corruption / SQL Server 7,2000 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed265-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Administration / SQL Server 7,2000 " title="SQLServerCentral.com / Administration / SQL Server 7,2000 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed5-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / SQL Server Newbies / SQL Server 7,2000 " title="SQLServerCentral.com / SQL Server Newbies / SQL Server 7,2000 " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed169-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Reporting Services / Reporting Services 2005 Administration " title="SQLServerCentral.com / Reporting Services / Reporting Services 2005 Administration " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed162-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Reporting Services / Reporting Services 2005 Development " title="SQLServerCentral.com / Reporting Services / Reporting Services 2005 Development " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed1063-0-0-1.aspx" />
+      <outline type="rss" text="SQLServerCentral.com / Reporting Services / Reporting Services " title="SQLServerCentral.com / Reporting Services / Reporting Services " xmlUrl="http://www.sqlservercentral.com/Forums/RssFeed150-0-0-1.aspx" />
+    </outline>
+    <outline text="http://forums.sqlteam.com/" title="forums.sqlteam.com">
+      <outline type="rss" text="Transact-SQL" title="Transact-SQL" xmlUrl="http://forums.sqlteam.com/c/t-sql.rss" />
+      <outline type="rss" text="SQL Server Administration" title="SQL Server Administration" xmlUrl="http://forums.sqlteam.com/c/sql-server-administration.rss" />
+      <outline type="rss" text="Other SQL Server Topics" title="Other SQL Server Topics" xmlUrl="http://forums.sqlteam.com/c/other-sql-server-topics.rss" />
+      <outline type="rss" text="High Availability" title="High Availability" xmlUrl="http://forums.sqlteam.com/c/high-availability.rss" />
+      <outline type="rss" text="Replication" title="Replication" xmlUrl="http://forums.sqlteam.com/c/replication.rss" />
+      <outline type="rss" text="ClearTrace" title="ClearTrace" xmlUrl="http://forums.sqlteam.com/c/cleartrace.rss" />
+    </outline>
+    <outline text="http://connect.microsoft.com/" title="connect.microsoft.com">
+      <outline type="rss" text="Microsoft Connect: Most Recent Feedback - SQL Server" title="Microsoft Connect: Most Recent Feedback - SQL Server" xmlUrl="https://connect.microsoft.com/rss/68/RecentFeedbackForConnection.xml" />
+    </outline>
+    <outline text="http://social.msdn.microsoft.com/" title="social.msdn.microsoft.com">
+      <outline type="rss" text="SQL Server, Azure SQL Database forum" title="SQL Server, Azure SQL Database forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlserverit/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Integration Services forum" title="SQL Server Integration Services forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlintegrationservices/threads?outputAs=rss" />
+      <outline type="rss" text=".NET Framework inside SQL Server forum" title=".NET Framework inside SQL Server forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlnetfx/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Samples and Community Projects forum" title="SQL Server Samples and Community Projects forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlserversamples/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Manageability forum" title="SQL Server Manageability forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlkjmanageability/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Distributed Replay forum" title="SQL Server Distributed Replay forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqldru/threads?outputAs=rss" />
+      <outline type="rss" text="Database Mirroring forum" title="Database Mirroring forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqldatabasemirroring/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Security forum" title="SQL Server Security forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlsecurity/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Tools forum" title="SQL Server Tools forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqltools/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Migration forum" title="SQL Server Migration forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlservermigration/threads?outputAs=rss" />
+      <outline type="rss" text="Getting started with SQL Server forum" title="Getting started with SQL Server forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlgetstarted/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server In-Memory Technologies forum" title="SQL Server In-Memory Technologies forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlinmemory/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Setup &amp; Upgrade forum" title="SQL Server Setup &amp; Upgrade forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlsetupandupgrade/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Data Access forum" title="SQL Server Data Access forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqldataaccess/threads?outputAs=rss" />
+      <outline type="rss" text="Database Design forum" title="Database Design forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/databasedesign/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Data Tools forum" title="SQL Server Data Tools forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/ssdt/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Replication forum" title="SQL Server Replication forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlreplication/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server SMO/DMO forum" title="SQL Server SMO/DMO forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlsmoanddmo/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Express forum" title="SQL Server Express forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlexpress/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server High Availability and Disaster Recovery forum" title="SQL Server High Availability and Disaster Recovery forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqldisasterrecovery/threads?outputAs=rss" />
+      <outline type="rss" text="Transact-SQL forum" title="Transact-SQL forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/transactsql/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Search forum" title="SQL Server Search forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlsearch/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Database Engine forum" title="SQL Server Database Engine forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqldatabaseengine/threads?outputAs=rss" />
+      <outline type="rss" text="SQL Server Application and Multi-Server Management forum" title="SQL Server Application and Multi-Server Management forum" xmlUrl="https://social.msdn.microsoft.com/Forums/en-US/sqlkjappmsmgmt/threads?outputAs=rss" />
+    </outline>
+  </body>
+</opml>

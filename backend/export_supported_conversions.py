@@ -19,7 +19,8 @@ def get_supported_conversions():
                             "input_format": input_format,
                             "output_format": output_format
                         })
-
+    # Sort by converter name, then input format, then output format
+    supported_conversions.sort(key=lambda x: (x["converter_name"], x["input_format"], x["output_format"]))
     return supported_conversions
 
 def get_supported_formats():
@@ -32,12 +33,12 @@ def get_supported_formats():
     return formats
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Export OpenAPI schema to JSON")
+    parser = argparse.ArgumentParser(description="Export supported conversions to JSON")
     parser.add_argument(
         "--output",
         type=Path,
         default=Path("supported_conversions.json"),
-        help="Destination file path (default: ./openapi.json)",
+        help="Destination file path (default: ./supported_conversions.json)",
     )
     parser.add_argument(
         "--report-only",

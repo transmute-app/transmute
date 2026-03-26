@@ -3,6 +3,7 @@ import re
 import sqlite3
 import mimetypes
 import hashlib
+import logging
 import magic
 
 from typing import TYPE_CHECKING
@@ -128,6 +129,52 @@ def validate_sql_identifier(identifier: str) -> str:
     return identifier
 
 
+def detect_pdf_type(file_path: Path) -> str:
+    """
+    Detect the specific PDF type (e.g. PDF/A, PDF/X) by inspecting
+    XMP metadata with PyMuPDF.
+
+    PDF subtypes declare themselves in XMP metadata using standard
+    namespaces (pdfaid for PDF/A, pdfxid for PDF/X, etc.).
+
+    Args:
+        file_path: Path to the PDF file to analyze
+
+    Returns:
+        A string indicating the PDF type (e.g. "pdf/a", "pdf/x"), or "pdf" if no specific type is detected
+    """
+    import fitz
+
+    try:
+        doc = fitz.open(str(file_path))
+    except Exception as exc:
+        raise ValueError(f"Could not open PDF: {exc}") from exc
+
+    try:
+        if not doc.is_pdf:
+            raise ValueError(f"File is not a PDF: {file_path}")
+
+        xmp = doc.get_xml_metadata() or ""
+
+        # Each PDF subtype declares itself in XMP with a distinct namespace prefix.
+        # More-specific subtypes (PDF/VT) must be checked before general ones
+        # (PDF/X) because PDF/VT files also contain PDF/X markers.
+        _XMP_SUBTYPE_MARKERS = [
+            ("pdfvtid:GTS_PDFVTVersion", "pdf/vt"),
+            ("pdfaid:part", "pdf/a"),
+            ("pdfuaid:part", "pdf/ua"),
+            ("ISO_PDFEVersion", "pdf/e"),
+            ("pdfxid:GTS_PDFXVersion", "pdf/x"),
+        ]
+        for marker, subtype in _XMP_SUBTYPE_MARKERS:
+            if marker in xmp:
+                return subtype
+    finally:
+        doc.close()
+
+    return "pdf"
+
+
 def detect_media_type(file_path: Path) -> str:
     """
     Detect the media type of a file based on its extension.
@@ -142,12 +189,18 @@ def detect_media_type(file_path: Path) -> str:
         A lowercase extension string without a leading dot (e.g. "png", "pdf")
     """
     # Use extensions as the media_type
-    _, extension = os.path.splitext(file_path)
-    if not extension:
+    filename = file_path.name
+    extension = get_file_extension(filename)
+    if extension == 'pdf':
+        # For PDFs, use libmagic to detect specific PDF types (e.g. PDF/A)
+        media_type = detect_pdf_type(file_path)
+    elif not extension:
         # If no extension, try to detect using magic
         media_type = magic.from_file(str(file_path), mime=True)
         extension = mimetypes.guess_extension(media_type) or ""
-    media_type = extension.lstrip('.').lower()
+        media_type = extension.lstrip('.').lower()
+    else:
+        media_type = extension.lstrip('.').lower()
     return media_type
 
 def sanitize_extension(extension: str) -> str:
@@ -167,7 +220,30 @@ def sanitize_extension(extension: str) -> str:
     """
     # Keep alphanumerics plus _, -, and ., normalize case.
     cleaned = extension.strip().lstrip(".")
-    return "".join(ch for ch in cleaned if ch.isalnum() or ch in {"_", "-", "."}).lower()
+    return "".join(ch for ch in cleaned if ch.isalnum() or ch in {"_", "-", ".", "/"}).lower()
+
+def get_file_extension(filename: str) -> str:
+    """
+    Extract and sanitize the file extension from a filename.
+
+    Args:
+        filename: The filename to extract the extension from
+    Returns:
+        A sanitized extension string without a leading dot, or an empty string if no extension is found
+    """
+    # Should return only
+    allowed_concatenated_extensions = {
+        '.tar.gz',
+        '.tar.bz2',
+        '.tar.xz',
+        '.tar.zst',
+    }
+    lower_filename = filename.lower()
+    for ext in allowed_concatenated_extensions:
+        if lower_filename.endswith(ext):
+            return sanitize_extension(ext.lstrip("."))
+    
+    return sanitize_extension(Path(lower_filename).suffix.lower())
 
 
 def validate_hexadecimal_filename(filename: str) -> bool:
@@ -183,7 +259,8 @@ def validate_hexadecimal_filename(filename: str) -> bool:
     """
     # Get filename without extension
     path = Path(filename)
-    stem = path.stem
+    extension = get_file_extension(filename)
+    stem = path.stem if not extension else path.stem[:-len(extension)]
     
     # Check if stem is non-empty and contains only hex characters
     if not stem:

@@ -1,9 +1,0 @@
-1
-00:00:01,000 --> 00:00:04,000
-Welcome to Transmute!
-This is a sample SRT subtitle.
-
-2
-00:00:05,000 --> 00:00:09,000
-You can use this file to test
-our subtitle conversions.
