@@ -51,7 +51,7 @@ interface FileTableProps {
 type SortColumn = 'filename' | 'type' | 'size' | 'date'
 type SortDirection = 'asc' | 'desc'
 
-function formatFileSize(bytes: number): string {
+export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   const kb = bytes / 1024
   if (kb < 1024) return `${kb.toFixed(1)} KB`
