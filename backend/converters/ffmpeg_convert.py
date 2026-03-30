@@ -53,6 +53,11 @@ class FFmpegConverter(ConverterInterface):
         'oga',
         'mka',
     }
+    qualities = {
+        'low',
+        'medium',
+        'high',
+    }
     supported_input_formats: set = video_formats | audio_formats
     supported_output_formats: set = (video_formats | audio_formats) - _decode_only_formats
 

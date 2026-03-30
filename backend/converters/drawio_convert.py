@@ -18,6 +18,11 @@ class DrawioConverter(ConverterInterface):
         'svg',
         'jpeg',
     }
+    qualities = {
+        'low',
+        'medium',
+        'high',
+    }
     drawio_paths = {
         'darwin': '/Applications/draw.io.app/Contents/MacOS/draw.io',
         'linux': '/opt/drawio/drawio',
@@ -142,6 +147,16 @@ class DrawioConverter(ConverterInterface):
                 '-o', output_file,
                 '--no-sandbox',  # Required for containerized environments
             ]
+
+            # Add quality for JPEG format
+            if self.output_type.lower() == 'jpeg':
+                cmd.append('--quality')
+                if quality == 'high':
+                    cmd.append('90')
+                elif quality == 'low':
+                    cmd.append('60')
+                else:  # Default to medium quality
+                    cmd.append('80')
             
             # Add transparency for PNG format
             if self.output_type.lower() == 'png':

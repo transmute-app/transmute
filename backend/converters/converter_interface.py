@@ -5,6 +5,7 @@ from typing import Optional
 class ConverterInterface:
     supported_input_formats: set = set()  # To be defined by subclasses with supported input formats
     supported_output_formats: set = set()  # To be defined by subclasses with supported output formats
+    qualities: set = set()  # Optional quality settings for conversion, can be overridden by subclasses
 
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
         """

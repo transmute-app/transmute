@@ -99,6 +99,12 @@ class PillowConverter(ConverterInterface):
         'pnm',
         'pfm',
     }
+    qualities = {
+        'low',
+        'medium',
+        'high',
+    }
+    
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
         """
         Initialize Pillow converter.

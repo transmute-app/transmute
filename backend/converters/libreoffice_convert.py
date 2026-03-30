@@ -47,6 +47,11 @@ class LibreOfficeConverter(ConverterInterface):
         'png',
         'jpeg',
     }
+    qualities = {
+        'low',
+        'medium',
+        'high',
+    }
 
     # LibreOffice binary paths by platform
     _soffice_paths = {
