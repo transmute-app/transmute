@@ -84,7 +84,7 @@ function Auth() {
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-text">Log In</h2>
-                  <p className="text-sm text-text-muted">Sign in with your organization account.</p>
+                  <p className="text-sm text-text-muted">Sign in with your {oidcConfig.display_name} account.</p>
                 </div>
               </div>
 
