@@ -22,6 +22,7 @@ function Auth() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [oidcConfig, setOidcConfig] = useState<OidcConfig | null>(null)
+  const [showLocalLogin, setShowLocalLogin] = useState(false)
 
   useEffect(() => {
     apiJson<OidcConfig>('/api/oidc/config', {}, { auth: false })
@@ -34,6 +35,9 @@ function Auth() {
     : '/'
 
   const requiresSetup = bootstrapStatus?.requires_setup ?? false
+
+  // When OIDC is enabled and not in setup mode, default to showing the OIDC-primary view
+  const oidcPrimary = !!oidcConfig?.enabled && !requiresSetup && !showLocalLogin
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -71,113 +75,170 @@ function Auth() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(var(--color-primary),0.35),_transparent_38%),linear-gradient(135deg,_rgb(var(--color-surface-dark)),_rgb(var(--color-surface-light))_55%,_rgb(var(--color-surface-dark)))] px-6 py-10 text-text">
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-xl items-center justify-center">
         <section className="w-full">
-          <form onSubmit={handleSubmit} className="w-full rounded-[2rem] border border-white/10 bg-surface-dark/80 p-8 shadow-2xl backdrop-blur">
-            <div className="mb-8 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/20 text-primary-light">
-                {requiresSetup ? <FaUserPlus size={20} /> : <FaKey size={20} />}
+          {oidcPrimary ? (
+            /* ── OIDC-primary view ── */
+            <div className="w-full rounded-[2rem] border border-white/10 bg-surface-dark/80 p-8 shadow-2xl backdrop-blur">
+              <div className="mb-8 flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/20 text-primary-light">
+                  <FaKey size={20} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text">Log In</h2>
+                  <p className="text-sm text-text-muted">Sign in with your organization account.</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-2xl font-bold text-text">{requiresSetup ? 'Create Admin' : 'Log In'}</h2>
-                <p className="text-sm text-text-muted">{requiresSetup ? 'This account will become the initial administrator.' : 'Use your Transmute username and password.'}</p>
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-text">Username</span>
-                <input
-                  value={username}
-                  onChange={event => setUsername(event.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-surface-light/70 px-4 py-3 text-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                  placeholder="operator"
-                  required
-                />
-              </label>
-
-              {requiresSetup && (
-                <>
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-medium text-text">Full name</span>
-                    <input
-                      value={fullName}
-                      onChange={event => setFullName(event.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-surface-light/70 px-4 py-3 text-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                      placeholder="Alex Operator"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-medium text-text">Email</span>
-                    <input
-                      value={email}
-                      onChange={event => setEmail(event.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-surface-light/70 px-4 py-3 text-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                      placeholder="alex@example.com"
-                      type="email"
-                    />
-                  </label>
-                </>
+              {error && (
+                <div className="mb-5 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm text-primary-light">
+                  {error}
+                </div>
               )}
 
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-text">Password</span>
-                <PasswordField
-                  value={password}
-                  onChange={event => setPassword(event.target.value)}
-                  inputClassName="rounded-xl border border-white/10 bg-surface-light/70 px-4 py-3 text-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                  toggleButtonClassName="rounded-xl border border-white/10 bg-surface-light/70 px-4 text-text-muted transition hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  placeholder="••••••••"
-                  required
-                  minLength={requiresSetup ? 8 : undefined}
-                />
-                {requiresSetup && <p className="mt-1 text-xs text-text-muted">Must be at least 8 characters.</p>}
-              </label>
-            </div>
+              <a
+                href="/api/oidc/login"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 font-semibold text-white transition hover:bg-primary-dark"
+              >
+                <FaArrowUpRightFromSquare size={14} />
+                Sign in with {oidcConfig.display_name}
+              </a>
 
-            {error && (
-              <div className="mt-5 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm text-primary-light">
-                {error}
+              {/* Secondary options */}
+              <div className="mt-6 flex items-center gap-3">
+                <div className="h-px flex-1 bg-white/10" />
+                <span className="text-xs text-text-muted">or</span>
+                <div className="h-px flex-1 bg-white/10" />
               </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="mt-6 w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting ? 'Working...' : requiresSetup ? 'Create Admin Account' : 'Sign In'}
-            </button>
-
-            {(oidcConfig?.enabled || (oidcConfig?.allow_unauthenticated && !requiresSetup)) && (
-              <>
-                <div className="mt-6 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-white/10" />
-                  <span className="text-xs text-text-muted">or</span>
-                  <div className="h-px flex-1 bg-white/10" />
+              <div className={`mt-4 flex gap-3 ${oidcConfig?.allow_unauthenticated ? 'flex-row' : 'flex-col'}`}>
+                <button
+                  type="button"
+                  onClick={() => setShowLocalLogin(true)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-light/70 px-5 py-3.5 font-semibold text-text transition hover:border-primary/40 hover:bg-surface-light"
+                >
+                  Use local account
+                </button>
+                {oidcConfig?.allow_unauthenticated && (
+                  <button
+                    type="button"
+                    onClick={handleGuestLogin}
+                    disabled={submitting}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-light/70 px-5 py-3.5 font-semibold text-text transition hover:border-primary/40 hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Use as Guest
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* ── Local login / bootstrap form ── */
+            <form onSubmit={handleSubmit} className="w-full rounded-[2rem] border border-white/10 bg-surface-dark/80 p-8 shadow-2xl backdrop-blur">
+              <div className="mb-8 flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/20 text-primary-light">
+                  {requiresSetup ? <FaUserPlus size={20} /> : <FaKey size={20} />}
                 </div>
-                <div className={`mt-4 flex gap-3 ${oidcConfig?.enabled && oidcConfig?.allow_unauthenticated ? 'flex-row' : 'flex-col'}`}>
-                  {oidcConfig?.enabled && (
-                    <a
-                      href="/api/oidc/login"
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-light/70 px-5 py-3.5 font-semibold text-text transition hover:border-primary/40 hover:bg-surface-light"
-                    >
-                      <FaArrowUpRightFromSquare size={14} />
-                      {requiresSetup ? `Bootstrap with ${oidcConfig.display_name}` : `Sign in with ${oidcConfig.display_name}`}
-                    </a>
-                  )}
-                  {oidcConfig?.allow_unauthenticated && !requiresSetup && (
-                    <button
-                      type="button"
-                      onClick={handleGuestLogin}
-                      disabled={submitting}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-light/70 px-5 py-3.5 font-semibold text-text transition hover:border-primary/40 hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      Use as Guest
-                    </button>
-                  )}
+                <div>
+                  <h2 className="text-2xl font-bold text-text">{requiresSetup ? 'Create Admin' : 'Log In'}</h2>
+                  <p className="text-sm text-text-muted">{requiresSetup ? 'This account will become the initial administrator.' : 'Use your Transmute username and password.'}</p>
                 </div>
-              </>
-            )}
-          </form>
+              </div>
+
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-text">Username</span>
+                  <input
+                    value={username}
+                    onChange={event => setUsername(event.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-surface-light/70 px-4 py-3 text-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                    placeholder="operator"
+                    required
+                  />
+                </label>
+
+                {requiresSetup && (
+                  <>
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-medium text-text">Full name</span>
+                      <input
+                        value={fullName}
+                        onChange={event => setFullName(event.target.value)}
+                        className="w-full rounded-xl border border-white/10 bg-surface-light/70 px-4 py-3 text-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                        placeholder="Alex Operator"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-medium text-text">Email</span>
+                      <input
+                        value={email}
+                        onChange={event => setEmail(event.target.value)}
+                        className="w-full rounded-xl border border-white/10 bg-surface-light/70 px-4 py-3 text-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                        placeholder="alex@example.com"
+                        type="email"
+                      />
+                    </label>
+                  </>
+                )}
+
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-text">Password</span>
+                  <PasswordField
+                    value={password}
+                    onChange={event => setPassword(event.target.value)}
+                    inputClassName="rounded-xl border border-white/10 bg-surface-light/70 px-4 py-3 text-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                    toggleButtonClassName="rounded-xl border border-white/10 bg-surface-light/70 px-4 text-text-muted transition hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="••••••••"
+                    required
+                    minLength={requiresSetup ? 8 : undefined}
+                  />
+                  {requiresSetup && <p className="mt-1 text-xs text-text-muted">Must be at least 8 characters.</p>}
+                </label>
+              </div>
+
+              {error && (
+                <div className="mt-5 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm text-primary-light">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="mt-6 w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {submitting ? 'Working...' : requiresSetup ? 'Create Admin Account' : 'Sign In'}
+              </button>
+
+              {/* Secondary options for local login view */}
+              {(oidcConfig?.enabled || (oidcConfig?.allow_unauthenticated && !requiresSetup)) && (
+                <>
+                  <div className="mt-6 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-white/10" />
+                    <span className="text-xs text-text-muted">or</span>
+                    <div className="h-px flex-1 bg-white/10" />
+                  </div>
+                  <div className={`mt-4 flex gap-3 ${oidcConfig?.enabled && oidcConfig?.allow_unauthenticated ? 'flex-row' : 'flex-col'}`}>
+                    {oidcConfig?.enabled && (
+                      <a
+                        href="/api/oidc/login"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-light/70 px-5 py-3.5 font-semibold text-text transition hover:border-primary/40 hover:bg-surface-light"
+                      >
+                        <FaArrowUpRightFromSquare size={14} />
+                        {requiresSetup ? `Bootstrap with ${oidcConfig.display_name}` : `Sign in with ${oidcConfig.display_name}`}
+                      </a>
+                    )}
+                    {oidcConfig?.allow_unauthenticated && !requiresSetup && (
+                      <button
+                        type="button"
+                        onClick={handleGuestLogin}
+                        disabled={submitting}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-light/70 px-5 py-3.5 font-semibold text-text transition hover:border-primary/40 hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Use as Guest
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </form>
+          )}
         </section>
       </div>
     </div>
