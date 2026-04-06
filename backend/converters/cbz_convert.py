@@ -102,7 +102,7 @@ class CBZConverter(ConverterInterface):
                 pages.append(PageInfo.load(path=str(img_path), type=page_type))
 
             comic = ComicInfo.from_pages(pages=pages)
-            Path(output_file).write_bytes(comic.pack())
+            Path(output_file).write_bytes(comic.pack(compression=zipfile.ZIP_DEFLATED))
 
         return output_file
 
@@ -113,7 +113,7 @@ class CBZConverter(ConverterInterface):
             raise RuntimeError(
                 f"PDF contains no extractable images: {exc}"
             ) from exc
-        Path(output_file).write_bytes(comic.pack())
+        Path(output_file).write_bytes(comic.pack(compression=zipfile.ZIP_DEFLATED))
         return output_file
 
     @staticmethod
@@ -168,7 +168,7 @@ class CBZConverter(ConverterInterface):
                 pages.append(PageInfo.load(path=str(img_path), type=page_type))
 
             comic = ComicInfo.from_pages(pages=pages)
-            Path(output_file).write_bytes(comic.pack())
+            Path(output_file).write_bytes(comic.pack(compression=zipfile.ZIP_DEFLATED))
 
         return output_file
 

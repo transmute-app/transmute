@@ -5,7 +5,7 @@ authlib==1.6.9
 bcrypt==5.0.0
 brotli==1.2.0
 cairosvg==2.9.0
-cbz==3.4.5
+cbz==4.0.0
 defusedxml==0.7.1
 extract-msg==0.55.0
 fastapi==0.129.0
