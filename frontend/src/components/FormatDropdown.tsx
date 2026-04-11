@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { FaChevronDown, FaSearch } from 'react-icons/fa'
+import { useTranslation } from 'react-i18next'
 
 interface FormatDropdownProps {
   value: string
@@ -25,6 +26,7 @@ function FormatDropdown({
 }: FormatDropdownProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const { t } = useTranslation()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -171,7 +173,7 @@ function FormatDropdown({
             onChange={e => { setSearch(e.target.value); setHighlightIndex(0) }}
             onKeyDown={handleKeyDown}
             className="bg-transparent text-[16px] sm:text-xs text-text placeholder-text-muted/50 outline-none w-full font-mono"
-            placeholder="Search..."
+            placeholder={t('dropdown.search')}
           />
         </div>
       </div>
@@ -179,7 +181,7 @@ function FormatDropdown({
       {/* Options list */}
       <div ref={listRef} className="max-h-[180px] overflow-y-auto py-1 scrollbar-thin">
         {filtered.length === 0 ? (
-          <div className="px-3 py-2 text-xs text-text-muted italic">No matches</div>
+          <div className="px-3 py-2 text-xs text-text-muted italic">{t('dropdown.noMatches')}</div>
         ) : (
           filtered.map((format, i) => (
             <button

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { FaKey, FaUserPlus, FaArrowUpRightFromSquare } from 'react-icons/fa6'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../AuthContext'
 import { apiJson } from '../utils/api'
 import PasswordField from '../components/PasswordField'
@@ -16,6 +17,7 @@ function Auth() {
   const navigate = useNavigate()
   const location = useLocation()
   const { bootstrapStatus, login, createBootstrapUser, loginAsGuest } = useAuth()
+  const { t } = useTranslation()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [email, setEmail] = useState('')
@@ -65,7 +67,7 @@ function Auth() {
       }
       navigate(returnTo, { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Authentication failed')
+      setError(err instanceof Error ? err.message : t('auth.authFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -78,7 +80,7 @@ function Auth() {
       await loginAsGuest()
       navigate(returnTo, { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create guest session')
+      setError(err instanceof Error ? err.message : t('auth.guestFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -96,8 +98,8 @@ function Auth() {
                   <FaKey size={20} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-text">Log In</h2>
-                  <p className="text-sm text-text-muted">Sign in with your {oidcConfig.display_name} account.</p>
+                  <h2 className="text-2xl font-bold text-text">{t('auth.logIn')}</h2>
+                  <p className="text-sm text-text-muted">{t('auth.signInWithProvider', { provider: oidcConfig.display_name })}</p>
                 </div>
               </div>
 
@@ -112,7 +114,7 @@ function Auth() {
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 font-semibold text-white transition hover:bg-primary-dark"
               >
                 <FaArrowUpRightFromSquare size={14} />
-                Sign in with {oidcConfig.display_name}
+                {t('auth.signInWith', { provider: oidcConfig.display_name })}
               </a>
 
               {/* Secondary options */}
@@ -127,7 +129,7 @@ function Auth() {
                   onClick={() => setShowLocalLogin(true)}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-light/70 px-5 py-3.5 font-semibold text-text transition hover:border-primary/40 hover:bg-surface-light"
                 >
-                  Use local account
+                  {t('auth.useLocalAccount')}
                 </button>
                 {oidcConfig?.allow_unauthenticated && (
                   <button
@@ -136,7 +138,7 @@ function Auth() {
                     disabled={submitting}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-light/70 px-5 py-3.5 font-semibold text-text transition hover:border-primary/40 hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Use as Guest
+                    {t('auth.useAsGuest')}
                   </button>
                 )}
               </div>
@@ -149,14 +151,14 @@ function Auth() {
                   {requiresSetup ? <FaUserPlus size={20} /> : <FaKey size={20} />}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-text">{requiresSetup ? 'Create Admin' : 'Log In'}</h2>
-                  <p className="text-sm text-text-muted">{requiresSetup ? 'This account will become the initial administrator.' : 'Use your Transmute username and password.'}</p>
+                  <h2 className="text-2xl font-bold text-text">{requiresSetup ? t('auth.createAdmin') : t('auth.logIn')}</h2>
+                  <p className="text-sm text-text-muted">{requiresSetup ? t('auth.initialAdmin') : t('auth.useCredentials')}</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-text">Username</span>
+                  <span className="mb-2 block text-sm font-medium text-text">{t('fields.username')}</span>
                   <input
                     value={username}
                     onChange={event => setUsername(event.target.value)}
@@ -169,7 +171,7 @@ function Auth() {
                 {requiresSetup && (
                   <>
                     <label className="block">
-                      <span className="mb-2 block text-sm font-medium text-text">Full name</span>
+                      <span className="mb-2 block text-sm font-medium text-text">{t('fields.fullName')}</span>
                       <input
                         value={fullName}
                         onChange={event => setFullName(event.target.value)}
@@ -178,7 +180,7 @@ function Auth() {
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-2 block text-sm font-medium text-text">Email</span>
+                      <span className="mb-2 block text-sm font-medium text-text">{t('fields.email')}</span>
                       <input
                         value={email}
                         onChange={event => setEmail(event.target.value)}
@@ -191,7 +193,7 @@ function Auth() {
                 )}
 
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-text">Password</span>
+                  <span className="mb-2 block text-sm font-medium text-text">{t('fields.password')}</span>
                   <PasswordField
                     value={password}
                     onChange={event => setPassword(event.target.value)}
@@ -201,7 +203,7 @@ function Auth() {
                     required
                     minLength={requiresSetup ? 8 : undefined}
                   />
-                  {requiresSetup && <p className="mt-1 text-xs text-text-muted">Must be at least 8 characters.</p>}
+                  {requiresSetup && <p className="mt-1 text-xs text-text-muted">{t('auth.passwordMin8')}</p>}
                 </label>
               </div>
 
@@ -216,7 +218,7 @@ function Auth() {
                 disabled={submitting}
                 className="mt-6 w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {submitting ? 'Working...' : requiresSetup ? 'Create Admin Account' : 'Sign In'}
+                {submitting ? t('auth.working') : requiresSetup ? t('auth.createAdminAccount') : t('auth.signIn')}
               </button>
 
               {/* Secondary options for local login view */}
@@ -224,7 +226,7 @@ function Auth() {
                 <>
                   <div className="mt-6 flex items-center gap-3">
                     <div className="h-px flex-1 bg-white/10" />
-                    <span className="text-xs text-text-muted">or</span>
+                    <span className="text-xs text-text-muted">{t('auth.or')}</span>
                     <div className="h-px flex-1 bg-white/10" />
                   </div>
                   <div className={`mt-4 flex gap-3 ${oidcConfig?.enabled && oidcConfig?.allow_unauthenticated ? 'flex-row' : 'flex-col'}`}>
@@ -234,7 +236,7 @@ function Auth() {
                         className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-light/70 px-5 py-3.5 font-semibold text-text transition hover:border-primary/40 hover:bg-surface-light"
                       >
                         <FaArrowUpRightFromSquare size={14} />
-                        {requiresSetup ? `Bootstrap with ${oidcConfig.display_name}` : `Sign in with ${oidcConfig.display_name}`}
+                        {requiresSetup ? t('auth.bootstrapWith', { provider: oidcConfig.display_name }) : t('auth.signInWith', { provider: oidcConfig.display_name })}
                       </a>
                     )}
                     {oidcConfig?.allow_unauthenticated && !requiresSetup && (
@@ -244,7 +246,7 @@ function Auth() {
                         disabled={submitting}
                         className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-light/70 px-5 py-3.5 font-semibold text-text transition hover:border-primary/40 hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Use as Guest
+                        {t('auth.useAsGuest')}
                       </button>
                     )}
                   </div>

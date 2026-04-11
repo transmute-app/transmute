@@ -1,5 +1,6 @@
 import { useState, type ComponentPropsWithoutRef } from 'react'
 import { FaEye, FaEyeSlash } from 'react-icons/fa6'
+import { useTranslation } from 'react-i18next'
 
 interface PasswordFieldProps extends Omit<ComponentPropsWithoutRef<'input'>, 'type'> {
   containerClassName?: string
@@ -14,8 +15,9 @@ function PasswordField({
   ...inputProps
 }: PasswordFieldProps) {
   const [isVisible, setIsVisible] = useState(false)
+  const { t } = useTranslation()
   const Icon = isVisible ? FaEyeSlash : FaEye
-  const toggleLabel = isVisible ? 'Hide password' : 'Show password'
+  const toggleLabel = isVisible ? t('password.hide') : t('password.show')
 
   return (
     <div className={containerClassName}>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { apiJson } from '../utils/api'
 
 interface UserStats {
@@ -28,18 +29,19 @@ function Stats() {
   const [stats, setStats] = useState<StatsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   useEffect(() => {
     apiJson<StatsData>('/api/stats')
       .then(setStats)
-      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load stats'))
+      .catch(err => setError(err instanceof Error ? err.message : t('stats.loadFailed')))
       .finally(() => setLoading(false))
   }, [])
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-surface-dark to-surface-light text-text-muted">
-        <p className="text-sm uppercase tracking-[0.2em]">Loading stats...</p>
+        <p className="text-sm uppercase tracking-[0.2em]">{t('stats.loadingStats')}</p>
       </div>
     )
   }
@@ -47,7 +49,7 @@ function Stats() {
   if (error || !stats) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-surface-dark to-surface-light">
-        <p className="text-sm text-primary-light">{error ?? 'No data available'}</p>
+        <p className="text-sm text-primary-light">{error ?? t('stats.noDataAvailable')}</p>
       </div>
     )
   }
@@ -59,30 +61,30 @@ function Stats() {
     <div className="min-h-full bg-gradient-to-br from-surface-dark to-surface-light p-8 pb-12">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6 min-h-[4rem]">
-          <h1 className="text-3xl font-bold text-primary">Stats</h1>
+          <h1 className="text-3xl font-bold text-primary">{t('stats.title')}</h1>
         </div>
 
         {/* Summary cards */}
         <div className="grid gap-4 sm:grid-cols-3 mb-8">
           <div className="rounded-xl border border-surface-light bg-surface-light/70 p-5">
-            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">Total Uploads</p>
+            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">{t('stats.totalUploads')}</p>
             <p className="mt-2 text-2xl font-bold text-text">{stats.total_files_uploaded.toLocaleString()}</p>
           </div>
           <div className="rounded-xl border border-surface-light bg-surface-light/70 p-5">
-            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">Total Conversions</p>
+            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">{t('stats.totalConversions')}</p>
             <p className="mt-2 text-2xl font-bold text-text">{stats.total_conversions.toLocaleString()}</p>
           </div>
           <div className="rounded-xl border border-surface-light bg-surface-light/70 p-5">
-            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">Total Storage</p>
+            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">{t('stats.totalStorage')}</p>
             <p className="mt-2 text-2xl font-bold text-text">{formatBytes(stats.total_storage_bytes)}</p>
           </div>
         </div>
 
         {/* Storage bar chart */}
         <div className="rounded-xl border border-surface-light bg-surface-light/70 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-text mb-4">Storage by User</h2>
+          <h2 className="text-lg font-semibold text-text mb-4">{t('stats.storageByUser')}</h2>
           {sortedByStorage.length === 0 ? (
-            <p className="text-sm text-text-muted">No data yet.</p>
+            <p className="text-sm text-text-muted">{t('stats.noData')}</p>
           ) : (
             <div className="space-y-3">
               {sortedByStorage.map(user => {
@@ -110,15 +112,15 @@ function Stats() {
 
         {/* User activity table */}
         <div className="rounded-xl border border-surface-light bg-surface-light/70 p-6">
-          <h2 className="text-lg font-semibold text-text mb-4">Activity by User</h2>
+          <h2 className="text-lg font-semibold text-text mb-4">{t('stats.activityByUser')}</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead>
                 <tr className="border-b border-surface-dark text-text-muted uppercase text-xs tracking-wider">
-                  <th className="py-3 pr-4">User</th>
-                  <th className="py-3 px-4 text-right">Uploads</th>
-                  <th className="py-3 px-4 text-right">Conversions</th>
-                  <th className="py-3 pl-4 text-right">Storage</th>
+                  <th className="py-3 pr-4">{t('stats.user')}</th>
+                  <th className="py-3 px-4 text-right">{t('stats.uploads')}</th>
+                  <th className="py-3 px-4 text-right">{t('stats.conversions')}</th>
+                  <th className="py-3 pl-4 text-right">{t('stats.storage')}</th>
                 </tr>
               </thead>
               <tbody>

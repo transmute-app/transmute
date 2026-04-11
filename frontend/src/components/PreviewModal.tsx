@@ -32,6 +32,7 @@ import ini from 'react-syntax-highlighter/dist/esm/languages/prism/ini'
 import diff from 'react-syntax-highlighter/dist/esm/languages/prism/diff'
 import batch from 'react-syntax-highlighter/dist/esm/languages/prism/batch'
 import { authFetch as fetch } from '../utils/api'
+import { useTranslation } from 'react-i18next'
 
 SyntaxHighlighter.registerLanguage('javascript', javascript)
 SyntaxHighlighter.registerLanguage('typescript', typescript)
@@ -297,6 +298,7 @@ function MediaControlsBar({ controls, showFullscreen, onFullscreen, hideDuration
   onFullscreen?: () => void
   hideDuration?: boolean
 }) {
+  const { t } = useTranslation()
   const { trackRef, volumeRef, playing, currentTime, duration, volume, muted, progress,
     togglePlay, handleSeekDown, handleVolumeDown, toggleMute } = controls
 
@@ -356,7 +358,7 @@ function MediaControlsBar({ controls, showFullscreen, onFullscreen, hideDuration
         <button
           onClick={onFullscreen}
           className="text-text-muted hover:text-text transition duration-200 flex-shrink-0"
-          title="Fullscreen"
+          title={t('preview.fullscreen')}
         >
           <FaExpand />
         </button>
@@ -599,6 +601,7 @@ function PreviewModal({ fileId, filename, mediaType, onClose }: PreviewModalProp
   const [textLoading, setTextLoading] = useState(false)
   const [mediaUrl, setMediaUrl] = useState<string | null>(null)
   const [mediaLoading, setMediaLoading] = useState(false)
+  const { t } = useTranslation()
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -614,7 +617,7 @@ function PreviewModal({ fileId, filename, mediaType, onClose }: PreviewModalProp
     fetch(url)
       .then(r => r.text())
       .then(setTextContent)
-      .catch(() => setTextContent('Failed to load file content.'))
+      .catch(() => setTextContent(t('preview.failedContent')))
       .finally(() => setTextLoading(false))
   }, [url, previewType])
 
@@ -656,7 +659,7 @@ function PreviewModal({ fileId, filename, mediaType, onClose }: PreviewModalProp
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-dark transition duration-200 flex-shrink-0"
-            aria-label="Close preview"
+            aria-label={t('preview.close')}
           >
             <FaTimes />
           </button>
@@ -666,25 +669,25 @@ function PreviewModal({ fileId, filename, mediaType, onClose }: PreviewModalProp
         <div className="overflow-auto p-6 flex items-center justify-center min-w-[300px] min-h-[200px]">
           {previewType === 'image' && (
             mediaLoading
-              ? <p className="text-text-muted text-sm">Loading...</p>
+              ? <p className="text-text-muted text-sm">{t('preview.loading')}</p>
               : mediaUrl
                 ? <img
                     src={mediaUrl}
                     alt={filename}
                     className="max-w-[80vw] max-h-[75vh] object-contain rounded"
                   />
-                : <p className="text-text-muted text-sm">Failed to load image preview.</p>
+                : <p className="text-text-muted text-sm">{t('preview.failedImage')}</p>
           )}
           {previewType === 'video' && (
             mediaLoading
-              ? <p className="text-text-muted text-sm">Loading...</p>
+              ? <p className="text-text-muted text-sm">{t('preview.loading')}</p>
               : mediaUrl
                 ? <VideoPlayer src={mediaUrl} />
-                : <p className="text-text-muted text-sm">Failed to load video preview.</p>
+                : <p className="text-text-muted text-sm">{t('preview.failedVideo')}</p>
           )}
           {previewType === 'audio' && (
             mediaLoading
-              ? <p className="text-text-muted text-sm">Loading...</p>
+              ? <p className="text-text-muted text-sm">{t('preview.loading')}</p>
               : mediaUrl
                 ? <div className="flex flex-col items-center gap-6 w-[36rem] max-w-[80vw] px-4">
                     <div className="w-28 h-28 rounded-full bg-primary/10 flex items-center justify-center">
@@ -695,26 +698,26 @@ function PreviewModal({ fileId, filename, mediaType, onClose }: PreviewModalProp
                     </span>
                     <AudioPlayer src={mediaUrl} mediaType={mediaType} />
                   </div>
-                : <p className="text-text-muted text-sm">Failed to load audio preview.</p>
+                : <p className="text-text-muted text-sm">{t('preview.failedAudio')}</p>
           )}
           {previewType === 'pdf' && (
             mediaLoading
-              ? <p className="text-text-muted text-sm">Loading...</p>
+              ? <p className="text-text-muted text-sm">{t('preview.loading')}</p>
               : mediaUrl
                 ? <iframe
                     src={mediaUrl}
                     title={filename}
                     className="w-[80vw] h-[75vh] rounded border-0"
                   />
-                : <p className="text-text-muted text-sm">Failed to load PDF.</p>
+                : <p className="text-text-muted text-sm">{t('preview.failedPdf')}</p>
           )}
           {previewType === 'text' && (
             textLoading
-              ? <p className="text-text-muted text-sm">Loading...</p>
+              ? <p className="text-text-muted text-sm">{t('preview.loading')}</p>
               : <TextViewer content={textContent ?? ''} mediaType={mediaType} />
           )}
           {!previewType && (
-            <p className="text-text-muted text-sm">Preview not available for this file type.</p>
+            <p className="text-text-muted text-sm">{t('preview.unsupported')}</p>
           )}
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { FaGithub, FaExternalLinkAlt, FaBook } from 'react-icons/fa'
+import { useTranslation } from 'react-i18next'
 import { publicFetch as fetch } from '../utils/api'
 
 const RELEASE_VERSION_PATTERN = /^v\d+\.\d+\.\d+$/
@@ -58,6 +59,7 @@ async function getUpdateNotice(version: string, signal: AbortSignal): Promise<Up
 function Footer() {
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null)
   const [updateNotice, setUpdateNotice] = useState<UpdateNotice | null>(null)
+  const { t } = useTranslation()
   const versionHref = appInfo?.version ? getVersionHref(appInfo.version) : null
 
   useEffect(() => {
@@ -86,12 +88,12 @@ function Footer() {
     <footer className="mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-wrap items-center justify-center gap-2 text-text-muted text-sm">
-          <a href="https://github.com/transmute-app/transmute" target="_blank" rel="noopener noreferrer" className="hover:text-text transition-colors" aria-label="GitHub" title="Source Code">
+          <a href="https://github.com/transmute-app/transmute" target="_blank" rel="noopener noreferrer" className="hover:text-text transition-colors" aria-label="GitHub" title={t('footer.sourceCode')}>
             <FaGithub size={16} />
           </a>
           <span className="text-text-muted/30">|</span>
           <span>
-            {appInfo?.name || 'Transmute'}
+            {appInfo?.name || t('app.name')}
             {appInfo?.version && (
               versionHref ? (
                 <a
@@ -123,11 +125,11 @@ function Footer() {
             </>
           )}
           <span className="text-text-muted/30">|</span>
-          <a href="/api/docs" className="hover:text-text transition-colors" aria-label="API Docs" title="API Documentation">
+          <a href="/api/docs" className="hover:text-text transition-colors" aria-label={t('footer.apiDocs')} title={t('footer.apiDocs')}>
             <FaBook size={14} />
           </a>
           <span className="text-text-muted/30">|</span>
-          <a href="https://transmute.sh" target="_blank" rel="noopener noreferrer" className="hover:text-text transition-colors" aria-label="Website" title="Transmute Website">
+          <a href="https://transmute.sh" target="_blank" rel="noopener noreferrer" className="hover:text-text transition-colors" aria-label={t('footer.website')} title={t('footer.website')}>
             <FaExternalLinkAlt size={13} />
           </a>
         </div>

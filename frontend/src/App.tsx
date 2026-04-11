@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { AuthProvider, useAuth } from './AuthContext'
 import { ThemeProvider, useTheme } from './ThemeContext'
 import Header from './components/Header'
@@ -16,31 +17,34 @@ import NotFound from './pages/NotFound'
 
 function RouteTitle() {
   const location = useLocation()
+  const { t } = useTranslation()
 
   useEffect(() => {
     const titles: Record<string, string> = {
-      '/auth': 'Transmute - Sign In',
-      '/': 'Transmute - Converter',
-      '/files': 'Transmute - Files',
-      '/history': 'Transmute - History',
-      '/settings': 'Transmute - Settings',
-      '/account': 'Transmute - My Account',
-      '/admin/users': 'Transmute - User Management',
-      '/admin/stats': 'Transmute - Stats',
+      '/auth': t('titles.signIn'),
+      '/': t('titles.converter'),
+      '/files': t('titles.files'),
+      '/history': t('titles.history'),
+      '/settings': t('titles.settings'),
+      '/account': t('titles.account'),
+      '/admin/users': t('titles.userManagement'),
+      '/admin/stats': t('titles.stats'),
     }
 
-    document.title = titles[location.pathname] || 'Transmute'
-  }, [location])
+    document.title = titles[location.pathname] || t('app.name')
+  }, [location, t])
 
   return null
 }
 
 function LoadingScreen() {
+  const { t } = useTranslation()
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-surface-dark to-surface-light px-6 text-text">
       <div className="rounded-3xl border border-white/10 bg-surface-light/70 px-8 py-6 shadow-xl backdrop-blur">
-        <p className="text-sm uppercase tracking-[0.2em] text-text-muted">Loading Session</p>
-        <p className="mt-3 text-xl font-semibold text-primary">Restoring your workspace...</p>
+        <p className="text-sm uppercase tracking-[0.2em] text-text-muted">{t('loading.session')}</p>
+        <p className="mt-3 text-xl font-semibold text-primary">{t('loading.restoring')}</p>
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { FaCheckSquare, FaSquare, FaSort, FaSortUp, FaSortDown, FaDownload, FaTrash, FaEye } from 'react-icons/fa'
+import { useTranslation } from 'react-i18next'
 import { stripExtension } from '../utils/filename'
 import FormatDropdown from './FormatDropdown'
 
@@ -87,6 +88,7 @@ function FileTable({
 }: FileTableProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>('date')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  const { t } = useTranslation()
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -156,7 +158,7 @@ function FileTable({
                   <button
                     onClick={onToggleSelectAll}
                     className="text-primary hover:text-primary-light text-lg transition duration-200"
-                    aria-label={allSelected ? 'Deselect all' : 'Select all'}
+                    aria-label={allSelected ? t('table.deselectAll') : t('table.selectAll')}
                   >
                     {allSelected ? <FaCheckSquare /> : <FaSquare />}
                   </button>
@@ -171,7 +173,7 @@ function FileTable({
                 onClick={() => handleSort('filename')}
                 className="flex items-center gap-1 hover:text-text transition uppercase"
               >
-                Filename <SortIcon column="filename" />
+                {t('table.filename')} <SortIcon column="filename" />
               </button>
             </th>
             <th
@@ -183,15 +185,15 @@ function FileTable({
                   onClick={() => handleSort('type')}
                   className="flex items-center gap-1 hover:text-text transition uppercase"
                 >
-                  Format <SortIcon column="type" />
+                  {t('table.format')} <SortIcon column="type" />
                 </button>
                 {bulkFormats && bulkFormats.length > 0 && onBulkFormatChange && (
                   <FormatDropdown
                     value=""
                     formats={bulkFormats}
                     onChange={onBulkFormatChange}
-                    placeholder="All"
-                    title="Set format for all files"
+                    placeholder={t('table.all')}
+                    title={t('table.setFormatAll')}
                     disabled={converting}
                   />
                 )}
@@ -200,14 +202,14 @@ function FileTable({
             {hasQuality && (
               <th className="px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <span className="uppercase">Quality</span>
+                  <span className="uppercase">{t('table.quality')}</span>
                   {bulkQualities && bulkQualities.length > 0 && onBulkQualityChange && (
                     <FormatDropdown
                       value=""
                       formats={bulkQualities}
                       onChange={onBulkQualityChange}
-                      placeholder="All"
-                      title="Set quality for all files"
+                    placeholder={t('table.all')}
+                    title={t('table.setQualityAll')}
                       disabled={converting}
                       presorted
                     />
@@ -223,7 +225,7 @@ function FileTable({
                 onClick={() => handleSort('size')}
                 className="flex items-center gap-1 hover:text-text transition uppercase"
               >
-                Size <SortIcon column="size" />
+                {t('table.size')} <SortIcon column="size" />
               </button>
             </th>
             {showDate && (
@@ -235,12 +237,12 @@ function FileTable({
                   onClick={() => handleSort('date')}
                   className="flex items-center gap-1 hover:text-text transition uppercase"
                 >
-                  Date <SortIcon column="date" />
+                  {t('table.date')} <SortIcon column="date" />
                 </button>
               </th>
             )}
             {hasActions && (
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-4 py-3 text-right">{t('table.actions')}</th>
             )}
           </tr>
         </thead>
@@ -258,7 +260,7 @@ function FileTable({
                     <button
                       onClick={() => onToggleSelect(row.id)}
                       className="text-primary hover:text-primary-light text-lg transition duration-200"
-                      aria-label={selectedIds?.has(row.id) ? 'Deselect' : 'Select'}
+                      aria-label={selectedIds?.has(row.id) ? t('table.deselect') : t('table.select')}
                     >
                       {selectedIds?.has(row.id) ? <FaCheckSquare /> : <FaSquare />}
                     </button>
@@ -276,7 +278,7 @@ function FileTable({
                   {row.status === 'failed' && (
                     <div className="mt-1">
                       <span className="inline-block text-[0.65rem] font-semibold uppercase tracking-wide bg-primary/20 px-2 py-0.5 rounded text-primary-light">
-                        Failed
+                        {t('table.failed')}
                       </span>
                       {row.statusMessage && (
                         <p className="mt-1 text-xs text-primary-light/90 break-words" title={row.statusMessage}>
@@ -322,7 +324,7 @@ function FileTable({
                           value={row.selectedQuality || ''}
                           formats={sortedQualities}
                           onChange={(quality) => row.onQualityChange!(quality)}
-                          placeholder="Quality"
+                          placeholder={t('table.qualityPlaceholder')}
                           title={`Quality: ${row.selectedQuality || 'default'}`}
                           presorted
                         />
@@ -360,7 +362,7 @@ function FileTable({
                       <button
                         onClick={row.onPreview}
                         className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-surface-dark transition duration-200"
-                        title="Preview"
+                        title={t('table.preview')}
                       >
                         <FaEye className="text-sm" />
                       </button>
@@ -370,7 +372,7 @@ function FileTable({
                         onClick={row.onDownload}
                         disabled={row.isDownloading}
                         className="p-2 rounded-lg text-success hover:bg-success/20 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Download"
+                        title={t('table.download')}
                       >
                         <FaDownload className="text-sm" />
                       </button>
@@ -380,7 +382,7 @@ function FileTable({
                         onClick={row.onDelete}
                         disabled={row.isDeleting}
                         className="p-2 rounded-lg text-primary-light hover:bg-primary/20 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Delete"
+                        title={t('table.delete')}
                       >
                         <FaTrash className="text-sm" />
                       </button>

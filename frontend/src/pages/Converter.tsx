@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { FaSyncAlt, FaDownload, FaTimes } from 'react-icons/fa'
+import { useTranslation } from 'react-i18next'
 import FileTable, { FileInfo, ConversionInfo } from '../components/FileTable'
 import PreviewModal, { isPreviewable } from '../components/PreviewModal'
 import { authFetch as fetch } from '../utils/api'
@@ -40,6 +41,7 @@ function HotkeyHint({ label, className = '' }: { label: string; className?: stri
 function Converter() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([])
   const [completedConversions, setCompletedConversions] = useState<CompletedConversion[]>([])
   const [uploading, setUploading] = useState(false)
@@ -234,7 +236,7 @@ function Converter() {
     setDeletingId(fileId)
     try {
       const response = await fetch(`/api/files/${fileId}`, { method: 'DELETE' })
-      if (!response.ok) throw new Error('Delete failed')
+      if (!response.ok) throw new Error(t('converter.deleteFailed'))
 
       if (isPending) {
         setPendingFiles((prev) => prev.filter((pf) => pf.file.id !== fileId))
@@ -242,7 +244,7 @@ function Converter() {
         setCompletedConversions((prev) => prev.filter((cc) => cc.file.id !== fileId))
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Delete failed')
+      setError(err instanceof Error ? err.message : t('converter.deleteFailed'))
     } finally {
       setDeletingId(null)
     }
@@ -509,10 +511,10 @@ function Converter() {
       <div className="h-full bg-gradient-to-br from-surface-dark to-surface-light flex items-center justify-center p-4">
         <div className="bg-surface-light rounded-lg shadow-xl p-8 max-w-xl w-full border border-surface-dark">
           <h1 className="text-4xl font-bold text-center text-primary mb-2">
-            Transmute
+            {t('app.name')}
           </h1>
           <h3 className="text-md text-center text-text-muted mb-6">
-            Drop a file, pick a format, Transmute.
+            {t('app.tagline')}
           </h3>
           
           <div className="space-y-4">
@@ -531,9 +533,9 @@ function Converter() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
                 <span className="text-sm font-medium">
-                  {uploading ? `Uploading ${uploadCount} file${uploadCount > 1 ? 's' : ''}...` : 'Drop files here'}
+                  {uploading ? t('converter.uploading', { count: uploadCount }) : t('converter.dropFiles')}
                 </span>
-                <span className="text-xs opacity-60">or click to browse</span>
+                <span className="text-xs opacity-60">{t('converter.clickToBrowse')}</span>
                 <HotkeyHint label={hotkeyLabels.open} />
               </div>
               <input
@@ -561,7 +563,7 @@ function Converter() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-surface-dark to-surface-light p-4 sm:p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-primary mb-6">Transmute</h1>
+        <h1 className="text-3xl font-bold text-primary mb-6">{t('app.name')}</h1>
 
         {/* File input */}
         <div className="mb-6">
@@ -582,8 +584,8 @@ function Converter() {
               <div className="flex flex-col items-center gap-1">
                 <span className="text-sm">
                   {uploading
-                    ? `Uploading ${uploadCount} file${uploadCount > 1 ? 's' : ''}...`
-                    : 'Drop files here or click to browse'}
+                    ? t('converter.uploading', { count: uploadCount })
+                    : t('converter.dropOrClick')}
                 </span>
                 <HotkeyHint label={hotkeyLabels.open} />
               </div>
@@ -610,7 +612,7 @@ function Converter() {
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4 gap-2">
               <h2 className="text-base sm:text-xl font-semibold text-text whitespace-nowrap">
-                Pending ({pendingFiles.length})
+                {t('converter.pending', { count: pendingFiles.length })}
               </h2>
               <div className="flex items-center gap-2 sm:gap-3">
                 <button
@@ -621,8 +623,8 @@ function Converter() {
                   <FaSyncAlt className={`text-xs sm:text-sm ${converting ? 'animate-spin' : ''}`} />
                   <span className="hidden sm:inline">
                     {converting
-                      ? `Converting ${pendingFiles.length} file${pendingFiles.length > 1 ? 's' : ''}...`
-                      : `Convert ${pendingFiles.length} File${pendingFiles.length > 1 ? 's' : ''}`}
+                      ? t('converter.converting', { count: pendingFiles.length })
+                      : t('converter.convertFile', { count: pendingFiles.length })}
                   </span>
                   <HotkeyHint label={hotkeyLabels.convert} className="text-text/80 hidden sm:inline" />
                 </button>
@@ -632,7 +634,7 @@ function Converter() {
                   className="flex items-center gap-1.5 sm:gap-2 text-sm text-text-muted hover:text-text border border-surface-dark hover:border-text-muted py-2 px-3 sm:px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FaTimes className="text-xs sm:text-sm" />
-                  <span className="hidden sm:inline">Clear</span>
+                  <span className="hidden sm:inline">{t('converter.clear')}</span>
                   <HotkeyHint label={hotkeyLabels.clear} className="hidden sm:inline" />
                 </button>
               </div>
@@ -667,7 +669,7 @@ function Converter() {
           <div>
             <div className="flex justify-between items-center mb-4 gap-2">
               <h2 className="text-base sm:text-xl font-semibold text-text whitespace-nowrap">
-                Completed ({completedConversions.length})
+                {t('converter.completed', { count: completedConversions.length })}
               </h2>
               <div className="flex items-center gap-2 sm:gap-3">
                 {completedConversions.length > 1 && (
@@ -678,10 +680,10 @@ function Converter() {
                   >
                     <FaDownload className="text-xs sm:text-sm" />
                     <span className="hidden sm:inline">
-                      {downloadingAll ? 'Downloading...' : `Download All ${completedConversions.length} Files`}
+                      {downloadingAll ? t('converter.downloading') : t('converter.downloadAll', { count: completedConversions.length })}
                     </span>
                     <span className="sm:hidden">
-                      {downloadingAll ? '...' : 'All'}
+                      {downloadingAll ? '...' : t('table.all')}
                     </span>
                   </button>
                 )}
@@ -690,7 +692,7 @@ function Converter() {
                   className="flex items-center gap-1.5 sm:gap-2 text-sm text-text-muted hover:text-text border border-surface-dark hover:border-text-muted py-2 px-3 sm:px-4 rounded-lg transition duration-200"
                 >
                   <FaTimes className="text-xs sm:text-sm" />
-                  <span className="hidden sm:inline">Clear</span>
+                  <span className="hidden sm:inline">{t('converter.clear')}</span>
                 </button>
               </div>
             </div>

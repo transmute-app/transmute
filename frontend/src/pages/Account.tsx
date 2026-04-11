@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { FaCopy, FaKey, FaPlus, FaTrash } from 'react-icons/fa6'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../AuthContext'
 import PasswordField from '../components/PasswordField'
 import { apiJson } from '../utils/api'
@@ -17,6 +18,7 @@ interface ApiKeyCreated extends ApiKey {
 
 function Account() {
   const { user, replaceUser } = useAuth()
+  const { t } = useTranslation()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
@@ -69,7 +71,7 @@ function Account() {
       setNewKeyName('')
       loadApiKeys()
     } catch (err) {
-      setKeyError(err instanceof Error ? err.message : 'Failed to create API key')
+      setKeyError(err instanceof Error ? err.message : t('apiKeys.createFailed'))
     } finally {
       setCreatingKey(false)
     }
@@ -80,7 +82,7 @@ function Account() {
       await apiJson(`/api/api-keys/${id}`, { method: 'DELETE' })
       setApiKeys(prev => prev.filter(k => k.id !== id))
     } catch (err) {
-      setKeyError(err instanceof Error ? err.message : 'Failed to delete API key')
+      setKeyError(err instanceof Error ? err.message : t('apiKeys.deleteFailed'))
     }
   }
 
@@ -111,9 +113,9 @@ function Account() {
       })
       replaceUser(updatedUser)
       setPassword('')
-      setMessage('Account updated successfully.')
+      setMessage(t('account.updated'))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update account')
+      setError(err instanceof Error ? err.message : t('account.updateFailed'))
     } finally {
       setSaving(false)
     }
@@ -123,9 +125,9 @@ function Account() {
     <div className="min-h-full bg-gradient-to-br from-surface-dark to-surface-light p-8 pb-12">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6 min-h-[4rem]">
-          <h1 className="text-3xl font-bold text-primary">My Account</h1>
+          <h1 className="text-3xl font-bold text-primary">{t('account.title')}</h1>
           <div className="rounded-lg border border-primary/20 bg-primary/10 px-4 py-2 text-sm text-primary-light">
-            Signed in as <span className="font-semibold">{user.role}</span>
+            {t('account.signedInAsRole')} <span className="font-semibold">{user.role}</span>
           </div>
         </div>
 
@@ -135,28 +137,28 @@ function Account() {
         <form onSubmit={handleSubmit} className="bg-surface-light rounded-xl p-6">
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-text">Username</span>
+              <span className="mb-2 block text-sm font-medium text-text">{t('fields.username')}</span>
               <input value={username} onChange={event => setUsername(event.target.value)} className="w-full rounded-lg border border-surface-light bg-surface-dark px-4 py-3 text-sm text-text outline-none focus:ring-2 focus:ring-primary/20" required />
             </label>
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-text">Email</span>
+              <span className="mb-2 block text-sm font-medium text-text">{t('fields.email')}</span>
               <input value={email} onChange={event => setEmail(event.target.value)} className="w-full rounded-lg border border-surface-light bg-surface-dark px-4 py-3 text-sm text-text outline-none focus:ring-2 focus:ring-primary/20" type="email" />
             </label>
             <label className="block md:col-span-2">
-              <span className="mb-2 block text-sm font-medium text-text">Full name</span>
+              <span className="mb-2 block text-sm font-medium text-text">{t('fields.fullName')}</span>
               <input value={fullName} onChange={event => setFullName(event.target.value)} className="w-full rounded-lg border border-surface-light bg-surface-dark px-4 py-3 text-sm text-text outline-none focus:ring-2 focus:ring-primary/20" />
             </label>
             <label className="block md:col-span-2">
-              <span className="mb-2 block text-sm font-medium text-text">New password</span>
-              <PasswordField value={password} onChange={event => setPassword(event.target.value)} inputClassName="rounded-lg border border-surface-light bg-surface-dark px-4 py-3 text-sm text-text outline-none focus:ring-2 focus:ring-primary/20" toggleButtonClassName="rounded-lg border border-surface-light bg-surface-dark px-4 text-text-muted transition hover:bg-primary/20 hover:text-primary-light focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Leave blank to keep the current password" minLength={8} />
-              <p className="mt-1 text-xs text-text-muted">Min 8 characters if changing.</p>
+              <span className="mb-2 block text-sm font-medium text-text">{t('fields.newPassword')}</span>
+              <PasswordField value={password} onChange={event => setPassword(event.target.value)} inputClassName="rounded-lg border border-surface-light bg-surface-dark px-4 py-3 text-sm text-text outline-none focus:ring-2 focus:ring-primary/20" toggleButtonClassName="rounded-lg border border-surface-light bg-surface-dark px-4 text-text-muted transition hover:bg-primary/20 hover:text-primary-light focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder={t('account.passwordPlaceholder')} minLength={8} />
+              <p className="mt-1 text-xs text-text-muted">{t('account.passwordHint')}</p>
             </label>
           </div>
 
           <div className="mt-6 flex items-center justify-between gap-4">
-            <div className="text-sm text-text-muted">Role: <span className="font-semibold text-text">{user.role}</span></div>
+            <div className="text-sm text-text-muted">{t('account.role')} <span className="font-semibold text-text">{user.role}</span></div>
             <button type="submit" disabled={saving} className="bg-success hover:bg-success-dark text-white font-semibold py-2 px-8 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-              {saving ? 'Saving...' : 'Save Account'}
+              {saving ? t('account.saving') : t('account.saveAccount')}
             </button>
           </div>
         </form>
@@ -165,10 +167,10 @@ function Account() {
         <div className="mt-8 bg-surface-light rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
             <FaKey className="text-primary" />
-            <h2 className="text-xl font-bold text-text">API Keys</h2>
+            <h2 className="text-xl font-bold text-text">{t('apiKeys.title')}</h2>
           </div>
           <p className="text-sm text-text-muted mb-4">
-            Use API keys to authenticate with the API without a password. Pass the key as a Bearer token.
+            {t('apiKeys.description')}
           </p>
 
           {keyError && <div className="p-3 bg-primary/20 border border-primary rounded-lg text-primary-light text-sm mb-4">{keyError}</div>}
@@ -176,14 +178,14 @@ function Account() {
           {/* Newly created key banner */}
           {newlyCreatedKey && (
             <div className="p-4 bg-success/10 border border-success/40 rounded-lg mb-4">
-              <p className="text-sm font-semibold text-green-200 mb-2">Key created! Copy it now — you won't see it again.</p>
+              <p className="text-sm font-semibold text-green-200 mb-2">{t('apiKeys.keyCreated')}</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 bg-surface-dark rounded px-3 py-2 text-sm text-text font-mono break-all select-all">{newlyCreatedKey}</code>
-                <button onClick={() => handleCopyKey(newlyCreatedKey)} className="shrink-0 p-2 rounded-lg bg-surface-dark hover:bg-primary/20 text-text-muted hover:text-primary transition" title="Copy">
+                <button onClick={() => handleCopyKey(newlyCreatedKey)} className="shrink-0 p-2 rounded-lg bg-surface-dark hover:bg-primary/20 text-text-muted hover:text-primary transition" title={t('apiKeys.copy')}>
                   <FaCopy />
                 </button>
               </div>
-              {copied && <p className="text-xs text-green-300 mt-1">Copied!</p>}
+              {copied && <p className="text-xs text-green-300 mt-1">{t('apiKeys.copied')}</p>}
             </div>
           )}
 
@@ -192,19 +194,19 @@ function Account() {
             <input
               value={newKeyName}
               onChange={e => setNewKeyName(e.target.value)}
-              placeholder="Key name (e.g. CI Pipeline)"
+              placeholder={t('apiKeys.namePlaceholder')}
               className="flex-1 rounded-lg border border-surface-light bg-surface-dark px-4 py-2 text-sm text-text outline-none focus:ring-2 focus:ring-primary/20"
               onKeyDown={e => e.key === 'Enter' && handleCreateKey()}
             />
             <button onClick={handleCreateKey} disabled={creatingKey || !newKeyName.trim()} className="flex items-center gap-2 bg-success hover:bg-success-dark text-white font-semibold py-2 px-4 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm">
               <FaPlus className="text-xs" />
-              {creatingKey ? 'Creating...' : 'Create Key'}
+              {creatingKey ? t('apiKeys.creating') : t('apiKeys.createKey')}
             </button>
           </div>
 
           {/* Keys list */}
           {apiKeys.length === 0 ? (
-            <p className="text-sm text-text-muted italic">No API keys yet.</p>
+            <p className="text-sm text-text-muted italic">{t('apiKeys.noKeys')}</p>
           ) : (
             <div className="space-y-2">
               {apiKeys.map(key => (
@@ -214,7 +216,7 @@ function Account() {
                     <span className="ml-3 text-xs text-text-muted font-mono">{key.prefix}...</span>
                     {key.created_at && <span className="ml-3 text-xs text-text-muted">{new Date(key.created_at).toLocaleDateString()}</span>}
                   </div>
-                  <button onClick={() => handleDeleteKey(key.id)} className="p-2 rounded-lg hover:bg-primary/20 text-text-muted hover:text-primary-light transition" title="Delete key">
+                  <button onClick={() => handleDeleteKey(key.id)} className="p-2 rounded-lg hover:bg-primary/20 text-text-muted hover:text-primary-light transition" title={t('apiKeys.deleteKey')}>
                     <FaTrash className="text-sm" />
                   </button>
                 </div>

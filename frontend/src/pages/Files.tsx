@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import FileTable, { FileInfo } from '../components/FileTable'
 import PreviewModal, { isPreviewable } from '../components/PreviewModal'
 import { authFetch as fetch } from '../utils/api'
@@ -13,16 +14,17 @@ function Files() {
   const [deletingSelected, setDeletingSelected] = useState(false)
   const [previewFile, setPreviewFile] = useState<FileInfo | null>(null)
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   useEffect(() => {
     const fetchFiles = async () => {
       try {
         const response = await fetch('/api/files')
-        if (!response.ok) throw new Error('Failed to fetch files')
+        if (!response.ok) throw new Error(t('files.fetchFailed'))
         const data = await response.json()
         setFiles(data.files)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load files')
+        setError(err instanceof Error ? err.message : t('files.loadFailed'))
       } finally {
         setLoading(false)
       }
@@ -34,7 +36,7 @@ function Files() {
     setDeletingId(fileId)
     try {
       const response = await fetch(`/api/files/${fileId}`, { method: 'DELETE' })
-      if (!response.ok) throw new Error('Delete failed')
+      if (!response.ok) throw new Error(t('files.deleteFailed'))
       setFiles(prev => prev.filter(f => f.id !== fileId))
       setSelectedIds(prev => {
         const newSet = new Set(prev)
@@ -42,7 +44,7 @@ function Files() {
         return newSet
       })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Delete failed')
+      setError(err instanceof Error ? err.message : t('files.deleteFailed'))
     } finally {
       setDeletingId(null)
     }
@@ -90,7 +92,7 @@ function Files() {
 
     const errors = results
       .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-      .map(r => (r.reason instanceof Error ? r.reason.message : 'Delete failed'))
+      .map(r => (r.reason instanceof Error ? r.reason.message : t('files.deleteFailed')))
 
     if (errors.length > 0) {
       setError(errors.join('; '))
@@ -108,7 +110,7 @@ function Files() {
     <div className="min-h-full bg-gradient-to-br from-surface-dark to-surface-light p-8 pb-12">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6 min-h-[4rem]">
-          <h1 className="text-3xl font-bold text-primary">Files</h1>
+          <h1 className="text-3xl font-bold text-primary">{t('files.title')}</h1>
           <div className="flex gap-3">
             {selectedIds.size > 0 && (
               <>
@@ -116,14 +118,14 @@ function Files() {
                   onClick={handleBringToConverter}
                   className="bg-success hover:bg-success-dark text-white font-semibold py-2 px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg"
                 >
-                  Convert {selectedIds.size} File{selectedIds.size > 1 ? 's' : ''}
+                  {t('files.convertSelected', { count: selectedIds.size })}
                 </button>
                 <button
                   onClick={handleDeleteSelected}
                   disabled={deletingSelected}
                   className="bg-primary/20 hover:bg-primary/40 text-primary-light font-semibold py-2 px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {deletingSelected ? 'Deleting...' : `Delete ${selectedIds.size} File${selectedIds.size > 1 ? 's' : ''}`}
+                  {deletingSelected ? t('files.deleting') : t('files.deleteSelected', { count: selectedIds.size })}
                 </button>
               </>
             )}
@@ -137,11 +139,11 @@ function Files() {
         )}
 
         {loading && (
-          <p className="text-text-muted text-sm">Loading files...</p>
+          <p className="text-text-muted text-sm">{t('files.loading')}</p>
         )}
 
         {!loading && files.length === 0 && (
-          <p className="text-text-muted text-sm">No uploaded files yet.</p>
+          <p className="text-text-muted text-sm">{t('files.noFiles')}</p>
         )}
 
         {!loading && files.length > 0 && (
