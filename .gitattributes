@@ -1,2 +1,3 @@
 *.rtf -linguist-detectable
 *.ipynb -linguist-detectable
+*.sh text eol=lf

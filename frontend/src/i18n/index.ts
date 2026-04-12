@@ -3,7 +3,7 @@ import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 
 import en from './en.json'
-// import de from './de.json'
+import de from './de.json'
 
 const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
 
@@ -13,7 +13,7 @@ i18n
   .init({
     resources: {
       en: { translation: en },
-      // de: { translation: de },
+      de: { translation: de },
     },
     fallbackLng: 'en',
     interpolation: {
