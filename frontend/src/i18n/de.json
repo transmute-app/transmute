@@ -95,7 +95,8 @@
     "converting_other": "{{count}} Dateien werden konvertiert...",
     "clear": "Liste leeren",
     "downloadAll": "Alle {{count}} Dateien herunterladen",
-    "downloading": "Download läuft..."
+    "downloading": "Download läuft...",
+    "unsupported": "Nicht unterstützt ({{count}})"
   },
   "files": {
     "title": "Dateien",

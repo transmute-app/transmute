@@ -392,20 +392,30 @@ function Converter() {
     await triggerDownloads(completedConversions)
   }
 
-  // Intersection of output formats shared by ALL pending files
+  // Split pending files into convertable (has formats) and unsupported (no formats)
+  const convertableFiles = useMemo(() =>
+    pendingFiles.filter(pf => pf.file.compatible_formats && Object.keys(pf.file.compatible_formats).length > 0),
+    [pendingFiles]
+  )
+  const unsupportedFiles = useMemo(() =>
+    pendingFiles.filter(pf => !pf.file.compatible_formats || Object.keys(pf.file.compatible_formats).length === 0),
+    [pendingFiles]
+  )
+
+  // Intersection of output formats shared by ALL convertable files
   const commonFormats = useMemo(() => {
-    if (pendingFiles.length === 0) return []
-    const sets = pendingFiles.map(pf =>
+    if (convertableFiles.length === 0) return []
+    const sets = convertableFiles.map(pf =>
       new Set(pf.file.compatible_formats ? Object.keys(pf.file.compatible_formats) : [])
     )
     const first = sets[0]
     return [...first].filter(f => sets.every(s => s.has(f))).sort()
-  }, [pendingFiles])
+  }, [convertableFiles])
 
-  // Intersection of qualities across pending files that have quality options for their selected format
+  // Intersection of qualities across convertable files that have quality options for their selected format
   const commonQualities = useMemo(() => {
     const qualityOrder: Record<string, number> = { low: 0, medium: 1, high: 2 }
-    const qualitySets = pendingFiles
+    const qualitySets = convertableFiles
       .map(pf => {
         if (!pf.selectedFormat) return null
         const q = pf.file.compatible_formats?.[pf.selectedFormat]
@@ -417,7 +427,7 @@ function Converter() {
     return [...first]
       .filter(q => qualitySets.every(s => s.has(q)))
       .sort((a, b) => (qualityOrder[a] ?? 99) - (qualityOrder[b] ?? 99))
-  }, [pendingFiles])
+  }, [convertableFiles])
 
   const handleBulkFormatChange = (format: string) => {
     setPendingFiles(prev =>
@@ -447,9 +457,10 @@ function Converter() {
     )
   }
 
-  const hasPendingFiles = pendingFiles.length > 0
+  const hasConvertableFiles = convertableFiles.length > 0
+  const hasUnsupportedFiles = unsupportedFiles.length > 0
   const hasCompletedConversions = completedConversions.length > 0
-  const hasStarted = hasPendingFiles || hasCompletedConversions
+  const hasStarted = hasConvertableFiles || hasUnsupportedFiles || hasCompletedConversions
 
   const filePickerRef1 = useRef<HTMLInputElement>(null)
   const filePickerRef2 = useRef<HTMLInputElement>(null)
@@ -608,28 +619,28 @@ function Converter() {
         )}
 
         {/* Pending conversions section */}
-        {hasPendingFiles && (
+        {hasConvertableFiles && (
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4 gap-2">
               <h2 className="text-base sm:text-xl font-semibold text-text whitespace-nowrap">
-                {t('converter.pending', { count: pendingFiles.length })}
+                {t('converter.pending', { count: convertableFiles.length })}
               </h2>
               <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={handleConvertAll}
-                  disabled={converting || pendingFiles.length === 0}
+                  disabled={converting || convertableFiles.length === 0}
                   className="flex items-center gap-1.5 sm:gap-2 bg-primary hover:bg-primary-dark text-text font-semibold py-2 px-3 sm:px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   <FaSyncAlt className={`text-xs sm:text-sm ${converting ? 'animate-spin' : ''}`} />
                   <span className="hidden sm:inline">
                     {converting
-                      ? t('converter.converting', { count: pendingFiles.length })
-                      : t('converter.convertFile', { count: pendingFiles.length })}
+                      ? t('converter.converting', { count: convertableFiles.length })
+                      : t('converter.convertFile', { count: convertableFiles.length })}
                   </span>
                   <HotkeyHint label={hotkeyLabels.convert} className="text-text/80 hidden sm:inline" />
                 </button>
                 <button
-                  onClick={() => setPendingFiles([])}
+                  onClick={() => setPendingFiles(prev => prev.filter(pf => !pf.file.compatible_formats || Object.keys(pf.file.compatible_formats).length === 0))}
                   disabled={converting}
                   className="flex items-center gap-1.5 sm:gap-2 text-sm text-text-muted hover:text-text border border-surface-dark hover:border-text-muted py-2 px-3 sm:px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -640,7 +651,7 @@ function Converter() {
               </div>
             </div>
             <FileTable
-                rows={pendingFiles.map(pf => ({
+                rows={convertableFiles.map(pf => ({
                   id: pf.file.id,
                   file: pf.file,
                   selectedFormat: pf.selectedFormat,
@@ -656,11 +667,41 @@ function Converter() {
                 isPending={true}
                 showDate={false}
                 converting={converting}
-                bulkFormats={pendingFiles.length > 1 ? commonFormats : undefined}
-                bulkQualities={pendingFiles.length > 1 ? commonQualities : undefined}
+                bulkFormats={convertableFiles.length > 1 ? commonFormats : undefined}
+                bulkQualities={convertableFiles.length > 1 ? commonQualities : undefined}
                 onBulkFormatChange={handleBulkFormatChange}
                 onBulkQualityChange={handleBulkQualityChange}
               />
+          </div>
+        )}
+
+        {/* Unsupported files section */}
+        {hasUnsupportedFiles && (
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4 gap-2">
+              <h2 className="text-base sm:text-xl font-semibold text-text whitespace-nowrap">
+                {t('converter.unsupported', { count: unsupportedFiles.length })}
+              </h2>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button
+                  onClick={() => setPendingFiles(prev => prev.filter(pf => pf.file.compatible_formats && Object.keys(pf.file.compatible_formats).length > 0))}
+                  className="flex items-center gap-1.5 sm:gap-2 text-sm text-text-muted hover:text-text border border-surface-dark hover:border-text-muted py-2 px-3 sm:px-4 rounded-lg transition duration-200"
+                >
+                  <FaTimes className="text-xs sm:text-sm" />
+                  <span className="hidden sm:inline">{t('converter.clear')}</span>
+                </button>
+              </div>
+            </div>
+            <FileTable
+              rows={unsupportedFiles.map(pf => ({
+                id: pf.file.id,
+                file: pf.file,
+                onDelete: () => handleDelete(pf.file.id, true),
+                onPreview: isPreviewable(pf.file.media_type) ? () => setPreviewFile({ id: pf.file.id, filename: pf.file.original_filename, mediaType: pf.file.media_type }) : undefined,
+                isDeleting: deletingId === pf.file.id,
+              }))}
+              showDate={false}
+            />
           </div>
         )}
 

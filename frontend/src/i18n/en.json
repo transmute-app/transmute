@@ -95,7 +95,8 @@
     "converting_other": "Converting {{count}} files...",
     "clear": "Clear",
     "downloadAll": "Download All {{count}} Files",
-    "downloading": "Downloading..."
+    "downloading": "Downloading...",
+    "unsupported": "Unsupported ({{count}})"
   },
   "files": {
     "title": "Files",
