@@ -166,7 +166,10 @@ function Auth() {
 
               <div className="space-y-4">
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-text">{t('fields.username')}</span>
+                  <span className="mb-2 block text-sm font-medium text-text">
+                    {t('fields.username')}
+                    <span aria-hidden="true" className="text-red-500 text-lg font-semibold leading-none">*</span>
+                  </span>
                   <input
                     value={username}
                     onChange={event => setUsername(event.target.value)}
@@ -201,7 +204,10 @@ function Auth() {
                 )}
 
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-text">{t('fields.password')}</span>
+                  <span className="mb-2 block text-sm font-medium text-text">
+                    {t('fields.password')}
+                    <span aria-hidden="true" className="text-red-500 text-lg font-semibold leading-none">*</span>
+                  </span>
                   <PasswordField
                     value={password}
                     onChange={event => setPassword(event.target.value)}

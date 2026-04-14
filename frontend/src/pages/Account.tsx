@@ -137,7 +137,10 @@ function Account() {
         <form onSubmit={handleSubmit} className="bg-surface-light rounded-xl p-6">
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-text">{t('fields.username')}</span>
+              <span className="mb-2 block text-sm font-medium text-text">
+                {t('fields.username')}
+                <span aria-hidden="true" className="text-red-500 text-lg font-semibold leading-none">*</span>
+              </span>
               <input value={username} onChange={event => setUsername(event.target.value)} className="w-full rounded-lg border border-surface-light bg-surface-dark px-4 py-3 text-sm text-text outline-none focus:ring-2 focus:ring-primary/20" required />
             </label>
             <label className="block">
