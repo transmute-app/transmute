@@ -71,15 +71,15 @@ function Stats() {
         {/* Summary cards */}
         <div className="grid gap-4 sm:grid-cols-3 mb-8">
           <div className="rounded-xl border border-surface-light bg-surface-light/70 p-5">
-            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">{t('stats.totalUploads')}</p>
+            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">{t('stats.currentUploadedFiles')}</p>
             <p className="mt-2 text-2xl font-bold text-text">{stats.total_files_uploaded.toLocaleString()}</p>
           </div>
           <div className="rounded-xl border border-surface-light bg-surface-light/70 p-5">
-            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">{t('stats.totalConversions')}</p>
+            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">{t('stats.currentConvertedFiles')}</p>
             <p className="mt-2 text-2xl font-bold text-text">{stats.total_conversions.toLocaleString()}</p>
           </div>
           <div className="rounded-xl border border-surface-light bg-surface-light/70 p-5">
-            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">{t('stats.totalStorage')}</p>
+            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">{t('stats.storageInUse')}</p>
             <p className="mt-2 text-2xl font-bold text-text">{formatBytes(stats.total_storage_bytes)}</p>
           </div>
         </div>
