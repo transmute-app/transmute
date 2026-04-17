@@ -9,7 +9,6 @@ from api.schemas import (
     ApiKeyCreatedResponse,
     ApiKeyDeleteResponse,
     ApiKeyListResponse,
-    ApiKeyResponse,
     ErrorResponse,
 )
 from core.auth import get_password_hash_str

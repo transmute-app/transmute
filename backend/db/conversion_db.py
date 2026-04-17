@@ -1,6 +1,4 @@
-import sqlite3
-
-from core import get_settings, migrate_table_columns, assign_orphaned_rows_to_admin
+from core import get_settings, migrate_table_columns
 from .file_db import FileDB
 
 

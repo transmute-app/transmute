@@ -1,6 +1,3 @@
-import pytest
-from pathlib import Path
-
 from core.settings import Settings, get_settings
 
 

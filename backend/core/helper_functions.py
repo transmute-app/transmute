@@ -3,7 +3,6 @@ import re
 import sqlite3
 import mimetypes
 import hashlib
-import logging
 import magic
 
 from typing import TYPE_CHECKING
