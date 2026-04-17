@@ -91,7 +91,6 @@ class PyPandocConverter(ConverterInterface):
         'docx': 'docx',
         'rst': 'rst',
         'tex': 'latex',
-        'tex': 'latex',
         'epub': 'epub',
         'odt': 'odt',
         'rtf': 'rtf',
