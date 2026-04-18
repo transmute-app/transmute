@@ -75,6 +75,10 @@ class FileListResponse(BaseModel):
     files: list[FileMetadata] = Field(..., description="List of uploaded files")
 
 
+class UrlUploadRequest(BaseModel):
+    url: str = Field(..., example="https://example.com/file.pdf", description="Direct URL to a file for Transmute to download")
+
+
 class FileUploadResponse(BaseModel):
     message: str = Field(..., example="File uploaded successfully", description="Upload status message")
     metadata: FileMetadataWithFormats = Field(..., description="Uploaded file metadata with compatible formats")

@@ -85,6 +85,8 @@
     "dropFiles": "Dateien hier ablegen",
     "clickToBrowse": "oder zum Auswählen klicken",
     "dropOrClick": "Dateien hier ablegen oder zum Auswählen klicken",
+    "urlUploadHint": "URL, die Transmute abrufen soll",
+    "addUrl": "Hinzufügen",
     "uploading": "{{count}} Datei wird hochgeladen...",
     "uploading_other": "{{count}} Dateien werden hochgeladen...",
     "pending": "Wartend ({{count}})",

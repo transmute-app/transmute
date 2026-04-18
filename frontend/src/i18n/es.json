@@ -85,6 +85,8 @@
     "dropFiles": "Arrastra los archivos aquí",
     "clickToBrowse": "o haz click para explorar",
     "dropOrClick": "Arrastra los archivos aquí o haz click para explorar",
+    "urlUploadHint": "URL para que Transmute la recoja",
+    "addUrl": "Agregar",
     "uploading": "Subiendo {{count}} archivo...",
     "uploading_other": "Subiendo {{count}} archivos...",
     "pending": "Pendiente ({{count}})",

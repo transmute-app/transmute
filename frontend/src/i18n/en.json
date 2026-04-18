@@ -85,6 +85,8 @@
     "dropFiles": "Drop files here",
     "clickToBrowse": "or click to browse",
     "dropOrClick": "Drop files here or click to browse",
+    "urlUploadHint": "URL for Transmute to grab",
+    "addUrl": "Add",
     "uploading": "Uploading {{count}} file...",
     "uploading_other": "Uploading {{count}} files...",
     "pending": "Pending ({{count}})",

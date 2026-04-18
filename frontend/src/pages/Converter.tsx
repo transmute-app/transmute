@@ -38,6 +38,46 @@ function HotkeyHint({ label, className = '' }: { label: string; className?: stri
   )
 }
 
+function UrlUploadPlaceholder({
+  value,
+  disabled,
+  onChange,
+  onSubmit,
+  compact = false,
+}: {
+  value: string
+  disabled: boolean
+  onChange: (value: string) => void
+  onSubmit: () => void
+  compact?: boolean
+}) {
+  const { t } = useTranslation()
+  const isValidUrl = value.trim().length > 0 && /^https?:\/\/.+/i.test(value.trim())
+
+  return (
+    <div className={`flex ${compact ? 'flex-col gap-2 sm:flex-row sm:items-center' : 'flex-col gap-2 sm:flex-row sm:items-center'}`}>
+      <input
+        type="url"
+        inputMode="url"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => { if (event.key === 'Enter' && isValidUrl && !disabled) onSubmit() }}
+        placeholder={t('converter.urlUploadHint')}
+        disabled={disabled}
+        className="w-full rounded-lg border border-surface-dark bg-transparent px-3 py-2 text-sm text-text outline-none transition duration-200 placeholder:text-text-muted/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+      />
+      <button
+        type="button"
+        disabled={disabled || !isValidUrl}
+        onClick={onSubmit}
+        className="rounded-lg border border-surface-dark bg-transparent px-4 py-2 text-sm font-semibold text-text-muted transition duration-200 hover:border-primary/60 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {t('converter.addUrl')}
+      </button>
+    </div>
+  )
+}
+
 async function getResponseDetail(response: Response) {
   try {
     const errorData = await response.json()
@@ -63,6 +103,7 @@ function Converter() {
   const [downloadingAll, setDownloadingAll] = useState(false)
   const [autoDownload, setAutoDownload] = useState(false)
   const [dragOver, setDragOver] = useState(false)
+  const [urlInput, setUrlInput] = useState('')
   const [defaultFormats, setDefaultFormats] = useState<Record<string, string>>({})
   const [formatAliases, setFormatAliases] = useState<Record<string, string>>({})
   const [defaultQualities, setDefaultQualities] = useState<Record<string, string>>({})
@@ -204,6 +245,74 @@ function Converter() {
 
     setUploading(false)
     setUploadCount(0)
+  }
+
+  const processUrlUpload = async () => {
+    const url = urlInput.trim()
+    if (!url) return
+
+    setUploading(true)
+    setError(null)
+    setIgnoredUploadCount(0)
+    setUploadCount(1)
+
+    try {
+      const response = await fetch('/api/files/url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      })
+
+      if (!response.ok) {
+        const detail = await getResponseDetail(response)
+        if (response.status === 422) {
+          setIgnoredUploadCount(1)
+        } else {
+          throw new Error(detail)
+        }
+        return
+      }
+
+      const data = await response.json()
+      const fileInfo: FileInfo = {
+        id: data.metadata.id,
+        original_filename: data.metadata.original_filename,
+        media_type: data.metadata.media_type,
+        extension: data.metadata.extension,
+        size_bytes: data.metadata.size_bytes,
+        created_at: data.metadata.created_at,
+        compatible_formats: data.metadata.compatible_formats,
+      }
+
+      const sortedFormats = fileInfo.compatible_formats
+        ? Object.keys(fileInfo.compatible_formats).sort()
+        : []
+      const inputExt = fileInfo.extension?.replace(/^\./,  '') || fileInfo.media_type || ''
+      const normalizedExt = formatAliases[inputExt] || inputExt
+      const userDefault = defaultFormats[normalizedExt] || defaultFormats[inputExt]
+      const defaultFormat = (userDefault && sortedFormats.includes(userDefault))
+        ? userDefault
+        : sortedFormats[0] || ''
+
+      const qualities = (defaultFormat && fileInfo.compatible_formats?.[defaultFormat]) || []
+      const defaultQualityForFormat = defaultQualities[defaultFormat]
+      const pending: PendingFile = {
+        file: fileInfo,
+        selectedFormat: defaultFormat,
+        selectedQuality: qualities.length > 0
+          ? (defaultQualityForFormat && qualities.includes(defaultQualityForFormat) ? defaultQualityForFormat : (qualities.includes('medium') ? 'medium' : undefined))
+          : undefined,
+        status: 'pending',
+      }
+
+      setPendingFiles((prev) => [...prev, pending])
+      setUrlInput('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'URL upload failed')
+    } finally {
+      setUploading(false)
+      setUploadCount(0)
+    }
   }
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -587,6 +696,13 @@ function Converter() {
               />
             </label>
 
+            <UrlUploadPlaceholder
+              value={urlInput}
+              onChange={setUrlInput}
+              onSubmit={processUrlUpload}
+              disabled={uploading}
+            />
+
             {error && (
               <div className="p-3 bg-primary/20 border border-primary rounded-lg text-primary-light text-sm">
                 {error}
@@ -612,38 +728,48 @@ function Converter() {
 
         {/* File input */}
         <div className="mb-6">
-          <label
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            className={`flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-150 ${
-              dragOver
-                ? 'border-primary bg-primary/10'
-                : 'border-surface-dark hover:border-primary/60 hover:bg-primary/5'
-            } ${uploading || converting ? 'opacity-50 pointer-events-none' : ''}`}
-          >
-            <div className="flex items-center gap-3 text-text-muted">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-              </svg>
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-sm">
-                  {uploading
-                    ? t('converter.uploading', { count: uploadCount })
-                    : t('converter.dropOrClick')}
-                </span>
-                <HotkeyHint label={hotkeyLabels.open} />
+          <div className="space-y-3">
+            <label
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              className={`flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-150 ${
+                dragOver
+                  ? 'border-primary bg-primary/10'
+                  : 'border-surface-dark hover:border-primary/60 hover:bg-primary/5'
+              } ${uploading || converting ? 'opacity-50 pointer-events-none' : ''}`}
+            >
+              <div className="flex items-center gap-3 text-text-muted">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                </svg>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-sm">
+                    {uploading
+                      ? t('converter.uploading', { count: uploadCount })
+                      : t('converter.dropOrClick')}
+                  </span>
+                  <HotkeyHint label={hotkeyLabels.open} />
+                </div>
               </div>
-            </div>
-            <input
-              type="file"
-              ref={filePickerRef2}
-              multiple
-              onChange={handleFileSelect}
+              <input
+                type="file"
+                ref={filePickerRef2}
+                multiple
+                onChange={handleFileSelect}
+                disabled={uploading || converting}
+                className="hidden"
+              />
+            </label>
+
+            <UrlUploadPlaceholder
+              value={urlInput}
+              onChange={setUrlInput}
+              onSubmit={processUrlUpload}
               disabled={uploading || converting}
-              className="hidden"
+              compact
             />
-          </label>
+          </div>
         </div>
 
         {error && (

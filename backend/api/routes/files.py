@@ -2,6 +2,7 @@ import os
 import uuid
 import hashlib
 import mimetypes
+import logging
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import FileResponse
@@ -11,7 +12,11 @@ from core import get_settings, detect_media_type, sanitize_extension, sanitize_f
 from db import FileDB, ConversionDB
 from registry import registry as converter_registry
 from api.deps import get_current_active_user, get_file_db, get_conversion_db
-from api.schemas import FileListResponse, FileUploadResponse, FileDeleteResponse, ErrorResponse, BatchDownloadRequest
+from api.schemas import FileListResponse, FileUploadResponse, FileDeleteResponse, ErrorResponse, BatchDownloadRequest, UrlUploadRequest
+from registry import downloader_registry
+from downloaders import DownloadError
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/files", tags=["files"])
 
@@ -139,6 +144,72 @@ async def upload_file(
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
     finally:
         await file.close()
+
+
+async def save_file_from_url(url: str, db: FileDB, user_id: str) -> dict:
+    """Download a file from a URL via a downloader and store it like a regular upload."""
+    uuid_str = str(uuid.uuid4())
+    downloader = downloader_registry.get_downloader_for_url(url)
+
+    try:
+        result = await downloader.download(url, Path(UPLOAD_DIR), uuid_str)
+    except DownloadError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc))
+
+    file_extension = get_file_extension(result.original_filename)
+    media_type = detect_media_type(result.file_path)
+
+    compatible_formats = converter_registry.get_compatible_formats_and_qualities(media_type)
+    if not compatible_formats:
+        result.file_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=422, detail=UNSUPPORTED_UPLOAD_DETAIL)
+
+    metadata = {
+        "id": uuid_str,
+        "storage_path": str(result.file_path),
+        "original_filename": result.original_filename,
+        "media_type": media_type,
+        "extension": file_extension,
+        "size_bytes": result.size_bytes,
+        "sha256_checksum": result.sha256_checksum,
+        "user_id": user_id,
+    }
+    db.insert_file_metadata(metadata)
+    metadata["compatible_formats"] = compatible_formats
+    return metadata
+
+
+@router.post(
+    "/url",
+    summary="Upload a file from a URL",
+    responses={
+        200: {
+            "model": FileUploadResponse,
+            "description": "File downloaded and uploaded successfully",
+        },
+        422: {
+            "model": ErrorResponse,
+            "description": "URL download failed or file has no supported conversions",
+        },
+        500: {
+            "model": ErrorResponse,
+            "description": "Upload failed",
+        },
+    },
+)
+async def upload_file_from_url(
+    request: UrlUploadRequest,
+    file_db: FileDB = Depends(get_file_db),
+    current_user: dict = Depends(get_current_active_user),
+):
+    try:
+        metadata = await save_file_from_url(request.url, file_db, current_user["uuid"])
+        return {"message": "File uploaded successfully", "metadata": metadata}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
 
 @router.get(
     "/{file_id}",
