@@ -16,6 +16,11 @@ class DownloaderRegistry:
         for _name, obj in inspect.getmembers(downloaders, inspect.isclass):
             if issubclass(obj, DownloaderInterface) and obj is not DownloaderInterface:
                 self.register(obj)
+        # HttpDownloader is a generic catch-all; move it to the end so
+        # more specific downloaders (e.g. YtDlpDownloader) are tried first.
+        if HttpDownloader in self.downloaders:
+            self.downloaders.remove(HttpDownloader)
+            self.downloaders.append(HttpDownloader)
 
     def register(self, downloader_class: Type[DownloaderInterface]) -> None:
         if downloader_class not in self.downloaders:
@@ -24,13 +29,14 @@ class DownloaderRegistry:
     def get_downloader_for_url(self, url: str) -> DownloaderInterface:
         """Return an appropriate downloader instance for the given URL.
 
-        For now this always returns an ``HttpDownloader``.  As more
-        downloaders are added (e.g. yt-dlp, authenticated) this method
-        will inspect the URL and choose the best match.
+        Iterates registered downloaders and returns the first one that
+        can handle the URL.
         """
-        if not HttpDownloader().can_handle(url):
-            raise ValueError(f"No suitable downloader found for URL: {url}")
-        return HttpDownloader()
+        for downloader_cls in self.downloaders:
+            instance = downloader_cls()
+            if instance.can_handle(url):
+                return instance
+        raise ValueError(f"No suitable downloader found for URL: {url}")
 
 
 # Shared singleton — import this instead of instantiating DownloaderRegistry() directly.

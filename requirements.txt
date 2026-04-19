@@ -42,3 +42,4 @@ uvicorn==0.41.0
 vobject==0.9.9
 weasyprint==68.1
 xlrd==2.0.2
+yt-dlp==2026.3.17
