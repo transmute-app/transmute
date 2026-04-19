@@ -22,11 +22,11 @@ class HttpDownloader(DownloaderInterface):
     
     def fix_url(self, url: str) -> str:
         """Fixes commonly incorrect URLs, for example change GitHub URLs to raw content URLs."""
-        if ((url.startswith("https://github.com") or url.startswith("http://github.com"))
-             and not url.endswith(".git") and "/blob/" in url):
-            # Convert GitHub blob URLs to raw URLs
-            url = url.replace("github.com", "raw.githubusercontent.com", count=1).replace("/blob/", "/", count=1)
         normalized = url.strip()
+        parsed = urlparse(normalized)
+        if parsed.hostname == "github.com" and not parsed.path.endswith(".git") and "/blob/" in parsed.path:
+            # Convert GitHub blob URLs to raw URLs
+            normalized = normalized.replace("github.com", "raw.githubusercontent.com", count=1).replace("/blob/", "/", count=1)
         return normalized
 
     async def download(self, url: str, dest_dir: Path, filename_stem: str) -> DownloadResult:

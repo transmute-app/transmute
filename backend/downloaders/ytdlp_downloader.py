@@ -11,10 +11,13 @@ from .downloader_interface import DownloaderInterface, DownloadResult, DownloadE
 
 logger = logging.getLogger(__name__)
 
-_YOUTUBE_HOSTS = re.compile(
-    r"^(www\.)?(youtube\.com|youtu\.be|music\.youtube\.com|m\.youtube\.com)$",
-    re.IGNORECASE,
-)
+_YOUTUBE_HOSTS = {
+    "youtube.com",
+    "www.youtube.com",
+    "youtu.be",
+    "music.youtube.com",
+    "m.youtube.com",
+}
 
 
 class YtDlpDownloader(DownloaderInterface):
@@ -24,7 +27,8 @@ class YtDlpDownloader(DownloaderInterface):
         parsed = urlparse(url)
         if parsed.scheme not in ("http", "https"):
             return False
-        return _YOUTUBE_HOSTS.match(parsed.netloc) is not None
+        hostname = parsed.hostname
+        return hostname is not None and hostname.lower() in _YOUTUBE_HOSTS
 
     async def download(self, url: str, dest_dir: Path, filename_stem: str) -> DownloadResult:
         os.makedirs(dest_dir, exist_ok=True)
