@@ -13,7 +13,7 @@ fastapi==0.129.0
 fonttools==4.61.1
 httpx==0.28.1
 itsdangerous==2.2.0
-lxml==6.0.2
+lxml==6.1.0
 markdown==3.10.2
 odfpy==1.4.1
 ocrmypdf==17.4.0
