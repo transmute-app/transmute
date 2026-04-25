@@ -18,7 +18,7 @@ ARG CALIBRE_VERSION="9.7.0"
 # https://github.com/jgm/pandoc/releases
 ARG PANDOC_VERSION="3.9.0.2"
 # https://github.com/jgraph/drawio-desktop/releases
-ARG DRAWIO_VERSION="29.7.8"
+ARG DRAWIO_VERSION="29.7.9"
 
 # Set working directory
 WORKDIR /app
