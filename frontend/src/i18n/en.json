@@ -287,6 +287,7 @@
     "select": "Select..."
   },
   "footer": {
+    "surveyCta": "Using Transmute? Share feedback in the 2-minute user survey.",
     "sourceCode": "Source Code",
     "apiDocs": "API Documentation",
     "website": "Transmute Website"

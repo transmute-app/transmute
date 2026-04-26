@@ -287,6 +287,7 @@
     "select": "Auswählen..."
   },
   "footer": {
+    "surveyCta": "Nutzt du Transmute? Teile dein Feedback in der 2-minütigen Nutzerumfrage.",
     "sourceCode": "Quellcode",
     "apiDocs": "API-Dokumentation",
     "website": "Transmute-Website"
