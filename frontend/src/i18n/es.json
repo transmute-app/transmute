@@ -7,6 +7,7 @@
     "signIn": "Transmute - Iniciar Sesión",
     "converter": "Transmute - Convertidor",
     "files": "Transmute - Archivos",
+    "queue": "Transmute - Cola",
     "history": "Transmute - Historial",
     "settings": "Transmute - Ajustes",
     "account": "Transmute - Mi Cuenta",
@@ -16,6 +17,7 @@
   "nav": {
     "convert": "Convertir",
     "files": "Archivos",
+    "queue": "Cola",
     "history": "Historial",
     "converter": "Convertidor",
     "logo": "Transmute Logo"
@@ -127,6 +129,34 @@
     "loadFailed": "Error al cargar las conversiones",
     "fetchFailed": "Error al obtener las conversiones",
     "deleteFailed": "Error al borrar"
+  },
+  "queue": {
+    "title": "Cola",
+    "loading": "Cargando trabajos...",
+    "noJobs": "Aún no hay trabajos de conversión.",
+    "polling": "Actualizando...",
+    "loadFailed": "Error al cargar los trabajos",
+    "cancelFailed": "Error al cancelar el trabajo",
+    "downloadFailed": "Error de descarga",
+    "col": {
+      "source": "Origen",
+      "target": "Destino",
+      "status": "Estado",
+      "created": "Creado",
+      "actions": "Acciones"
+    },
+    "status": {
+      "queued": "En cola",
+      "running": "En curso",
+      "completed": "Completado",
+      "failed": "Fallido",
+      "cancelled": "Cancelado"
+    },
+    "actions": {
+      "download": "Descargar",
+      "cancel": "Cancelar",
+      "noActions": "No hay acciones disponibles"
+    }
   },
   "settings": {
     "title": "Ajustes",

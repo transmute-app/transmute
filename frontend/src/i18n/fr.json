@@ -7,6 +7,7 @@
     "signIn": "Transmute - Connexion",
     "converter": "Transmute - Convertisseur",
     "files": "Transmute - Fichiers",
+    "queue": "Transmute - File d'attente",
     "history": "Transmute - Historique",
     "settings": "Transmute - Paramètres",
     "account": "Transmute - Mon compte",
@@ -16,6 +17,7 @@
   "nav": {
     "convert": "Conversion",
     "files": "Fichiers",
+    "queue": "File d'attente",
     "history": "Historique",
     "converter": "Convertisseur",
     "logo": "Logo Transmute"
@@ -127,6 +129,34 @@
     "loadFailed": "Le chargement des conversions a échoué",
     "fetchFailed": "La récupération des conversions a échoué",
     "deleteFailed": "La suppression a échoué"
+  },
+  "queue": {
+    "title": "File d'attente",
+    "loading": "Chargement des tâches...",
+    "noJobs": "Aucune tâche de conversion pour le moment.",
+    "polling": "Mise à jour...",
+    "loadFailed": "Échec du chargement des tâches",
+    "cancelFailed": "Échec de l'annulation de la tâche",
+    "downloadFailed": "Échec du téléchargement",
+    "col": {
+      "source": "Source",
+      "target": "Cible",
+      "status": "Statut",
+      "created": "Créé",
+      "actions": "Actions"
+    },
+    "status": {
+      "queued": "En attente",
+      "running": "En cours",
+      "completed": "Terminé",
+      "failed": "Échoué",
+      "cancelled": "Annulé"
+    },
+    "actions": {
+      "download": "Télécharger",
+      "cancel": "Annuler",
+      "noActions": "Aucune action disponible"
+    }
   },
   "settings": {
     "title": "Paramètres",

@@ -7,6 +7,7 @@
     "signIn": "Transmute - Sign In",
     "converter": "Transmute - Converter",
     "files": "Transmute - Files",
+    "queue": "Transmute - Queue",
     "history": "Transmute - History",
     "settings": "Transmute - Settings",
     "account": "Transmute - My Account",
@@ -16,6 +17,7 @@
   "nav": {
     "convert": "Convert",
     "files": "Files",
+    "queue": "Queue",
     "history": "History",
     "converter": "Converter",
     "logo": "Transmute Logo"
@@ -127,6 +129,34 @@
     "loadFailed": "Failed to load conversions",
     "fetchFailed": "Failed to fetch conversions",
     "deleteFailed": "Delete failed"
+  },
+  "queue": {
+    "title": "Queue",
+    "loading": "Loading jobs...",
+    "noJobs": "No conversion jobs yet.",
+    "polling": "Updating...",
+    "loadFailed": "Failed to load jobs",
+    "cancelFailed": "Failed to cancel job",
+    "downloadFailed": "Download failed",
+    "col": {
+      "source": "Source",
+      "target": "Target",
+      "status": "Status",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "status": {
+      "queued": "Queued",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "actions": {
+      "download": "Download",
+      "cancel": "Cancel",
+      "noActions": "No actions available"
+    }
   },
   "settings": {
     "title": "Settings",
