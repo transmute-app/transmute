@@ -2,20 +2,18 @@ from pathlib import Path
 import shutil
 import uuid
 from fastapi import APIRouter, Depends, HTTPException
-from converters import ConverterInterface
 from registry import registry
-from core import get_settings, sanitize_extension, delete_file_and_metadata, validate_safe_path, compute_sha256_checksum, media_type_extensions
+from core import get_settings, sanitize_extension, delete_file_and_metadata, validate_safe_path
 from db import ConversionDB, FileDB, ConversionRelationsDB, SettingsDB, DefaultQualitiesDB
+from services import ConversionFailedError, run_conversion_job
 from api.deps import get_current_active_user, get_file_db, get_conversion_db, get_conversion_relations_db, get_settings_db, get_default_qualities_db
 from api.schemas import ConversionRequest, ConversionListResponse, FileMetadata, ErrorResponse, FileDeleteResponse
 
 
 # Synthetic input formats produced by URL downloaders that pass straight
 # through to a real base format without re-encoding (see registry.WEB_ALIAS_BASE_FORMATS).
-WEB_ALIAS_PASSTHROUGH: dict[str, str] = {
-    "webvideo": "mp4",
-    "webaudio": "m4a",
-}
+# Kept here as a re-export for callers/tests that still import from this module.
+from services.conversion_service import WEB_ALIAS_PASSTHROUGH
 
 
 router = APIRouter(prefix="/conversions", tags=["conversions"])
@@ -110,7 +108,6 @@ def create_conversion(
     """Create a new conversion for a previously uploaded file."""
     og_id = conversion_request.id
     output_format = sanitize_extension(conversion_request.output_format)
-    output_extension = f".{media_type_extensions.get(output_format, output_format)}"
     og_metadata = file_db.get_file_metadata(og_id)
 
     # Ensure the original file was uploaded and exists in the database
@@ -119,63 +116,30 @@ def create_conversion(
     # Verify the file belongs to the current user
     if og_metadata.get("user_id") != current_user["uuid"]:
         raise HTTPException(status_code=404, detail=f"No file found with id {og_id}")
-    
-    # Validate the original file's storage path
-    validate_safe_path(og_metadata['storage_path'], raise_exception=True)
-    
+
     input_format = og_metadata['media_type']
-    converted_id = str(uuid.uuid4())
-    converted_metadata = dict(og_metadata)
-    
+
     # Find the appropriate converter for this conversion
     converter_type = registry.get_converter_for_conversion(input_format, output_format)
     if converter_type is None:
         raise HTTPException(status_code=400, detail=f"No converter found for {input_format} to {output_format}")
 
-    # Perform the conversion using the converter interface
-    converter: ConverterInterface = converter_type(og_metadata['storage_path'], f'{TEMP_DIR}/', input_format, output_format)
-    quality = conversion_request.quality
-    if quality is None:
-        default_quality = default_qualities_db.get(current_user["uuid"], output_format)
-        if default_quality:
-            quality = default_quality["quality"]
     try:
-        passthrough_base = WEB_ALIAS_PASSTHROUGH.get(input_format)
-        if passthrough_base is not None and output_format == passthrough_base:
-            output_files = copy_web_alias_to_base(og_metadata['storage_path'], Path(TEMP_DIR), converted_id, output_format)
-        else:
-            output_files = converter.convert(quality=quality)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Conversion failed: {str(e)}")
-    moved_output_file = Path(output_files[0]).rename(f'{CONVERTED_DIR}/{converted_id}{output_extension}')
+        converted_metadata = run_conversion_job(
+            source_metadata=og_metadata,
+            output_format=output_format,
+            quality=conversion_request.quality,
+            converter_type=converter_type,
+            user_id=current_user["uuid"],
+            file_db=file_db,
+            conversion_db=conversion_db,
+            conversion_relations_db=conversion_relations_db,
+            settings_db=settings_db,
+            default_qualities_db=default_qualities_db,
+        )
+    except ConversionFailedError as exc:
+        raise HTTPException(status_code=400, detail=f"Conversion failed: {exc}")
 
-    # Store the converted file metadata in the conversion database and create a relation to the original file
-    converted_metadata['id'] = converted_id
-    converted_metadata['media_type'] = f"{output_format}"
-    converted_metadata['extension'] = output_extension
-    converted_metadata['storage_path'] = str(moved_output_file)
-    converted_metadata['size_bytes'] = moved_output_file.stat().st_size
-    converted_metadata['sha256_checksum'] = compute_sha256_checksum(moved_output_file)
-    converted_metadata['user_id'] = current_user["uuid"]
-    converted_metadata.pop('created_at', None)  # Remove created_at from original metadata if it exists
-    if quality:
-        converted_metadata['quality'] = quality
-    conversion_db.insert_file_metadata(converted_metadata)
-    # Re-add quality after insert (insert_file_metadata pops it)
-    if quality:
-        converted_metadata['quality'] = quality
-    # Store relation with denormalized original file metadata
-    conversion_relations_db.insert_conversion_relation({
-        'original_file_id': og_id,
-        'converted_file_id': converted_id,
-        'original_filename': og_metadata['original_filename'],
-        'original_media_type': og_metadata['media_type'],
-        'original_extension': og_metadata['extension'],
-        'original_size_bytes': og_metadata['size_bytes'],
-        'user_id': current_user["uuid"],
-    })
-    if settings_db.get_settings(current_user["uuid"]).get("keep_originals", True) is False:
-        delete_file_and_metadata(file_id=og_id, file_db=file_db)
     return converted_metadata
 
 @router.delete(

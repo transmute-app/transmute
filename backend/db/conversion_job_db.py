@@ -233,7 +233,7 @@ class ConversionJobDB:
         cursor = self.conn.cursor()
         cursor.row_factory = sqlite3.Row
         cursor.execute(
-            f"SELECT * FROM {self.TABLE_NAME} {where_sql} ORDER BY created_at DESC, id DESC{limit_sql}",  # nosec B608
+            f"SELECT * FROM {self.TABLE_NAME} {where_sql} ORDER BY created_at DESC, rowid DESC{limit_sql}",  # nosec B608
             tuple(params),
         )
         return [dict(row) for row in cursor.fetchall()]
@@ -259,7 +259,7 @@ class ConversionJobDB:
             cursor.row_factory = sqlite3.Row
             cursor.execute(
                 f"SELECT * FROM {self.TABLE_NAME} WHERE status = ? "  # nosec B608
-                f"ORDER BY created_at ASC, id ASC LIMIT 1",
+                f"ORDER BY created_at ASC, rowid ASC LIMIT 1",
                 (STATUS_QUEUED,),
             )
             row = cursor.fetchone()

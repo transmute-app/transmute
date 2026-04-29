@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -6,7 +7,11 @@ from textwrap import dedent
 from api import router
 from api.routes.oidc import attach_session_middleware
 from core import build_logging_config, configure_logging, get_settings
-from background import get_upload_cleanup_thread
+from background import (
+    get_conversion_worker_thread,
+    get_upload_cleanup_thread,
+    recover_running_jobs,
+)
 import uvicorn
 
 
@@ -36,6 +41,18 @@ def build_api_description(app_name: str) -> str:
 def create_app() -> FastAPI:
     configure_logging()
     settings = get_settings()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        # Mark any jobs that were `running` when the previous process died
+        # as failed; they cannot be resumed cleanly.
+        recover_running_jobs()
+        # Start the conversion queue worker (daemon thread).
+        worker = get_conversion_worker_thread()
+        worker.start()
+        yield
+        # Daemon threads exit with the process; nothing to clean up here.
+
     app = FastAPI(
         title=f"{settings.app_name} API",
         description=build_api_description(settings.app_name),
@@ -43,7 +60,8 @@ def create_app() -> FastAPI:
         servers=[{"url": settings.api_server_url, "description": f"{settings.app_name} API server"}],
         docs_url=None,
         redoc_url=None,
-        redirect_slashes=True
+        redirect_slashes=True,
+        lifespan=lifespan,
     )
 
     def custom_openapi():
