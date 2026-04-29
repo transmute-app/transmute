@@ -8,6 +8,40 @@ class ConversionRequest(BaseModel):
     output_format: str = Field(..., example="png", description="Target format for conversion")
 
 
+ConversionJobStatus = Literal["queued", "running", "completed", "failed", "cancelled"]
+
+
+class ConversionJobCreateRequest(BaseModel):
+    id: str = Field(..., example="123e4567-e89b-12d3-a456-426614174000", description="ID of the source file to convert")
+    output_format: str = Field(..., example="png", description="Target format for conversion")
+    quality: Optional[str] = Field(None, example="medium", description="Optional quality setting (e.g. low, medium, high)")
+
+
+class ConversionJobResponse(BaseModel):
+    id: str = Field(..., description="Job UUID")
+    user_id: str = Field(..., description="Owning user UUID")
+    source_file_id: str = Field(..., description="Source file ID being converted")
+    output_format: str = Field(..., description="Target output format")
+    quality: Optional[str] = Field(None, description="Quality option used, if any")
+    status: ConversionJobStatus = Field(..., description="Current job status")
+    progress: Optional[int] = Field(None, description="0-100 progress hint when available")
+    error_message: Optional[str] = Field(None, description="Error message when status is failed")
+    output_file_id: Optional[str] = Field(None, description="ID of the resulting converted file when completed")
+    converter_name: Optional[str] = Field(None, description="Converter implementation that handled (or will handle) the job")
+    source_filename: Optional[str] = Field(None, description="Denormalized source filename at submit time")
+    source_media_type: Optional[str] = Field(None, description="Denormalized source media type at submit time")
+    source_extension: Optional[str] = Field(None, description="Denormalized source extension at submit time")
+    source_size_bytes: Optional[int] = Field(None, description="Denormalized source size at submit time")
+    created_at: Optional[str] = Field(None, description="Creation timestamp")
+    started_at: Optional[str] = Field(None, description="Time the worker began processing")
+    completed_at: Optional[str] = Field(None, description="Time the job reached a terminal status")
+    updated_at: Optional[str] = Field(None, description="Last update timestamp")
+
+
+class ConversionJobListResponse(BaseModel):
+    jobs: list[ConversionJobResponse] = Field(..., description="List of conversion jobs for the current user")
+
+
 class FileMetadata(BaseModel):
     id: str = Field(..., example="123e4567-e89b-12d3-a456-426614174000")
     storage_path: str = Field(..., example="data/uploads/6e36aefe-b129-436e-999d-f5037075c017.png")

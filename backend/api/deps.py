@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
 
 from core.auth import decode_access_token, verify_password
-from db import FileDB, ConversionDB, ConversionRelationsDB, SettingsDB, DefaultFormatsDB, DefaultQualitiesDB, UserDB, ApiKeyDB, UserIdentityDB
+from db import FileDB, ConversionDB, ConversionRelationsDB, ConversionJobDB, SettingsDB, DefaultFormatsDB, DefaultQualitiesDB, UserDB, ApiKeyDB, UserIdentityDB
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/token")
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/users/token", auto_error=False)
@@ -29,6 +29,11 @@ def _conversion_db() -> ConversionDB:
 @lru_cache(maxsize=1)
 def _conversion_relations_db() -> ConversionRelationsDB:
     return ConversionRelationsDB()
+
+
+@lru_cache(maxsize=1)
+def _conversion_job_db() -> ConversionJobDB:
+    return ConversionJobDB()
 
 
 @lru_cache(maxsize=1)
@@ -54,6 +59,11 @@ def get_conversion_db() -> ConversionDB:
 def get_conversion_relations_db() -> ConversionRelationsDB:
     """Dependency that provides a shared ConversionRelationsDB instance."""
     return _conversion_relations_db()
+
+
+def get_conversion_job_db() -> ConversionJobDB:
+    """Dependency that provides a shared ConversionJobDB instance."""
+    return _conversion_job_db()
 
 
 def get_settings_db() -> SettingsDB:

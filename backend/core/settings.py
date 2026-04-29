@@ -41,8 +41,16 @@ class Settings(BaseSettings):
     file_table_name: str = "FILES_METADATA"
     conversion_table_name: str = "CONVERSIONS_METADATA"
     conversion_relations_table_name: str = "CONVERSION_RELATIONS"
+    conversion_jobs_table_name: str = "CONVERSION_JOBS"
     app_settings_table_name: str = "APP_SETTINGS"
     user_table_name: str = "USERS"
+
+    # ===== Conversion queue =====
+    # Number of background worker threads (single-process; v1 keeps this at 1).
+    conversion_worker_concurrency: int = 1
+    # If a `running` job exists at startup, it's stale (process restarted mid-job).
+    # Such jobs are marked failed during recovery on app boot.
+    conversion_job_stale_after_minutes: int = 60
 
     # ===== Authentication =====
     auth_secret_key: str = ""
