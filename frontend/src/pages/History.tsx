@@ -5,7 +5,7 @@ import PreviewModal, { isPreviewable } from '../components/PreviewModal'
 import { authFetch as fetch } from '../utils/api'
 import { downloadBlob } from '../utils/download'
 import { stripExtension } from '../utils/filename'
-import { cancelJob, listJobs, retryJob, isTerminalJobStatus, type ConversionJob } from '../utils/jobs'
+import { cancelJob, deleteJob, listJobs, retryJob, isTerminalJobStatus, type ConversionJob } from '../utils/jobs'
 
 interface OriginalFileInfo {
   id: string
@@ -141,6 +141,19 @@ function History() {
     }
   }
 
+  const handleDeleteJob = async (jobId: string) => {
+    setDeletingId(jobId)
+    setError(null)
+    try {
+      await deleteJob(jobId)
+      setJobs(prev => prev.filter(j => j.id !== jobId))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('history.deleteFailed'))
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   const toggleSelection = (id: string) => {
     setSelectedIds(prev => {
       const newSet = new Set(prev)
@@ -260,8 +273,10 @@ function History() {
         selectable: false,
         onCancel: status === 'queued' ? () => handleCancelJob(job.id) : undefined,
         onRetry: status === 'failed' || status === 'cancelled' ? () => handleRetryJob(job.id) : undefined,
+        onDelete: status === 'failed' || status === 'cancelled' ? () => handleDeleteJob(job.id) : undefined,
         isCancelling: cancellingId === job.id,
         isRetrying: retryingId === job.id,
+        isDeleting: deletingId === job.id,
       }
     })
 

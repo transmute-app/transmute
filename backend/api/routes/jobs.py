@@ -220,3 +220,37 @@ def retry_job(
         raise HTTPException(status_code=409, detail="Job is no longer retryable")
     updated = job_db.get_job(job_id, user_id=current_user["uuid"])
     return _serialize_job(updated)
+
+
+@router.delete(
+    "/{job_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a terminal conversion job",
+    responses={
+        204: {"description": "Job deleted"},
+        404: {"model": ErrorResponse, "description": "Job not found"},
+        409: {"model": ErrorResponse, "description": "Job is still active"},
+    },
+)
+def delete_job(
+    job_id: str,
+    job_db: ConversionJobDB = Depends(get_conversion_job_db),
+    current_user: dict = Depends(get_current_active_user),
+):
+    """Delete a job that has reached a terminal state.
+
+    Only ``failed`` and ``cancelled`` jobs may be removed via this endpoint.
+    Completed jobs are represented in the conversions list and removed via
+    ``DELETE /api/conversions/{id}``; queued/running jobs must be cancelled
+    first.
+    """
+    job = job_db.get_job(job_id, user_id=current_user["uuid"])
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job["status"] not in ("failed", "cancelled"):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot delete job with status '{job['status']}'",
+        )
+    job_db.delete_job(job_id, user_id=current_user["uuid"])
+    return None

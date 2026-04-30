@@ -75,6 +75,15 @@ export async function retryJob(jobId: string): Promise<ConversionJob> {
   })
 }
 
+export async function deleteJob(jobId: string): Promise<void> {
+  const response = await authFetch(`/api/jobs/${encodeURIComponent(jobId)}`, {
+    method: 'DELETE',
+  })
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText || 'Delete failed')
+  }
+}
+
 /**
  * Download the converted output file for a completed job.
  * Throws ApiError if the job is not completed or output is unavailable.
