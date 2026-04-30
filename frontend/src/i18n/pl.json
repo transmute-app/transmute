@@ -101,7 +101,10 @@
     "downloadAll": "Pobierz wszystkie {{count}} plików",
     "downloading": "Pobieranie...",
     "ignoredUnsupported": "Zignorowano {{count}} plik bez wsparcia konwersji.",
-    "ignoredUnsupported_other": "Zignorowano {{count}} plików bez wsparcia konwersji."
+    "ignoredUnsupported_other": "Zignorowano {{count}} plików bez wsparcia konwersji.",
+    "jobsInQueue": "{{count}} zadanie w kolejce",
+    "jobsInQueue_other": "{{count}} zadań w kolejce",
+    "viewQueue": "Zobacz kolejkę"
   },
   "files": {
     "title": "Pliki",

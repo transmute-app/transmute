@@ -101,7 +101,10 @@
     "downloadAll": "Download All {{count}} Files",
     "downloading": "Downloading...",
     "ignoredUnsupported": "Ignored {{count}} file with no supported conversions.",
-    "ignoredUnsupported_other": "Ignored {{count}} files with no supported conversions."
+    "ignoredUnsupported_other": "Ignored {{count}} files with no supported conversions.",
+    "jobsInQueue": "{{count}} job in queue",
+    "jobsInQueue_other": "{{count}} jobs in queue",
+    "viewQueue": "View queue"
   },
   "files": {
     "title": "Files",

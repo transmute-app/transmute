@@ -101,7 +101,10 @@
     "downloadAll": "Télécharger les {{count}} fichiers",
     "downloading": "Téléchargement...",
     "ignoredUnsupported": "{{count}} fichier ignoré avec aucune conversion supporté.",
-    "ignoredUnsupported_other": "{{count}} fichiers ignorés avec aucune conversion supporté."
+    "ignoredUnsupported_other": "{{count}} fichiers ignorés avec aucune conversion supporté.",
+    "jobsInQueue": "{{count}} tâche dans la file",
+    "jobsInQueue_other": "{{count}} tâches dans la file",
+    "viewQueue": "Voir la file"
   },
   "files": {
     "title": "Fichiers",

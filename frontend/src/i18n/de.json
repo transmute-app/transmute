@@ -101,7 +101,10 @@
     "downloadAll": "Alle {{count}} Dateien herunterladen",
     "downloading": "Download läuft...",
     "ignoredUnsupported": "{{count}} Datei wurde ignoriert, da keine unterstützten Konvertierungen verfügbar sind.",
-    "ignoredUnsupported_other": "{{count}} Dateien wurden ignoriert, da keine unterstützten Konvertierungen verfügbar sind."
+    "ignoredUnsupported_other": "{{count}} Dateien wurden ignoriert, da keine unterstützten Konvertierungen verfügbar sind.",
+    "jobsInQueue": "{{count}} Auftrag in der Warteschlange",
+    "jobsInQueue_other": "{{count}} Aufträge in der Warteschlange",
+    "viewQueue": "Warteschlange anzeigen"
   },
   "files": {
     "title": "Dateien",

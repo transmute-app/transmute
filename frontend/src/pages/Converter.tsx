@@ -1,12 +1,19 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FaSyncAlt, FaDownload, FaTimes } from 'react-icons/fa'
+import { FaListCheck } from 'react-icons/fa6'
 import { useTranslation } from 'react-i18next'
 import FileTable, { FileInfo, ConversionInfo } from '../components/FileTable'
 import PreviewModal, { isPreviewable } from '../components/PreviewModal'
-import { authFetch as fetch } from '../utils/api'
+import { authFetch as fetch, apiJson } from '../utils/api'
 import { downloadBlob } from '../utils/download'
 import { stripExtension } from '../utils/filename'
+import {
+  createJob,
+  isTerminalJobStatus,
+  listJobs,
+  type ConversionJob,
+} from '../utils/jobs'
 
 interface PendingFile {
   file: FileInfo
@@ -108,6 +115,17 @@ function Converter() {
   const [formatAliases, setFormatAliases] = useState<Record<string, string>>({})
   const [defaultQualities, setDefaultQualities] = useState<Record<string, string>>({})
   const [previewFile, setPreviewFile] = useState<{ id: string; filename: string; mediaType: string } | null>(null)
+  const [activeJobCount, setActiveJobCount] = useState(0)
+
+  // Keep mutable references so polling can read latest values without
+  // forcing the interval effect to restart on every render.
+  const submittedJobsRef = useRef<Map<string, ConversionJob>>(new Map())
+  const knownStatusRef = useRef<Map<string, ConversionJob['status']>>(new Map())
+  const pendingFilesRef = useRef(pendingFiles)
+  const autoDownloadRef = useRef(autoDownload)
+  const handleDownloadRef = useRef<(c: ConversionInfo) => Promise<void>>(async () => {})
+  const handleJobTransitionRef = useRef<(job: ConversionJob) => Promise<void>>(async () => {})
+  const pollJobsRef = useRef<() => Promise<boolean>>(async () => false)
 
   // Load auto-download setting, default format mappings, and default quality mappings
   useEffect(() => {
@@ -409,61 +427,36 @@ function Converter() {
     )
 
     const promises = filesToConvert.map(async ({ file, selectedFormat, selectedQuality }) => {
-      const inputFormat = file.extension?.replace(/^\.\//, '') || ''
-
       try {
-        const response = await fetch('/api/conversions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: file.id,
-            input_format: inputFormat,
-            output_format: selectedFormat,
-            ...(selectedQuality ? { quality: selectedQuality } : {}),
-          }),
+        const job = await createJob({
+          id: file.id,
+          output_format: selectedFormat,
+          quality: selectedQuality ?? null,
         })
+        submittedJobsRef.current.set(job.id, job)
+        knownStatusRef.current.set(job.id, job.status)
 
-        if (!response.ok) {
-          let detail = response.statusText
-          try {
-            const errorData = await response.json()
-            detail = errorData.detail || detail
-          } catch {
-            // Fall back to status text when the response body is not JSON.
-          }
-          throw new Error(`Conversion failed for ${file.original_filename}: ${detail}`)
-        }
-
-        const data = await response.json()
-        const conversionInfo: ConversionInfo = {
-          id: data.id,
-          original_filename: data.original_filename,
-          media_type: data.media_type,
-          extension: data.extension,
-          size_bytes: data.size_bytes,
-          created_at: data.created_at,
-          quality: data.quality,
-        }
-
-        const completed: CompletedConversion = { file, conversion: conversionInfo }
-
-        // Move to completed list immediately as it finishes
-        setCompletedConversions((prev) => [completed, ...prev])
-        setPendingFiles((prev) => prev.filter((pf) => pf.file.id !== file.id))
-
-        if (autoDownload) {
-          await handleDownload(conversionInfo)
-        }
-
-        return completed
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : `Conversion failed for ${file.original_filename}`
+        // Surface a per-row "queued" hint until the worker picks it up.
         setPendingFiles((prev) =>
           prev.map((pf) =>
             pf.file.id === file.id
-              ? { ...pf, status: 'failed', errorMessage }
+              ? { ...pf, status: 'pending', errorMessage: t('queue.status.queued') }
+              : pf
+          )
+        )
+
+        // If the worker already took it to a terminal state (very fast), act now
+        // so we don't have to wait a full poll interval.
+        if (isTerminalJobStatus(job.status)) {
+          await handleJobTransitionRef.current(job)
+        }
+        return job
+      } catch (err) {
+        const message = err instanceof Error ? err.message : `Conversion failed for ${file.original_filename}`
+        setPendingFiles((prev) =>
+          prev.map((pf) =>
+            pf.file.id === file.id
+              ? { ...pf, status: 'failed', errorMessage: message }
               : pf
           )
         )
@@ -481,7 +474,12 @@ function Converter() {
       setError(errors.join('; '))
     }
 
-    setConverting(false)
+    // Trigger an immediate poll so very-fast jobs surface without waiting for
+    // the next interval, then let the polling effect take over.
+    const stillActive = await pollJobsRef.current()
+    if (!stillActive) {
+      setConverting(false)
+    }
   }
 
   const triggerDownloads = async (conversions: CompletedConversion[]) => {
@@ -532,6 +530,126 @@ function Converter() {
     if (completedConversions.length === 0) return
     await triggerDownloads(completedConversions)
   }
+
+  // Refresh per-render refs used by the polling loop.
+  useEffect(() => { pendingFilesRef.current = pendingFiles }, [pendingFiles])
+  useEffect(() => { autoDownloadRef.current = autoDownload }, [autoDownload])
+  useEffect(() => { handleDownloadRef.current = handleDownload })
+
+  // Apply a per-job status transition: completed -> move to completed list,
+  // failed/cancelled -> mark the row as failed with a useful message.
+  const handleJobTransition = useCallback(async (job: ConversionJob) => {
+    const sourceId = job.source_file_id
+    if (job.status === 'completed' && job.output_file_id) {
+      const pf = pendingFilesRef.current.find(p => p.file.id === sourceId)
+      const sourceFile = pf?.file
+      if (!sourceFile) return
+
+      // Best-effort enrich from the canonical conversion list so size/extension
+      // match what the History page would show. Fall back to the job payload.
+      let conversion: ConversionInfo
+      try {
+        const data = await apiJson<{ conversions: Array<ConversionInfo & { id: string }> }>(
+          '/api/conversions/complete',
+        )
+        const match = data.conversions.find(c => c.id === job.output_file_id)
+        if (match) {
+          conversion = {
+            id: match.id,
+            original_filename: match.original_filename,
+            media_type: match.media_type,
+            extension: match.extension,
+            size_bytes: match.size_bytes,
+            created_at: match.created_at,
+            quality: match.quality,
+          }
+        } else {
+          throw new Error('not found')
+        }
+      } catch {
+        const ext = job.output_format.startsWith('.') ? job.output_format : `.${job.output_format}`
+        conversion = {
+          id: job.output_file_id,
+          original_filename: sourceFile.original_filename,
+          media_type: job.output_format,
+          extension: ext,
+          size_bytes: 0,
+          created_at: job.completed_at || new Date().toISOString(),
+          quality: job.quality || undefined,
+        }
+      }
+
+      setCompletedConversions(prev => [{ file: sourceFile, conversion }, ...prev])
+      setPendingFiles(prev => prev.filter(p => p.file.id !== sourceId))
+
+      if (autoDownloadRef.current) {
+        try { await handleDownloadRef.current(conversion) } catch { /* ignore */ }
+      }
+      return
+    }
+
+    if (job.status === 'failed') {
+      setPendingFiles(prev => prev.map(p =>
+        p.file.id === sourceId
+          ? { ...p, status: 'failed', errorMessage: job.error_message || t('queue.status.failed') }
+          : p
+      ))
+      return
+    }
+
+    if (job.status === 'cancelled') {
+      setPendingFiles(prev => prev.map(p =>
+        p.file.id === sourceId
+          ? { ...p, status: 'failed', errorMessage: t('queue.status.cancelled') }
+          : p
+      ))
+    }
+  }, [t])
+
+  useEffect(() => { handleJobTransitionRef.current = handleJobTransition }, [handleJobTransition])
+
+  // Poll /api/jobs once. Returns true when at least one tracked job is still
+  // non-terminal, so callers can decide whether to keep the spinner up.
+  const pollJobs = useCallback(async (): Promise<boolean> => {
+    const ids = Array.from(submittedJobsRef.current.keys())
+    if (ids.length === 0) {
+      setActiveJobCount(0)
+      return false
+    }
+    try {
+      const fresh = await listJobs()
+      const byId = new Map(fresh.map(j => [j.id, j]))
+      let activeRemaining = 0
+      for (const id of ids) {
+        const updated = byId.get(id)
+        if (!updated) continue
+        submittedJobsRef.current.set(id, updated)
+        const prevStatus = knownStatusRef.current.get(id)
+        if (prevStatus !== updated.status) {
+          knownStatusRef.current.set(id, updated.status)
+          await handleJobTransitionRef.current(updated)
+        }
+        if (!isTerminalJobStatus(updated.status)) activeRemaining++
+      }
+      setActiveJobCount(activeRemaining)
+      if (activeRemaining === 0) {
+        setConverting(false)
+      }
+      return activeRemaining > 0
+    } catch {
+      // Suppress polling errors; the next tick will retry.
+      return true
+    }
+  }, [])
+
+  useEffect(() => { pollJobsRef.current = pollJobs }, [pollJobs])
+
+  // Schedule polling while there are non-terminal tracked jobs.
+  useEffect(() => {
+    if (activeJobCount === 0) return
+    const handle = window.setInterval(() => { void pollJobs() }, 2500)
+    return () => window.clearInterval(handle)
+  }, [activeJobCount, pollJobs])
 
   const clearIgnoredUploads = () => {
     setIgnoredUploadCount(0)
@@ -794,6 +912,22 @@ function Converter() {
         {ignoredUploadCount > 0 && (
           <div className="mb-4 rounded-lg border border-text-muted/20 bg-surface-dark/40 px-3 py-2 text-xs text-text-muted">
             {t('converter.ignoredUnsupported', { count: ignoredUploadCount })}
+          </div>
+        )}
+
+        {activeJobCount > 0 && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-text">
+            <span className="flex items-center gap-2">
+              <FaSyncAlt className="text-xs animate-spin text-primary-light" />
+              {t('converter.jobsInQueue', { count: activeJobCount })}
+            </span>
+            <Link
+              to="/queue"
+              className="inline-flex items-center gap-1.5 text-primary-light hover:text-text font-medium"
+            >
+              <FaListCheck className="text-xs" />
+              {t('converter.viewQueue')}
+            </Link>
           </div>
         )}
 

@@ -101,7 +101,10 @@
     "downloadAll": "Scarica tutti i {{count}} file",
     "downloading": "Download in corso...",
     "ignoredUnsupported": "Ignorato {{count}} file, non ci sono conversioni supportate.",
-    "ignoredUnsupported_other": "Ignorati {{count}} file, non ci sono conversioni supportate."
+    "ignoredUnsupported_other": "Ignorati {{count}} file, non ci sono conversioni supportate.",
+    "jobsInQueue": "{{count}} lavoro in coda",
+    "jobsInQueue_other": "{{count}} lavori in coda",
+    "viewQueue": "Vedi coda"
   },
   "files": {
     "title": "File",
