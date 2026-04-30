@@ -40,7 +40,7 @@ describe('FileTable', () => {
 
     expect(screen.getByText('report.pdf')).toBeInTheDocument()
     expect(screen.getByText('pdf')).toBeInTheDocument()
-    expect(screen.getByText('2.0 KB')).toBeInTheDocument()
+    expect(screen.getAllByText('2.0 KB').length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: /filename/i })).toBeInTheDocument()
   })
 
@@ -64,7 +64,7 @@ describe('FileTable', () => {
     )
 
     expect(screen.getByText('report.docx')).toBeInTheDocument()
-    expect(screen.getByText('4.0 KB')).toBeInTheDocument()
+    expect(screen.getAllByText('4.0 KB').length).toBeGreaterThan(0)
     expect(screen.getByText('docx')).toBeInTheDocument()
   })
 })

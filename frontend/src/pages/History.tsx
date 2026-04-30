@@ -322,7 +322,7 @@ function History() {
 
   return (
     <div className="min-h-full bg-gradient-to-br from-surface-dark to-surface-light p-8 pb-12">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6 min-h-[4rem]">
           <h1 className="text-3xl font-bold text-primary">{t('history.title')}</h1>
           <div className="flex gap-3">
