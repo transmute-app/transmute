@@ -100,9 +100,10 @@
     "downloading": "Descargando...",
     "ignoredUnsupported": "Se ignoró {{count}} archivo sin conversiones compatibles.",
     "ignoredUnsupported_other": "Se ignoraron {{count}} archivos sin conversiones compatibles.",
-    "jobsInQueue": "{{count}} trabajo en cola",
-    "jobsInQueue_other": "{{count}} trabajos en cola",
-    "viewQueue": "Ver cola"
+    "jobsInQueue": "{{count}} trabajo en ejecución",
+    "jobsInQueue_other": "{{count}} trabajos en ejecución",
+    "jobsInProgressHint": "Tus conversiones se están procesando en segundo plano. Puedes seguir trabajando.",
+    "viewQueue": "Ver trabajos"
   },
   "files": {
     "title": "Archivos",

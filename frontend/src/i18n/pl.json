@@ -100,9 +100,10 @@
     "downloading": "Pobieranie...",
     "ignoredUnsupported": "Zignorowano {{count}} plik bez wsparcia konwersji.",
     "ignoredUnsupported_other": "Zignorowano {{count}} plików bez wsparcia konwersji.",
-    "jobsInQueue": "{{count}} zadanie w kolejce",
-    "jobsInQueue_other": "{{count}} zadań w kolejce",
-    "viewQueue": "Zobacz kolejkę"
+    "jobsInQueue": "{{count}} zadanie w trakcie",
+    "jobsInQueue_other": "{{count}} zadań w trakcie",
+    "jobsInProgressHint": "Twoje konwersje są przetwarzane w tle. Możesz dalej pracować.",
+    "viewQueue": "Zobacz zadania"
   },
   "files": {
     "title": "Pliki",

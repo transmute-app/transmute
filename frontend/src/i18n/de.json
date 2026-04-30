@@ -100,9 +100,10 @@
     "downloading": "Download läuft...",
     "ignoredUnsupported": "{{count}} Datei wurde ignoriert, da keine unterstützten Konvertierungen verfügbar sind.",
     "ignoredUnsupported_other": "{{count}} Dateien wurden ignoriert, da keine unterstützten Konvertierungen verfügbar sind.",
-    "jobsInQueue": "{{count}} Auftrag in der Warteschlange",
-    "jobsInQueue_other": "{{count}} Aufträge in der Warteschlange",
-    "viewQueue": "Warteschlange anzeigen"
+    "jobsInQueue": "{{count}} Auftrag wird verarbeitet",
+    "jobsInQueue_other": "{{count}} Aufträge werden verarbeitet",
+    "jobsInProgressHint": "Ihre Konvertierungen werden im Hintergrund verarbeitet. Sie können weiterarbeiten.",
+    "viewQueue": "Jobs anzeigen"
   },
   "files": {
     "title": "Dateien",

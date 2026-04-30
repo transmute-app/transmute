@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { FaSyncAlt, FaDownload, FaTimes } from 'react-icons/fa'
+import { FaCheckCircle, FaSyncAlt, FaDownload, FaTimes } from 'react-icons/fa'
 import { FaListCheck } from 'react-icons/fa6'
 import { useTranslation } from 'react-i18next'
 import FileTable, { FileInfo, ConversionInfo } from '../components/FileTable'
@@ -652,19 +652,19 @@ function Converter() {
     return () => window.clearInterval(handle)
   }, [activeJobCount, pollJobs])
 
-  const clearIgnoredUploads = () => {
+  const clearIgnoredUploads = useCallback(() => {
     setIgnoredUploadCount(0)
-  }
+  }, [])
 
-  const handleClearPending = () => {
+  const handleClearPending = useCallback(() => {
     setPendingFiles([])
     clearIgnoredUploads()
-  }
+  }, [clearIgnoredUploads])
 
-  const handleClearCompleted = () => {
+  const handleClearCompleted = useCallback(() => {
     setCompletedConversions([])
     clearIgnoredUploads()
-  }
+  }, [clearIgnoredUploads])
 
   // Pending files are always convertible; unsupported uploads are rejected by the API.
   const convertableFiles = useMemo(() =>
@@ -742,7 +742,7 @@ function Converter() {
     clear: 'Esc',
   }
 
-  const hotkeys : Record<string, Function> = {
+  const hotkeys = useMemo<Record<string, () => void>>(() => ({
     'CTRL+O': () => {
       if(filePickerRef1.current) {
         filePickerRef1.current.click()
@@ -753,14 +753,14 @@ function Converter() {
       }
     },
     'CTRL+ENTER': () => {
-      handleConvertAllRef.current();
+      handleConvertAllRef.current()
     },
     'ESCAPE': () => {
       handleClearPending()
     },
-  }
+  }), [handleClearPending])
 
-  const keydownHandler = (event: KeyboardEvent) => {
+  const keydownHandler = useCallback((event: KeyboardEvent) => {
       let shortcut = ''
       if(event.ctrlKey || event.metaKey) shortcut += 'CTRL+'
       if(event.shiftKey) shortcut += 'SHIFT+'
@@ -771,7 +771,7 @@ function Converter() {
         event.preventDefault()
         hotkeys[shortcut]()
       }
-  }
+  }, [hotkeys])
 
   useEffect(() => {
     window.addEventListener('keydown', keydownHandler)
@@ -779,7 +779,7 @@ function Converter() {
     return () => {
       window.removeEventListener('keydown', keydownHandler)
     }
-  }, [])
+  }, [keydownHandler])
 
   useEffect(() => {
     handleConvertAllRef.current = handleConvertAll;
@@ -869,7 +869,7 @@ function Converter() {
                 dragOver
                   ? 'border-primary bg-primary/10'
                   : 'border-surface-dark hover:border-primary/60 hover:bg-primary/5'
-              } ${uploading || converting ? 'opacity-50 pointer-events-none' : ''}`}
+              } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
             >
               <div className="flex items-center gap-3 text-text-muted">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -889,7 +889,7 @@ function Converter() {
                 ref={filePickerRef2}
                 multiple
                 onChange={handleFileSelect}
-                disabled={uploading || converting}
+                disabled={uploading}
                 className="hidden"
               />
             </label>
@@ -898,7 +898,7 @@ function Converter() {
               value={urlInput}
               onChange={setUrlInput}
               onSubmit={processUrlUpload}
-              disabled={uploading || converting}
+              disabled={uploading}
               compact
             />
           </div>
@@ -917,14 +917,19 @@ function Converter() {
         )}
 
         {activeJobCount > 0 && (
-          <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-text">
-            <span className="flex items-center gap-2">
-              <FaSyncAlt className="text-xs animate-spin text-primary-light" />
-              {t('converter.jobsInQueue', { count: activeJobCount })}
-            </span>
+          <div className="mb-4 flex flex-col gap-3 rounded-lg border border-success/40 bg-success/10 px-4 py-3 text-sm text-text sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full bg-success/20 text-success">
+                <FaCheckCircle className="text-sm" />
+              </span>
+              <div>
+                <p className="font-semibold text-text">{t('converter.jobsInQueue', { count: activeJobCount })}</p>
+                <p className="mt-1 text-xs text-text-muted">{t('converter.jobsInProgressHint')}</p>
+              </div>
+            </div>
             <Link
               to="/history"
-              className="inline-flex items-center gap-1.5 text-primary-light hover:text-text font-medium"
+              className="inline-flex items-center gap-1.5 self-start rounded-lg border border-success/30 px-3 py-2 font-medium text-success transition duration-200 hover:bg-success/15 hover:text-success sm:self-auto"
             >
               <FaListCheck className="text-xs" />
               {t('converter.viewQueue')}
