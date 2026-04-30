@@ -7,7 +7,7 @@
     "signIn": "Transmute - Iniciar Sesión",
     "converter": "Transmute - Convertidor",
     "files": "Transmute - Archivos",
-    "history": "Transmute - Historial",
+    "history": "Transmute - Trabajos",
     "settings": "Transmute - Ajustes",
     "account": "Transmute - Mi Cuenta",
     "userManagement": "Transmute - Gestión de Usuarios",
@@ -16,7 +16,7 @@
   "nav": {
     "convert": "Convertir",
     "files": "Archivos",
-    "history": "Historial",
+    "history": "Trabajos",
     "converter": "Convertidor",
     "logo": "Transmute Logo"
   },
@@ -118,7 +118,7 @@
     "deleteFailed": "Error al borrar"
   },
   "history": {
-    "title": "Historial",
+    "title": "Trabajos",
     "loading": "Cargando conversiones...",
     "noConversions": "Aún no hay archivos convertidos.",
     "downloadSelected": "Descargar {{count}} Archivo",

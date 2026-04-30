@@ -7,7 +7,7 @@
     "signIn": "Transmute - Connexion",
     "converter": "Transmute - Convertisseur",
     "files": "Transmute - Fichiers",
-    "history": "Transmute - Historique",
+    "history": "Transmute - Tâches",
     "settings": "Transmute - Paramètres",
     "account": "Transmute - Mon compte",
     "userManagement": "Transmute - Gestion des utilisateurs",
@@ -16,7 +16,7 @@
   "nav": {
     "convert": "Conversion",
     "files": "Fichiers",
-    "history": "Historique",
+    "history": "Tâches",
     "converter": "Convertisseur",
     "logo": "Logo Transmute"
   },
@@ -118,7 +118,7 @@
     "deleteFailed": "La suppression a échoué"
   },
   "history": {
-    "title": "Historique",
+    "title": "Tâches",
     "loading": "Chargement des conversions...",
     "noConversions": "Aucun fichier converti pour le moment.",
     "downloadSelected": "Télécharger {{count}} fichier",

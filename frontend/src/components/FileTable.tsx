@@ -134,7 +134,7 @@ function FileTable({
     return sortDirection === 'asc' ? cmp : -cmp
   })
 
-  const SortIcon = ({ column }: { column: SortColumn }) => {
+  const renderSortIcon = (column: SortColumn) => {
     if (sortColumn !== column) return <FaSort className="inline ml-1 opacity-30 text-[0.6rem]" />
     return sortDirection === 'asc'
       ? <FaSortUp className="inline ml-1 text-[0.6rem]" />
@@ -183,7 +183,7 @@ function FileTable({
                 onClick={() => handleSort('filename')}
                 className="flex items-center gap-1 hover:text-text transition uppercase"
               >
-                {t('table.filename')} <SortIcon column="filename" />
+                {t('table.filename')} {renderSortIcon('filename')}
               </button>
             </th>
             <th
@@ -195,7 +195,7 @@ function FileTable({
                   onClick={() => handleSort('type')}
                   className="flex items-center gap-1 hover:text-text transition uppercase"
                 >
-                  {t('table.format')} <SortIcon column="type" />
+                  {t('table.format')} {renderSortIcon('type')}
                 </button>
                 {bulkFormats && bulkFormats.length > 0 && onBulkFormatChange && (
                   <FormatDropdown
@@ -235,7 +235,7 @@ function FileTable({
                 onClick={() => handleSort('size')}
                 className="flex items-center gap-1 hover:text-text transition uppercase"
               >
-                {t('table.size')} <SortIcon column="size" />
+                {t('table.size')} {renderSortIcon('size')}
               </button>
             </th>
             {showDate && (
@@ -247,12 +247,12 @@ function FileTable({
                   onClick={() => handleSort('date')}
                   className="flex items-center gap-1 hover:text-text transition uppercase"
                 >
-                  {t('table.date')} <SortIcon column="date" />
+                  {t('table.date')} {renderSortIcon('date')}
                 </button>
               </th>
             )}
             {showStatus && (
-              <th className="px-2 sm:px-4 py-3 uppercase">{t('table.status')}</th>
+              <th className="px-2 sm:px-4 py-3 text-center uppercase">{t('table.status')}</th>
             )}
             {hasActions && (
               <th className="px-2 sm:px-4 py-3 text-right">{t('table.actions')}</th>
@@ -394,7 +394,7 @@ function FileTable({
                       row.jobStatus === 'cancelled' ? <FaBan className="text-text-muted text-base" /> :
                       <FaTimesCircle className="text-primary-light text-base" />
                     return (
-                      <span className="inline-flex" title={tooltip} aria-label={tooltip}>
+                      <span className="inline-flex w-full justify-center" title={tooltip} aria-label={tooltip}>
                         {icon}
                       </span>
                     )
