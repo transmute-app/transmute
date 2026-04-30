@@ -9,7 +9,6 @@ from api.routes.oidc import attach_session_middleware
 from core import build_logging_config, configure_logging, get_settings
 from background import (
     get_conversion_worker_manager_thread,
-    get_conversion_worker_thread,
     get_upload_cleanup_thread,
     recover_running_jobs,
 )
