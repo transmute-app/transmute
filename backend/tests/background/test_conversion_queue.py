@@ -1,11 +1,11 @@
 import threading
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from background.conversion_queue import (
     _process_job,
+    conversion_worker_manager_task,
     conversion_worker_task,
+    get_conversion_worker_manager_thread,
     get_conversion_worker_thread,
     recover_running_jobs,
 )
@@ -180,15 +180,13 @@ def test_process_job_marks_failed_on_unexpected_error(mock_registry, mock_run):
 # ── recover_running_jobs ────────────────────────────────────────────
 
 @patch("background.conversion_queue.ConversionJobDB")
-def test_recover_running_jobs_calls_fail_running(mock_cls):
-    mock_cls.return_value.fail_running_jobs.return_value = 3
+def test_recover_running_jobs_calls_requeue_running(mock_cls):
+    mock_cls.return_value.requeue_running_jobs.return_value = 3
 
     affected = recover_running_jobs()
 
     assert affected == 3
-    mock_cls.return_value.fail_running_jobs.assert_called_once()
-    args, _ = mock_cls.return_value.fail_running_jobs.call_args
-    assert "restart" in args[0].lower()
+    mock_cls.return_value.requeue_running_jobs.assert_called_once_with()
 
 
 # ── conversion_worker_task ──────────────────────────────────────────
@@ -253,6 +251,112 @@ def test_worker_loop_recovers_when_process_raises(
     conversion_worker_task(stop_event=stop_event)
 
     mock_job_db.mark_failed.assert_called_once_with("job-x", "Internal worker error")
+
+
+@patch("background.conversion_queue.get_conversion_worker_thread")
+@patch("background.conversion_queue.ConversionJobDB")
+@patch("background.conversion_queue.get_settings")
+def test_worker_manager_starts_workers_only_when_jobs_exist(
+    mock_get_settings,
+    mock_job_cls,
+    mock_get_worker,
+):
+    stop_event = threading.Event()
+    mock_get_settings.return_value = MagicMock(conversion_worker_concurrency=3)
+    mock_job_db = mock_job_cls.return_value
+
+    def count_side_effect(status=None, user_id=None):
+        if mock_job_db.count_jobs.call_count == 1:
+            return 0
+        stop_event.set()
+        return 2
+
+    mock_job_db.count_jobs.side_effect = count_side_effect
+
+    worker_one = MagicMock()
+    worker_one.is_alive.return_value = True
+    worker_two = MagicMock()
+    worker_two.is_alive.return_value = True
+    mock_get_worker.side_effect = [worker_one, worker_two]
+
+    conversion_worker_manager_task(stop_event=stop_event)
+
+    worker_one.start.assert_called_once_with()
+    worker_two.start.assert_called_once_with()
+    assert mock_get_worker.call_count == 2
+
+
+@patch("background.conversion_queue.get_conversion_worker_thread")
+@patch("background.conversion_queue.ConversionJobDB")
+@patch("background.conversion_queue.get_settings")
+def test_worker_manager_honors_concurrency_limit(
+    mock_get_settings,
+    mock_job_cls,
+    mock_get_worker,
+):
+    stop_event = threading.Event()
+    mock_get_settings.return_value = MagicMock(conversion_worker_concurrency=2)
+    mock_job_db = mock_job_cls.return_value
+
+    def count_side_effect(status=None, user_id=None):
+        stop_event.set()
+        return 5
+
+    mock_job_db.count_jobs.side_effect = count_side_effect
+
+    workers = []
+    for _ in range(3):
+        worker = MagicMock()
+        worker.is_alive.return_value = True
+        workers.append(worker)
+    mock_get_worker.side_effect = workers
+
+    conversion_worker_manager_task(stop_event=stop_event)
+
+    assert mock_get_worker.call_count == 2
+
+
+@patch("background.conversion_queue.get_conversion_worker_thread")
+@patch("background.conversion_queue.ConversionJobDB")
+@patch("background.conversion_queue.get_settings")
+def test_worker_manager_shrinks_back_when_queue_drains(
+    mock_get_settings,
+    mock_job_cls,
+    mock_get_worker,
+):
+    stop_event = threading.Event()
+    mock_get_settings.return_value = MagicMock(conversion_worker_concurrency=3)
+    mock_job_db = mock_job_cls.return_value
+
+    def count_side_effect(status=None, user_id=None):
+        if mock_job_db.count_jobs.call_count == 1:
+            return 2
+        stop_event.set()
+        return 0
+
+    mock_job_db.count_jobs.side_effect = count_side_effect
+
+    worker_one = MagicMock()
+    worker_one.is_alive.return_value = True
+    worker_two = MagicMock()
+    worker_two.is_alive.return_value = True
+    mock_get_worker.side_effect = [worker_one, worker_two]
+
+    conversion_worker_manager_task(stop_event=stop_event)
+
+    worker_one.start.assert_called_once_with()
+    worker_two.start.assert_called_once_with()
+    stop_event_one = mock_get_worker.call_args_list[0].kwargs["stop_event"]
+    stop_event_two = mock_get_worker.call_args_list[1].kwargs["stop_event"]
+    assert stop_event_one.is_set() is True
+    assert stop_event_two.is_set() is True
+
+
+def test_get_conversion_worker_manager_thread_is_daemon():
+    thread = get_conversion_worker_manager_thread(stop_event=threading.Event(), worker_concurrency=2)
+    assert isinstance(thread, threading.Thread)
+    assert thread.daemon is True
+    assert thread.name == "conversion-queue-manager"
 
 
 def test_get_conversion_worker_thread_is_daemon():

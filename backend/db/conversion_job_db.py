@@ -31,29 +31,6 @@ ALL_STATUSES = {
 
 TERMINAL_STATUSES = {STATUS_COMPLETED, STATUS_FAILED, STATUS_CANCELLED}
 
-
-_JOB_COLUMNS = (
-    "id",
-    "user_id",
-    "source_file_id",
-    "output_format",
-    "quality",
-    "status",
-    "progress",
-    "error_message",
-    "output_file_id",
-    "converter_name",
-    "source_filename",
-    "source_media_type",
-    "source_extension",
-    "source_size_bytes",
-    "created_at",
-    "started_at",
-    "completed_at",
-    "updated_at",
-)
-
-
 class ConversionJobDB:
     """Database class for managing queued conversion jobs.
 
@@ -238,6 +215,26 @@ class ConversionJobDB:
         )
         return [dict(row) for row in cursor.fetchall()]
 
+    def count_jobs(self, user_id: str | None = None, status: str | None = None) -> int:
+        """Count jobs, optionally filtered by owner and/or status."""
+        clauses: list[str] = []
+        params: list = []
+        if user_id is not None:
+            clauses.append("user_id = ?")
+            params.append(user_id)
+        if status is not None:
+            clauses.append("status = ?")
+            params.append(status)
+        where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+
+        cursor = self.conn.cursor()
+        cursor.execute(
+            f"SELECT COUNT(*) FROM {self.TABLE_NAME} {where_sql}",  # nosec B608
+            tuple(params),
+        )
+        row = cursor.fetchone()
+        return int(row[0]) if row is not None else 0
+
     # ── status transitions ──────────────────────────────────────────
 
     def claim_next_queued_job(self) -> Optional[dict]:
@@ -353,6 +350,24 @@ class ConversionJobDB:
                 f"completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP "
                 f"WHERE status = ?",
                 (STATUS_FAILED, error_message, STATUS_RUNNING),
+            )
+            return cursor.rowcount
+
+    def requeue_running_jobs(self) -> int:
+        """Re-queue every currently running job.
+
+        Used at startup to recover from crashes/restarts where the worker
+        was interrupted mid-conversion. Since jobs are not resumable, we
+        reset them back to a fresh queued state so the worker can retry
+        them from scratch.
+        """
+        with self.conn:
+            cursor = self.conn.execute(
+                f"UPDATE {self.TABLE_NAME} SET "  # nosec B608
+                f"status = ?, progress = 0, error_message = NULL, "
+                f"started_at = NULL, completed_at = NULL, updated_at = CURRENT_TIMESTAMP "
+                f"WHERE status = ?",
+                (STATUS_QUEUED, STATUS_RUNNING),
             )
             return cursor.rowcount
 

@@ -3,17 +3,11 @@ import shutil
 import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from registry import registry
-from core import get_settings, sanitize_extension, delete_file_and_metadata, validate_safe_path
+from core import get_settings, sanitize_extension, delete_file_and_metadata
 from db import ConversionDB, FileDB, ConversionRelationsDB, SettingsDB, DefaultQualitiesDB
 from services import ConversionFailedError, run_conversion_job
 from api.deps import get_current_active_user, get_file_db, get_conversion_db, get_conversion_relations_db, get_settings_db, get_default_qualities_db
 from api.schemas import ConversionRequest, ConversionListResponse, FileMetadata, ErrorResponse, FileDeleteResponse
-
-
-# Synthetic input formats produced by URL downloaders that pass straight
-# through to a real base format without re-encoding (see registry.WEB_ALIAS_BASE_FORMATS).
-# Kept here as a re-export for callers/tests that still import from this module.
-from services.conversion_service import WEB_ALIAS_PASSTHROUGH
 
 
 router = APIRouter(prefix="/conversions", tags=["conversions"])

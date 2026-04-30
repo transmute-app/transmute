@@ -86,6 +86,20 @@ def test_list_jobs_filters_by_user_and_status(job_db):
     assert completed == []
 
 
+def test_count_jobs_filters_by_user_and_status(job_db):
+    job_a1 = job_db.insert_job(_make_job(user_id="user-a", source_id="f1"))
+    job_db.insert_job(_make_job(user_id="user-a", source_id="f2"))
+    job_db.insert_job(_make_job(user_id="user-b", source_id="f3"))
+    job_db.claim_next_queued_job()
+    job_db.mark_completed(job_a1["id"], output_file_id="out-1")
+
+    assert job_db.count_jobs() == 3
+    assert job_db.count_jobs(user_id="user-a") == 2
+    assert job_db.count_jobs(user_id="user-b") == 1
+    assert job_db.count_jobs(user_id="user-a", status="completed") == 1
+    assert job_db.count_jobs(status="queued") == 2
+
+
 def test_claim_next_queued_job_marks_running(job_db):
     job1 = job_db.insert_job(_make_job(source_id="f1"))
     job2 = job_db.insert_job(_make_job(source_id="f2"))
@@ -211,6 +225,25 @@ def test_fail_running_jobs_recovers_stale_running(job_db):
     assert affected == 1
     assert job_db.get_job(job["id"])["status"] == "failed"
     assert job_db.get_job(job["id"])["error_message"] == "interrupted"
+    # Queued jobs remain untouched.
+    assert job_db.get_job(queued_only["id"])["status"] == "queued"
+
+
+def test_requeue_running_jobs_recovers_stale_running(job_db):
+    job = job_db.insert_job(_make_job())
+    job_db.claim_next_queued_job()
+    job_db.update_progress(job["id"], 42)
+    queued_only = job_db.insert_job(_make_job(source_id="f-other"))
+
+    affected = job_db.requeue_running_jobs()
+
+    assert affected == 1
+    recovered = job_db.get_job(job["id"])
+    assert recovered["status"] == "queued"
+    assert recovered["progress"] == 0
+    assert recovered["error_message"] is None
+    assert recovered["started_at"] is None
+    assert recovered["completed_at"] is None
     # Queued jobs remain untouched.
     assert job_db.get_job(queued_only["id"])["status"] == "queued"
 
