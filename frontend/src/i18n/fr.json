@@ -7,7 +7,6 @@
     "signIn": "Transmute - Connexion",
     "converter": "Transmute - Convertisseur",
     "files": "Transmute - Fichiers",
-    "queue": "Transmute - File d'attente",
     "history": "Transmute - Historique",
     "settings": "Transmute - Paramètres",
     "account": "Transmute - Mon compte",
@@ -17,7 +16,6 @@
   "nav": {
     "convert": "Conversion",
     "files": "Fichiers",
-    "queue": "File d'attente",
     "history": "Historique",
     "converter": "Convertisseur",
     "logo": "Logo Transmute"
@@ -131,35 +129,9 @@
     "downloadingSelected": "Téléchargement...",
     "loadFailed": "Le chargement des conversions a échoué",
     "fetchFailed": "La récupération des conversions a échoué",
-    "deleteFailed": "La suppression a échoué"
-  },
-  "queue": {
-    "title": "File d'attente",
-    "loading": "Chargement des tâches...",
-    "noJobs": "Aucune tâche de conversion pour le moment.",
-    "polling": "Mise à jour...",
-    "loadFailed": "Échec du chargement des tâches",
+    "deleteFailed": "La suppression a échoué",
     "cancelFailed": "Échec de l'annulation de la tâche",
-    "downloadFailed": "Échec du téléchargement",
-    "col": {
-      "source": "Source",
-      "target": "Cible",
-      "status": "Statut",
-      "created": "Créé",
-      "actions": "Actions"
-    },
-    "status": {
-      "queued": "En attente",
-      "running": "En cours",
-      "completed": "Terminé",
-      "failed": "Échoué",
-      "cancelled": "Annulé"
-    },
-    "actions": {
-      "download": "Télécharger",
-      "cancel": "Annuler",
-      "noActions": "Aucune action disponible"
-    }
+    "retryFailed": "Échec de la nouvelle tentative"
   },
   "settings": {
     "title": "Paramètres",
@@ -297,7 +269,17 @@
     "setFormatAll": "Définir le format pour tous les fichiers",
     "setQualityAll": "Définir la qualité pour tous les fichiers",
     "all": "Tout",
-    "noMatches": "Aucun résultat"
+    "noMatches": "Aucun résultat",
+    "status": "Statut",
+    "cancel": "Annuler",
+    "retry": "Réessayer",
+    "statusLabel": {
+      "queued": "En file",
+      "running": "En cours",
+      "completed": "Terminée",
+      "failed": "Échouée",
+      "cancelled": "Annulée"
+    }
   },
   "preview": {
     "close": "Fermer l'aperçu",

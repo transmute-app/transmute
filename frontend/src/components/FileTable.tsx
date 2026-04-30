@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaCheckSquare, FaSquare, FaSort, FaSortUp, FaSortDown, FaDownload, FaTrash, FaEye } from 'react-icons/fa'
+import { FaCheckSquare, FaSquare, FaSort, FaSortUp, FaSortDown, FaDownload, FaTrash, FaEye, FaTimes, FaRedo } from 'react-icons/fa'
 import { useTranslation } from 'react-i18next'
 import { stripExtension } from '../utils/filename'
 import FormatDropdown from './FormatDropdown'
@@ -24,6 +24,8 @@ export interface ConversionInfo {
   quality?: string
 }
 
+export type JobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
+
 export interface FileTableRow {
   id: string
   file: FileInfo
@@ -32,13 +34,19 @@ export interface FileTableRow {
   selectedQuality?: string
   status?: 'pending' | 'failed'
   statusMessage?: string
+  jobStatus?: JobStatus
+  selectable?: boolean
   onFormatChange?: (format: string) => void
   onQualityChange?: (quality: string) => void
   onDelete?: () => void
   onDownload?: () => void
   onPreview?: () => void
+  onCancel?: () => void
+  onRetry?: () => void
   isDeleting?: boolean
   isDownloading?: boolean
+  isCancelling?: boolean
+  isRetrying?: boolean
 }
 
 interface FileTableProps {
@@ -46,6 +54,7 @@ interface FileTableProps {
   isPending?: boolean
   showCheckbox?: boolean
   showDate?: boolean
+  showStatus?: boolean
   selectedIds?: Set<string>
   onToggleSelect?: (id: string) => void
   onToggleSelectAll?: () => void
@@ -76,6 +85,7 @@ function FileTable({
   isPending = false,
   showCheckbox = false,
   showDate = true,
+  showStatus = false,
   selectedIds,
   onToggleSelect,
   onToggleSelectAll,
@@ -140,7 +150,7 @@ function FileTable({
     return base + (row.conversion.extension || '')
   }
 
-  const hasActions = rows.some(r => r.onDownload || r.onDelete || r.onPreview)
+  const hasActions = rows.some(r => r.onDownload || r.onDelete || r.onPreview || r.onCancel || r.onRetry)
   const hasQuality = isPending
     ? rows.some(r => r.selectedFormat && r.file.compatible_formats?.[r.selectedFormat]?.length)
     : rows.some(r => r.conversion?.quality)
@@ -241,6 +251,9 @@ function FileTable({
                 </button>
               </th>
             )}
+            {showStatus && (
+              <th className="px-4 py-3 uppercase">{t('table.status')}</th>
+            )}
             {hasActions && (
               <th className="px-4 py-3 text-right">{t('table.actions')}</th>
             )}
@@ -256,7 +269,7 @@ function FileTable({
             >
               {showCheckbox && (
                 <td className="px-3 py-3">
-                  {onToggleSelect && (
+                  {onToggleSelect && row.selectable !== false && (
                     <button
                       onClick={() => onToggleSelect(row.id)}
                       className="text-primary hover:text-primary-light text-lg transition duration-200"
@@ -355,6 +368,26 @@ function FileTable({
                   }
                 </td>
               )}
+              {showStatus && (
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {row.jobStatus ? (
+                    <span
+                      className={`text-xs font-mono uppercase px-2 py-0.5 rounded ${
+                        row.jobStatus === 'completed' ? 'bg-success/20 text-success' :
+                        row.jobStatus === 'running' ? 'bg-primary/20 text-primary-light' :
+                        row.jobStatus === 'queued' ? 'bg-surface-dark text-text-muted' :
+                        row.jobStatus === 'cancelled' ? 'bg-surface-dark text-text-muted' :
+                        'bg-primary/20 text-primary-light'
+                      }`}
+                      title={row.statusMessage || undefined}
+                    >
+                      {t(`table.statusLabel.${row.jobStatus}`)}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-text-muted">—</span>
+                  )}
+                </td>
+              )}
               {hasActions && (
                 <td className="px-4 py-3">
                   <div className="flex gap-1.5 justify-end">
@@ -375,6 +408,26 @@ function FileTable({
                         title={t('table.download')}
                       >
                         <FaDownload className="text-sm" />
+                      </button>
+                    )}
+                    {row.onRetry && (
+                      <button
+                        onClick={row.onRetry}
+                        disabled={row.isRetrying}
+                        className="p-2 rounded-lg text-primary-light hover:bg-primary/20 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={t('table.retry')}
+                      >
+                        <FaRedo className="text-sm" />
+                      </button>
+                    )}
+                    {row.onCancel && (
+                      <button
+                        onClick={row.onCancel}
+                        disabled={row.isCancelling}
+                        className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-surface-dark transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={t('table.cancel')}
+                      >
+                        <FaTimes className="text-sm" />
                       </button>
                     )}
                     {row.onDelete && (

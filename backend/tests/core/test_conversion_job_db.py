@@ -155,6 +155,52 @@ def test_cancel_queued_job_enforces_owner(job_db):
     assert job_db.get_job(job["id"])["status"] == "queued"
 
 
+def test_retry_terminal_job_resets_failed_to_queued(job_db):
+    job = job_db.insert_job(_make_job(user_id="user-a"))
+    job_db.claim_next_queued_job()
+    job_db.mark_failed(job["id"], "boom")
+
+    assert job_db.retry_terminal_job(job["id"], "user-a") is True
+    refreshed = job_db.get_job(job["id"])
+    assert refreshed["status"] == "queued"
+    assert refreshed["error_message"] is None
+    assert refreshed["output_file_id"] is None
+    assert refreshed["started_at"] is None
+    assert refreshed["completed_at"] is None
+    assert refreshed["progress"] == 0
+
+
+def test_retry_terminal_job_resets_cancelled_to_queued(job_db):
+    job = job_db.insert_job(_make_job(user_id="user-a"))
+    job_db.cancel_queued_job(job["id"], "user-a")
+
+    assert job_db.retry_terminal_job(job["id"], "user-a") is True
+    assert job_db.get_job(job["id"])["status"] == "queued"
+
+
+def test_retry_terminal_job_rejects_running_and_completed(job_db):
+    job = job_db.insert_job(_make_job(user_id="user-a"))
+    job_db.claim_next_queued_job()
+
+    # running -> not retryable
+    assert job_db.retry_terminal_job(job["id"], "user-a") is False
+    assert job_db.get_job(job["id"])["status"] == "running"
+
+    job_db.mark_completed(job["id"], "out-1")
+    # completed -> not retryable
+    assert job_db.retry_terminal_job(job["id"], "user-a") is False
+    assert job_db.get_job(job["id"])["status"] == "completed"
+
+
+def test_retry_terminal_job_enforces_owner(job_db):
+    job = job_db.insert_job(_make_job(user_id="user-a"))
+    job_db.claim_next_queued_job()
+    job_db.mark_failed(job["id"], "boom")
+
+    assert job_db.retry_terminal_job(job["id"], "user-b") is False
+    assert job_db.get_job(job["id"])["status"] == "failed"
+
+
 def test_fail_running_jobs_recovers_stale_running(job_db):
     job = job_db.insert_job(_make_job())
     job_db.claim_next_queued_job()

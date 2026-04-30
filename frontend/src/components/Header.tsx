@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { FaArrowRightArrowLeft, FaChartBar, FaChevronDown, FaClockRotateLeft, FaFile, FaGear, FaListCheck, FaRightFromBracket, FaUser, FaUsers } from 'react-icons/fa6'
+import { FaArrowRightArrowLeft, FaChartBar, FaChevronDown, FaClockRotateLeft, FaFile, FaGear, FaRightFromBracket, FaUser, FaUsers } from 'react-icons/fa6'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../AuthContext'
 import { useTheme } from '../ThemeContext'
@@ -68,17 +68,6 @@ function Header() {
                   <span className="hidden sm:inline">{t('nav.files')}</span>
                 </NavLink>
               )}
-              <NavLink
-                to="/queue"
-                className={({ isActive }) =>
-                  `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition duration-200 ${isActive ? 'bg-primary/10 text-primary-light' : 'text-text hover:bg-surface-light hover:text-primary'}`
-                }
-                title={t('nav.queue')}
-                aria-label={t('nav.queue')}
-              >
-                <FaListCheck className="text-base" />
-                <span className="hidden sm:inline">{t('nav.queue')}</span>
-              </NavLink>
               <NavLink
                 to="/history"
                 className={({ isActive }) =>

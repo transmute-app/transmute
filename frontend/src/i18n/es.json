@@ -7,7 +7,6 @@
     "signIn": "Transmute - Iniciar Sesión",
     "converter": "Transmute - Convertidor",
     "files": "Transmute - Archivos",
-    "queue": "Transmute - Cola",
     "history": "Transmute - Historial",
     "settings": "Transmute - Ajustes",
     "account": "Transmute - Mi Cuenta",
@@ -17,7 +16,6 @@
   "nav": {
     "convert": "Convertir",
     "files": "Archivos",
-    "queue": "Cola",
     "history": "Historial",
     "converter": "Convertidor",
     "logo": "Transmute Logo"
@@ -131,35 +129,9 @@
     "downloadingSelected": "Descargando...",
     "loadFailed": "Error al cargar las conversiones",
     "fetchFailed": "Error al obtener las conversiones",
-    "deleteFailed": "Error al borrar"
-  },
-  "queue": {
-    "title": "Cola",
-    "loading": "Cargando trabajos...",
-    "noJobs": "Aún no hay trabajos de conversión.",
-    "polling": "Actualizando...",
-    "loadFailed": "Error al cargar los trabajos",
-    "cancelFailed": "Error al cancelar el trabajo",
-    "downloadFailed": "Error de descarga",
-    "col": {
-      "source": "Origen",
-      "target": "Destino",
-      "status": "Estado",
-      "created": "Creado",
-      "actions": "Acciones"
-    },
-    "status": {
-      "queued": "En cola",
-      "running": "En curso",
-      "completed": "Completado",
-      "failed": "Fallido",
-      "cancelled": "Cancelado"
-    },
-    "actions": {
-      "download": "Descargar",
-      "cancel": "Cancelar",
-      "noActions": "No hay acciones disponibles"
-    }
+    "deleteFailed": "Error al borrar",
+    "cancelFailed": "No se pudo cancelar el trabajo",
+    "retryFailed": "No se pudo reintentar el trabajo"
   },
   "settings": {
     "title": "Ajustes",
@@ -297,7 +269,17 @@
     "setFormatAll": "Establecer formato para todos los archivos",
     "setQualityAll": "Establecer calidad para todos los archivos",
     "all": "Todos",
-    "noMatches": "No coincidencias"
+    "noMatches": "No coincidencias",
+    "status": "Estado",
+    "cancel": "Cancelar",
+    "retry": "Reintentar",
+    "statusLabel": {
+      "queued": "En cola",
+      "running": "En curso",
+      "completed": "Completado",
+      "failed": "Fallido",
+      "cancelled": "Cancelado"
+    }
   },
   "preview": {
     "close": "Cerrar vista previa",

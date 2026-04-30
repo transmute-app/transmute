@@ -69,6 +69,12 @@ export async function cancelJob(jobId: string): Promise<ConversionJob> {
   })
 }
 
+export async function retryJob(jobId: string): Promise<ConversionJob> {
+  return apiJson<ConversionJob>(`/api/jobs/${encodeURIComponent(jobId)}/retry`, {
+    method: 'POST',
+  })
+}
+
 /**
  * Download the converted output file for a completed job.
  * Throws ApiError if the job is not completed or output is unavailable.

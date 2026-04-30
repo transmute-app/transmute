@@ -10,7 +10,6 @@ import Auth from './pages/Auth'
 import Converter from './pages/Converter'
 import History from './pages/History'
 import Files from './pages/Files'
-import Queue from './pages/Queue'
 import Settings from './pages/Settings'
 import Users from './pages/Users'
 import Stats from './pages/Stats'
@@ -25,7 +24,6 @@ function RouteTitle() {
       '/auth': t('titles.signIn'),
       '/': t('titles.converter'),
       '/files': t('titles.files'),
-      '/queue': t('titles.queue'),
       '/history': t('titles.history'),
       '/settings': t('titles.settings'),
       '/account': t('titles.account'),
@@ -107,7 +105,7 @@ function AppRoutes() {
           </RequireAuth>
         }
       />
-      <Route path="/queue" element={<RequireAuth><Queue /></RequireAuth>} />
+      <Route path="/queue" element={<Navigate to="/history" replace />} />
       <Route path="/history" element={<RequireAuth><History /></RequireAuth>} />
       <Route path="/settings" element={<RequireAuth><RejectGuest><Settings /></RejectGuest></RequireAuth>} />
       <Route path="/account" element={<RequireAuth><RejectGuest><Account /></RejectGuest></RequireAuth>} />

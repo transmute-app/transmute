@@ -436,11 +436,12 @@ function Converter() {
         submittedJobsRef.current.set(job.id, job)
         knownStatusRef.current.set(job.id, job.status)
 
-        // Surface a per-row "queued" hint until the worker picks it up.
+        // Mark the row as queued; the row stays in the pending list while the
+        // worker processes it.
         setPendingFiles((prev) =>
           prev.map((pf) =>
             pf.file.id === file.id
-              ? { ...pf, status: 'pending', errorMessage: t('queue.status.queued') }
+              ? { ...pf, status: 'pending', errorMessage: undefined }
               : pf
           )
         )
@@ -591,7 +592,7 @@ function Converter() {
     if (job.status === 'failed') {
       setPendingFiles(prev => prev.map(p =>
         p.file.id === sourceId
-          ? { ...p, status: 'failed', errorMessage: job.error_message || t('queue.status.failed') }
+          ? { ...p, status: 'failed', errorMessage: job.error_message || t('table.statusLabel.failed') }
           : p
       ))
       return
@@ -600,7 +601,7 @@ function Converter() {
     if (job.status === 'cancelled') {
       setPendingFiles(prev => prev.map(p =>
         p.file.id === sourceId
-          ? { ...p, status: 'failed', errorMessage: t('queue.status.cancelled') }
+          ? { ...p, status: 'failed', errorMessage: t('table.statusLabel.cancelled') }
           : p
       ))
     }
@@ -922,7 +923,7 @@ function Converter() {
               {t('converter.jobsInQueue', { count: activeJobCount })}
             </span>
             <Link
-              to="/queue"
+              to="/history"
               className="inline-flex items-center gap-1.5 text-primary-light hover:text-text font-medium"
             >
               <FaListCheck className="text-xs" />

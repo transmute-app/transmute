@@ -177,3 +177,46 @@ def cancel_job(
         raise HTTPException(status_code=409, detail="Job is no longer cancellable")
     updated = job_db.get_job(job_id, user_id=current_user["uuid"])
     return _serialize_job(updated)
+
+
+@router.post(
+    "/{job_id}/retry",
+    summary="Retry a failed or cancelled conversion job",
+    responses={
+        200: {"model": ConversionJobResponse, "description": "Job re-queued"},
+        404: {"model": ErrorResponse, "description": "Job or source file not found"},
+        409: {"model": ErrorResponse, "description": "Job is not in a retryable state"},
+    },
+)
+def retry_job(
+    job_id: str,
+    file_db: FileDB = Depends(get_file_db),
+    job_db: ConversionJobDB = Depends(get_conversion_job_db),
+    current_user: dict = Depends(get_current_active_user),
+):
+    """Re-queue a job that previously ended in ``failed`` or ``cancelled``.
+
+    The source file must still exist and be owned by the caller — if the
+    original was deleted (e.g. ``keep_originals=false``) the retry is rejected
+    with a 404 so the user can re-upload before trying again.
+    """
+    job = job_db.get_job(job_id, user_id=current_user["uuid"])
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job["status"] not in ("failed", "cancelled"):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot retry job with status '{job['status']}'",
+        )
+
+    source = file_db.get_file_metadata(job["source_file_id"])
+    if source is None or source.get("user_id") != current_user["uuid"]:
+        raise HTTPException(
+            status_code=404,
+            detail="Source file no longer exists; re-upload before retrying",
+        )
+
+    if not job_db.retry_terminal_job(job_id, current_user["uuid"]):
+        raise HTTPException(status_code=409, detail="Job is no longer retryable")
+    updated = job_db.get_job(job_id, user_id=current_user["uuid"])
+    return _serialize_job(updated)

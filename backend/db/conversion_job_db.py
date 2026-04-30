@@ -314,6 +314,23 @@ class ConversionJobDB:
             )
             return cursor.rowcount > 0
 
+    def retry_terminal_job(self, job_id: str, user_id: str) -> bool:
+        """Re-queue a job that previously ended in failed or cancelled.
+
+        Resets progress/error/timestamps/output so the worker treats it as a
+        fresh queued job. Returns True when a row was updated, False otherwise.
+        """
+        with self.conn:
+            cursor = self.conn.execute(
+                f"UPDATE {self.TABLE_NAME} SET "  # nosec B608
+                f"status = ?, progress = 0, error_message = NULL, "
+                f"output_file_id = NULL, started_at = NULL, completed_at = NULL, "
+                f"updated_at = CURRENT_TIMESTAMP "
+                f"WHERE id = ? AND user_id = ? AND status IN (?, ?)",
+                (STATUS_QUEUED, job_id, user_id, STATUS_FAILED, STATUS_CANCELLED),
+            )
+            return cursor.rowcount > 0
+
     def update_progress(self, job_id: str, progress: int) -> None:
         progress = max(0, min(100, int(progress)))
         with self.conn:

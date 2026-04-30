@@ -7,7 +7,6 @@
     "signIn": "Transmute - Rejestracja",
     "converter": "Transmute - Konwerter",
     "files": "Transmute - Pliki",
-    "queue": "Transmute - Kolejka",
     "history": "Transmute - Historia",
     "settings": "Transmute - Ustawienia",
     "account": "Transmute - Moje konto",
@@ -17,7 +16,6 @@
   "nav": {
     "convert": "Konwersja",
     "files": "Pliki",
-    "queue": "Kolejka",
     "history": "Historia",
     "converter": "Konwerter",
     "logo": "Logo Transmute"
@@ -131,35 +129,9 @@
     "downloadingSelected": "Pobieranie...",
     "loadFailed": "Niepowodzenie ładowania konwersji",
     "fetchFailed": "Niepowodzenie pobierania konwersji",
-    "deleteFailed": "Niepowodzenie usuwania"
-  },
-  "queue": {
-    "title": "Kolejka",
-    "loading": "Ładowanie zadań...",
-    "noJobs": "Brak zadań konwersji.",
-    "polling": "Aktualizowanie...",
-    "loadFailed": "Niepowodzenie ładowania zadań",
-    "cancelFailed": "Niepowodzenie anulowania zadania",
-    "downloadFailed": "Niepowodzenie pobierania",
-    "col": {
-      "source": "Źródło",
-      "target": "Cel",
-      "status": "Status",
-      "created": "Utworzono",
-      "actions": "Akcje"
-    },
-    "status": {
-      "queued": "W kolejce",
-      "running": "W trakcie",
-      "completed": "Ukończone",
-      "failed": "Niepowodzenie",
-      "cancelled": "Anulowane"
-    },
-    "actions": {
-      "download": "Pobierz",
-      "cancel": "Anuluj",
-      "noActions": "Brak dostępnych akcji"
-    }
+    "deleteFailed": "Niepowodzenie usuwania",
+    "cancelFailed": "Nie udało się anulować zadania",
+    "retryFailed": "Nie udało się ponowić zadania"
   },
   "settings": {
     "title": "Ustawienia",
@@ -297,7 +269,17 @@
     "setFormatAll": "Ustaw format dla wszystkich plików",
     "setQualityAll": "Ustaw jakość dla wszystkich plików",
     "all": "Wszystko",
-    "noMatches": "Brak dopasowań"
+    "noMatches": "Brak dopasowań",
+    "status": "Status",
+    "cancel": "Anuluj",
+    "retry": "Ponów",
+    "statusLabel": {
+      "queued": "W kolejce",
+      "running": "W trakcie",
+      "completed": "Zakończone",
+      "failed": "Nieudane",
+      "cancelled": "Anulowane"
+    }
   },
   "preview": {
     "close": "Zamknij podgląd",

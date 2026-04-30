@@ -7,7 +7,6 @@
     "signIn": "Transmute - Anmelden",
     "converter": "Transmute - Konverter",
     "files": "Transmute - Dateien",
-    "queue": "Transmute - Warteschlange",
     "history": "Transmute - Verlauf",
     "settings": "Transmute - Einstellungen",
     "account": "Transmute - Mein Konto",
@@ -17,7 +16,6 @@
   "nav": {
     "convert": "Konvertieren",
     "files": "Dateien",
-    "queue": "Warteschlange",
     "history": "Verlauf",
     "converter": "Konverter",
     "logo": "Transmute-Logo"
@@ -131,35 +129,9 @@
     "downloadingSelected": "Download läuft...",
     "loadFailed": "Konvertierungen konnten nicht geladen werden",
     "fetchFailed": "Konvertierungen konnten nicht abgerufen werden",
-    "deleteFailed": "Löschen fehlgeschlagen"
-  },
-  "queue": {
-    "title": "Warteschlange",
-    "loading": "Aufträge werden geladen...",
-    "noJobs": "Noch keine Konvertierungsaufträge.",
-    "polling": "Aktualisierung...",
-    "loadFailed": "Aufträge konnten nicht geladen werden",
+    "deleteFailed": "Löschen fehlgeschlagen",
     "cancelFailed": "Auftrag konnte nicht abgebrochen werden",
-    "downloadFailed": "Download fehlgeschlagen",
-    "col": {
-      "source": "Quelle",
-      "target": "Ziel",
-      "status": "Status",
-      "created": "Erstellt",
-      "actions": "Aktionen"
-    },
-    "status": {
-      "queued": "In Warteschlange",
-      "running": "Läuft",
-      "completed": "Abgeschlossen",
-      "failed": "Fehlgeschlagen",
-      "cancelled": "Abgebrochen"
-    },
-    "actions": {
-      "download": "Herunterladen",
-      "cancel": "Abbrechen",
-      "noActions": "Keine Aktionen verfügbar"
-    }
+    "retryFailed": "Wiederholung des Auftrags fehlgeschlagen"
   },
   "settings": {
     "title": "Einstellungen",
@@ -297,7 +269,17 @@
     "setFormatAll": "Format für alle Dateien festlegen",
     "setQualityAll": "Qualität für alle Dateien festlegen",
     "all": "Alle",
-    "noMatches": "Keine Treffer"
+    "noMatches": "Keine Treffer",
+    "status": "Status",
+    "cancel": "Abbrechen",
+    "retry": "Wiederholen",
+    "statusLabel": {
+      "queued": "In Warteschlange",
+      "running": "Läuft",
+      "completed": "Abgeschlossen",
+      "failed": "Fehlgeschlagen",
+      "cancelled": "Abgebrochen"
+    }
   },
   "preview": {
     "close": "Vorschau schließen",
