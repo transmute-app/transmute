@@ -19,7 +19,7 @@ interface PendingFile {
   file: FileInfo
   selectedFormat: string
   selectedQuality?: string
-  status: 'pending' | 'failed'
+  status: 'pending' | 'queued' | 'running' | 'failed'
   errorMessage?: string
 }
 
@@ -94,6 +94,14 @@ async function getResponseDetail(response: Response) {
   }
 }
 
+function isReadyPendingFile(status: PendingFile['status']) {
+  return status === 'pending' || status === 'failed'
+}
+
+function isSubmittedPendingFile(status: PendingFile['status']) {
+  return status === 'queued' || status === 'running'
+}
+
 function Converter() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -104,7 +112,7 @@ function Converter() {
   const [uploadCount, setUploadCount] = useState(0)
   const [ignoredUploadCount, setIgnoredUploadCount] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  const [converting, setConverting] = useState(false)
+  const [submittingJobs, setSubmittingJobs] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [downloadingAll, setDownloadingAll] = useState(false)
@@ -412,11 +420,16 @@ function Converter() {
   const handleConvertAll = async () => {
     if (pendingFiles.length === 0) return
 
-    setConverting(true)
+    setSubmittingJobs(true)
     setError(null)
 
-    const filesToConvert = [...pendingFiles].filter(({ selectedFormat }) => !!selectedFormat)
+    const filesToConvert = [...pendingFiles].filter(({ selectedFormat, status }) => !!selectedFormat && isReadyPendingFile(status))
     const fileIdsToConvert = new Set(filesToConvert.map(({ file }) => file.id))
+
+    if (fileIdsToConvert.size === 0) {
+      setSubmittingJobs(false)
+      return
+    }
 
     setPendingFiles((prev) =>
       prev.map((pf) =>
@@ -436,12 +449,13 @@ function Converter() {
         submittedJobsRef.current.set(job.id, job)
         knownStatusRef.current.set(job.id, job.status)
 
-        // Mark the row as queued; the row stays in the pending list while the
-        // worker processes it.
+        // Keep submitted files visible in the pending list while the worker
+        // processes them, but distinguish them from files still waiting for
+        // the user to queue.
         setPendingFiles((prev) =>
           prev.map((pf) =>
             pf.file.id === file.id
-              ? { ...pf, status: 'pending', errorMessage: undefined }
+              ? { ...pf, status: job.status === 'running' ? 'running' : 'queued', errorMessage: undefined }
               : pf
           )
         )
@@ -475,12 +489,11 @@ function Converter() {
       setError(errors.join('; '))
     }
 
+    setSubmittingJobs(false)
+
     // Trigger an immediate poll so very-fast jobs surface without waiting for
     // the next interval, then let the polling effect take over.
-    const stillActive = await pollJobsRef.current()
-    if (!stillActive) {
-      setConverting(false)
-    }
+    await pollJobsRef.current()
   }
 
   const triggerDownloads = async (conversions: CompletedConversion[]) => {
@@ -598,6 +611,16 @@ function Converter() {
       return
     }
 
+    if (job.status === 'queued' || job.status === 'running') {
+      const pendingStatus: PendingFile['status'] = job.status
+      setPendingFiles(prev => prev.map(p =>
+        p.file.id === sourceId
+          ? { ...p, status: pendingStatus, errorMessage: undefined }
+          : p
+      ))
+      return
+    }
+
     if (job.status === 'cancelled') {
       setPendingFiles(prev => prev.map(p =>
         p.file.id === sourceId
@@ -633,9 +656,6 @@ function Converter() {
         if (!isTerminalJobStatus(updated.status)) activeRemaining++
       }
       setActiveJobCount(activeRemaining)
-      if (activeRemaining === 0) {
-        setConverting(false)
-      }
       return activeRemaining > 0
     } catch {
       // Suppress polling errors; the next tick will retry.
@@ -726,6 +746,11 @@ function Converter() {
       })
     )
   }
+
+  const readyFilesToConvert = useMemo(() =>
+    convertableFiles.filter(pf => isReadyPendingFile(pf.status)),
+    [convertableFiles]
+  )
 
   const hasConvertableFiles = convertableFiles.length > 0
   const hasCompletedConversions = completedConversions.length > 0
@@ -947,20 +972,20 @@ function Converter() {
               <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={handleConvertAll}
-                  disabled={converting || convertableFiles.length === 0}
+                  disabled={submittingJobs || readyFilesToConvert.length === 0}
                   className="flex items-center gap-1.5 sm:gap-2 bg-primary hover:bg-primary-dark text-text font-semibold py-2 px-3 sm:px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  <FaSyncAlt className={`text-xs sm:text-sm ${converting ? 'animate-spin' : ''}`} />
+                  <FaSyncAlt className={`text-xs sm:text-sm ${submittingJobs ? 'animate-spin' : ''}`} />
                   <span className="hidden sm:inline">
-                    {converting
-                      ? t('converter.converting', { count: convertableFiles.length })
-                      : t('converter.convertFile', { count: convertableFiles.length })}
+                    {submittingJobs
+                      ? t('converter.converting', { count: readyFilesToConvert.length })
+                      : t('converter.convertFile', { count: readyFilesToConvert.length })}
                   </span>
                   <HotkeyHint label={hotkeyLabels.convert} className="text-text/80 hidden sm:inline" />
                 </button>
                 <button
                   onClick={handleClearPending}
-                  disabled={converting}
+                  disabled={submittingJobs}
                   className="flex items-center gap-1.5 sm:gap-2 text-sm text-text-muted hover:text-text border border-surface-dark hover:border-text-muted py-2 px-3 sm:px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FaTimes className="text-xs sm:text-sm" />
@@ -974,18 +999,20 @@ function Converter() {
                   id: pf.file.id,
                   file: pf.file,
                   selectedFormat: pf.selectedFormat,
-                  status: pf.status,
+                  status: pf.status === 'failed' ? 'failed' : 'pending',
                   statusMessage: pf.errorMessage,
-                  onFormatChange: (format: string) => handleFormatChange(pf.file.id, format),
-                  onQualityChange: (quality: string) => handleQualityChange(pf.file.id, quality),
+                  jobStatus: isSubmittedPendingFile(pf.status) ? pf.status : undefined,
+                  onFormatChange: isReadyPendingFile(pf.status) ? (format: string) => handleFormatChange(pf.file.id, format) : undefined,
+                  onQualityChange: isReadyPendingFile(pf.status) ? (quality: string) => handleQualityChange(pf.file.id, quality) : undefined,
                   selectedQuality: pf.selectedQuality,
-                  onDelete: () => handleDelete(pf.file.id, true),
+                  onDelete: isReadyPendingFile(pf.status) ? () => handleDelete(pf.file.id, true) : undefined,
                   onPreview: isPreviewable(pf.file.media_type) ? () => setPreviewFile({ id: pf.file.id, filename: pf.file.original_filename, mediaType: pf.file.media_type }) : undefined,
                   isDeleting: deletingId === pf.file.id,
                 }))}
                 isPending={true}
                 showDate={false}
-                converting={converting}
+                showStatus={true}
+                converting={submittingJobs}
                 bulkFormats={convertableFiles.length > 1 ? commonFormats : undefined}
                 bulkQualities={convertableFiles.length > 1 ? commonQualities : undefined}
                 onBulkFormatChange={handleBulkFormatChange}
