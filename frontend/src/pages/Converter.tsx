@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { lazy, Suspense, useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FaCheckCircle, FaSyncAlt, FaDownload, FaTimes } from 'react-icons/fa'
 import { FaListCheck } from 'react-icons/fa6'
 import { useTranslation } from 'react-i18next'
 import FileTable, { FileInfo, ConversionInfo } from '../components/FileTable'
-import PreviewModal, { isPreviewable } from '../components/PreviewModal'
+import { isPreviewable } from '../components/previewUtils'
 import { authFetch as fetch, apiJson } from '../utils/api'
 import { downloadBlob } from '../utils/download'
 import { stripExtension } from '../utils/filename'
@@ -14,6 +14,8 @@ import {
   listJobs,
   type ConversionJob,
 } from '../utils/jobs'
+
+const PreviewModal = lazy(() => import('../components/PreviewModal'))
 
 interface PendingFile {
   file: FileInfo
@@ -1069,12 +1071,14 @@ function Converter() {
         )}
 
         {previewFile && (
-          <PreviewModal
-            fileId={previewFile.id}
-            filename={previewFile.filename}
-            mediaType={previewFile.mediaType}
-            onClose={() => setPreviewFile(null)}
-          />
+          <Suspense fallback={null}>
+            <PreviewModal
+              fileId={previewFile.id}
+              filename={previewFile.filename}
+              mediaType={previewFile.mediaType}
+              onClose={() => setPreviewFile(null)}
+            />
+          </Suspense>
         )}
       </div>
     </div>

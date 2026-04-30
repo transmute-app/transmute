@@ -1,11 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { lazy, Suspense, useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import FileTable, { FileInfo, ConversionInfo, FileTableRow, JobStatus } from '../components/FileTable'
-import PreviewModal, { isPreviewable } from '../components/PreviewModal'
+import { isPreviewable } from '../components/previewUtils'
 import { authFetch as fetch } from '../utils/api'
 import { downloadBlob } from '../utils/download'
 import { stripExtension } from '../utils/filename'
 import { cancelJob, deleteJob, listJobs, retryJob, isTerminalJobStatus, type ConversionJob } from '../utils/jobs'
+
+const PreviewModal = lazy(() => import('../components/PreviewModal'))
 
 interface OriginalFileInfo {
   id: string
@@ -373,12 +375,14 @@ function History() {
         )}
 
         {previewConversion && (
-          <PreviewModal
-            fileId={previewConversion.id}
-            filename={previewConversion.original_filename}
-            mediaType={previewConversion.media_type}
-            onClose={() => setPreviewConversion(null)}
-          />
+          <Suspense fallback={null}>
+            <PreviewModal
+              fileId={previewConversion.id}
+              filename={previewConversion.original_filename}
+              mediaType={previewConversion.media_type}
+              onClose={() => setPreviewConversion(null)}
+            />
+          </Suspense>
         )}
       </div>
     </div>

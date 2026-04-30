@@ -1,19 +1,20 @@
-import { type ReactNode, useEffect } from 'react'
+import { lazy, Suspense, type ReactNode, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AuthProvider, useAuth } from './AuthContext'
 import { ThemeProvider, useTheme } from './ThemeContext'
 import Header from './components/Header'
 import Footer from './components/Footer'
-import Account from './pages/Account'
-import Auth from './pages/Auth'
-import Converter from './pages/Converter'
-import History from './pages/History'
-import Files from './pages/Files'
-import Settings from './pages/Settings'
-import Users from './pages/Users'
-import Stats from './pages/Stats'
-import NotFound from './pages/NotFound'
+
+const Account = lazy(() => import('./pages/Account'))
+const Auth = lazy(() => import('./pages/Auth'))
+const Converter = lazy(() => import('./pages/Converter'))
+const History = lazy(() => import('./pages/History'))
+const Files = lazy(() => import('./pages/Files'))
+const Settings = lazy(() => import('./pages/Settings'))
+const Users = lazy(() => import('./pages/Users'))
+const Stats = lazy(() => import('./pages/Stats'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 function RouteTitle() {
   const location = useLocation()
@@ -94,25 +95,27 @@ function AppRoutes() {
   const { status } = useAuth()
 
   return (
-    <Routes>
-      <Route path="/auth" element={status === 'authenticated' ? <Navigate to="/" replace /> : <Auth />} />
-      <Route path="/" element={<RequireAuth><Converter /></RequireAuth>} />
-      <Route
-        path="/files"
-        element={
-          <RequireAuth>
-            {keepOriginals ? <Files /> : <Navigate to="/" replace />}
-          </RequireAuth>
-        }
-      />
-      <Route path="/queue" element={<Navigate to="/history" replace />} />
-      <Route path="/history" element={<RequireAuth><History /></RequireAuth>} />
-      <Route path="/settings" element={<RequireAuth><RejectGuest><Settings /></RejectGuest></RequireAuth>} />
-      <Route path="/account" element={<RequireAuth><RejectGuest><Account /></RejectGuest></RequireAuth>} />
-      <Route path="/admin/users" element={<RequireAuth><RequireAdmin><Users /></RequireAdmin></RequireAuth>} />
-      <Route path="/admin/stats" element={<RequireAuth><RequireAdmin><Stats /></RequireAdmin></RequireAuth>} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <Suspense fallback={<LoadingScreen />}>
+      <Routes>
+        <Route path="/auth" element={status === 'authenticated' ? <Navigate to="/" replace /> : <Auth />} />
+        <Route path="/" element={<RequireAuth><Converter /></RequireAuth>} />
+        <Route
+          path="/files"
+          element={
+            <RequireAuth>
+              {keepOriginals ? <Files /> : <Navigate to="/" replace />}
+            </RequireAuth>
+          }
+        />
+        <Route path="/queue" element={<Navigate to="/history" replace />} />
+        <Route path="/history" element={<RequireAuth><History /></RequireAuth>} />
+        <Route path="/settings" element={<RequireAuth><RejectGuest><Settings /></RejectGuest></RequireAuth>} />
+        <Route path="/account" element={<RequireAuth><RejectGuest><Account /></RejectGuest></RequireAuth>} />
+        <Route path="/admin/users" element={<RequireAuth><RequireAdmin><Users /></RequireAdmin></RequireAuth>} />
+        <Route path="/admin/stats" element={<RequireAuth><RequireAdmin><Stats /></RequireAdmin></RequireAuth>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   )
 }
 

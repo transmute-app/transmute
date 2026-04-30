@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { lazy, Suspense, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import FileTable, { FileInfo } from '../components/FileTable'
-import PreviewModal, { isPreviewable } from '../components/PreviewModal'
+import { isPreviewable } from '../components/previewUtils'
 import { authFetch as fetch } from '../utils/api'
+
+const PreviewModal = lazy(() => import('../components/PreviewModal'))
 
 function Files() {
   const [files, setFiles] = useState<FileInfo[]>([])
@@ -164,12 +166,14 @@ function Files() {
         )}
 
         {previewFile && (
-          <PreviewModal
-            fileId={previewFile.id}
-            filename={previewFile.original_filename}
-            mediaType={previewFile.media_type}
-            onClose={() => setPreviewFile(null)}
-          />
+          <Suspense fallback={null}>
+            <PreviewModal
+              fileId={previewFile.id}
+              filename={previewFile.original_filename}
+              mediaType={previewFile.media_type}
+              onClose={() => setPreviewFile(null)}
+            />
+          </Suspense>
         )}
       </div>
     </div>
