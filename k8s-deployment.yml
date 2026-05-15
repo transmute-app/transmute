@@ -1,0 +1,128 @@
+# This is an example of how to deploy Transmute under Kubernetes.
+#
+# NOTE: Do NOT use this file as is. Kubernetes clusters vary widely in configuration
+# and various parts of the configuration will need to be modified to suit your cluster's
+# ingress server, storage back-end, and so forth. Comments have been included to indicate
+# where such modifications are most likely to be necessary.
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: transmute
+
+---
+# This PersistentVolumeClaim allocates a volume for Transmute to use to store its data.
+#
+# As it is, this will allocate a volume using whatever the default storage class is on
+# your cluster. If this is a local volume, this means that data and settings will be
+# lost if the Transmute pod is moved between cluster nodes. As such, you should uncomment
+# the "storageClassName" line and replace "nfs-pv" with the appropriate storageClass used
+# by your cluster's storage back-end to ensure Transmute's settings and data are properly
+# persisted.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: transmute-data
+  namespace: transmute
+spec:
+#  storageClassName: nfs-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 8Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transmute
+  namespace: transmute
+  labels:
+    app: transmute
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: transmute
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: transmute
+    spec:
+      # The following security context sets the uid and gid under which Transmute's
+      # processes will run. You may need to change this to match your cluster's
+      # standards or to ensure that it has the ability to write to the data volume.
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      volumes:
+        - name: transmute-data
+          persistentVolumeClaim:
+            claimName: transmute-data
+      containers:
+        - image: ghcr.io/transmute-app/transmute:latest
+          name: transmute
+          env:
+            # The value of APP_URL should be configured to match the host setting in the Ingress (below).
+            # If your ingress provider is providing SSL into the cluster, you should prefix this URL
+            # with "https" even though Transmute itself is not providing SSL.
+            - name: APP_URL
+              value: "https://transmute.your-domain.example"
+          ports:
+            - name: http
+              containerPort: 3313
+          volumeMounts:
+            - mountPath: "/app/data"
+              name: transmute-data
+          readinessProbe:
+            httpGet:
+              path: /api/health/ready
+              port: http
+            initialDelaySeconds: 40
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          imagePullPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: transmute
+  namespace: transmute
+spec:
+  selector:
+    app: transmute
+  ports:
+    - protocol: TCP
+      port: 3313
+      name: http
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: transmute-ingress
+  namespace: transmute
+  annotations:
+    # The annotations included on these next two lines assume that your cluster is using Traefik as your
+    # ingress provider and wish it to provide SSL. If this is not true, you will need to change them to
+    # match your cluster's ingress provider.
+    traefik.ingress.kubernetes.io/router.entrypoints: 'websecure'
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+spec:
+  rules:
+    - host: transmute.your-domain.example
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: transmute
+                port:
+                  number: 3313
