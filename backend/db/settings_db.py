@@ -105,7 +105,7 @@ class SettingsDB:
     settings = get_settings()
     DB_PATH = settings.db_path
     _TABLE_NAME = settings.app_settings_table_name
-    _CUSTOM_THEMES_TABLE_NAME = "CUSTOM_THEMES"
+    _CUSTOM_THEMES_TABLE_NAME = settings.custom_themes_table_name
 
     @property
     def TABLE_NAME(self) -> str:

@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     conversion_relations_table_name: str = "CONVERSION_RELATIONS"
     conversion_jobs_table_name: str = "CONVERSION_JOBS"
     app_settings_table_name: str = "APP_SETTINGS"
+    custom_themes_table_name: str = "CUSTOM_THEMES"
     user_table_name: str = "USERS"
 
     # ===== Conversion queue =====
