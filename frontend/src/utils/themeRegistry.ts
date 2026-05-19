@@ -107,9 +107,9 @@ function buildThemeRule(theme: CustomTheme): string {
     const hex = theme.colors[tok]
     return `  ${tokenToCssVar(tok)}: ${hexToRgbChannels(hex)};`
   }).join('\n')
-  // Escape any double quotes in the key, though the backend slug regex
+  // Escape backslashes and double quotes in the key, though the backend slug regex
   // forbids them. This keeps the selector safe even for hand-edited cache.
-  const safeKey = theme.key.replace(/"/g, '\\"')
+  const safeKey = theme.key.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
   return `:root[data-theme="${safeKey}"] {\n${declarations}\n}`
 }
 

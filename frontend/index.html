@@ -38,7 +38,7 @@
             var themes = (parsed && parsed.themes) || [];
             if (!themes.length) return [];
             var css = themes.map(function (theme) {
-              var safeKey = String(theme.key).replace(/"/g, '\\"');
+              var safeKey = String(theme.key).replace(/[\\"]/g, '\\$&');
               var decls = TOKENS.map(function (tok) {
                 var cssVar = '--color-' + tok.replace(/_/g, '-');
                 var hex = theme.colors && theme.colors[tok];
