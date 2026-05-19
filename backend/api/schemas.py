@@ -136,7 +136,7 @@ UserRoleValue = Literal["admin", "member", "guest"]
 
 
 class AppSettingsResponse(BaseModel):
-    theme: ThemeValue = Field(..., example="rubedo", description="Active UI theme")
+    theme: str = Field(..., example="rubedo", description="Active UI theme key (built-in or custom)")
     auto_download: bool = Field(..., example=False, description="Auto-download converted files on completion")
     keep_originals: bool = Field(..., example=True, description="Retain uploaded source files after conversion")
     cleanup_enabled: bool = Field(..., example=True, description="Enable automatic cleanup of old files")
@@ -144,11 +144,53 @@ class AppSettingsResponse(BaseModel):
 
 
 class AppSettingsUpdate(BaseModel):
-    theme: Optional[ThemeValue] = Field(None, example="rubedo", description="UI theme to apply")
+    theme: Optional[str] = Field(None, example="rubedo", description="Theme key to apply (built-in or custom)")
     auto_download: Optional[bool] = Field(None, example=False, description="Auto-download on completion")
     keep_originals: Optional[bool] = Field(None, example=True, description="Keep original files after conversion")
     cleanup_enabled: Optional[bool] = Field(None, example=True, description="Enable automatic cleanup of old files")
     cleanup_ttl_minutes: Optional[int] = Field(None, example=60, description="Time-to-live in minutes for cleanup")
+
+
+# Hex color regex: #rgb or #rrggbb
+_HEX_COLOR_PATTERN = r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+
+
+class CustomThemeColors(BaseModel):
+    primary:       str = Field(..., example="#ef4444", pattern=_HEX_COLOR_PATTERN, description="Primary brand color")
+    primary_light: str = Field(..., example="#f87171", pattern=_HEX_COLOR_PATTERN, description="Lighter primary variant")
+    primary_dark:  str = Field(..., example="#b91c1c", pattern=_HEX_COLOR_PATTERN, description="Darker primary variant")
+    accent:        str = Field(..., example="#f59e0b", pattern=_HEX_COLOR_PATTERN, description="Accent color")
+    success:       str = Field(..., example="#22c55e", pattern=_HEX_COLOR_PATTERN, description="Success color")
+    success_light: str = Field(..., example="#4ade80", pattern=_HEX_COLOR_PATTERN, description="Lighter success variant")
+    success_dark:  str = Field(..., example="#15803d", pattern=_HEX_COLOR_PATTERN, description="Darker success variant")
+    surface_dark:  str = Field(..., example="#0f172a", pattern=_HEX_COLOR_PATTERN, description="Dark surface background")
+    surface_light: str = Field(..., example="#1e293b", pattern=_HEX_COLOR_PATTERN, description="Light surface background")
+    text:          str = Field(..., example="#f8fafc", pattern=_HEX_COLOR_PATTERN, description="Primary text color")
+    text_muted:    str = Field(..., example="#cbd5e1", pattern=_HEX_COLOR_PATTERN, description="Muted text color")
+
+
+class CustomThemeResponse(BaseModel):
+    key:        str = Field(..., example="my-theme", description="Stable URL-safe identifier")
+    name:       str = Field(..., example="My Theme", description="Human-readable display name")
+    colors:     CustomThemeColors = Field(..., description="Color token values (hex)")
+    created_by: Optional[str] = Field(None, description="UUID of the user that created the theme")
+    created_at: Optional[str] = Field(None, description="ISO-8601 creation timestamp")
+    updated_at: Optional[str] = Field(None, description="ISO-8601 last-update timestamp")
+
+
+class CustomThemeListResponse(BaseModel):
+    themes:   list[CustomThemeResponse] = Field(..., description="All custom themes registered in the database")
+    builtins: list[str] = Field(..., description="Built-in theme keys defined by the application")
+
+
+class CustomThemeCreateRequest(BaseModel):
+    name:   str = Field(..., min_length=1, max_length=64, example="My Theme", description="Display name")
+    colors: CustomThemeColors = Field(..., description="Color token payload (every token is required)")
+
+
+class CustomThemeUpdateRequest(BaseModel):
+    name:   Optional[str] = Field(None, min_length=1, max_length=64, example="My Theme", description="New display name")
+    colors: Optional[CustomThemeColors] = Field(None, description="Replacement color token payload")
 
 
 class DefaultFormatMapping(BaseModel):

@@ -1,15 +1,39 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTheme, type ThemeName } from '../ThemeContext'
 import { useAuth } from '../AuthContext'
 import { useTranslation } from 'react-i18next'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import FormatDropdown from '../components/FormatDropdown'
 import { authFetch as fetch } from '../utils/api'
+import {
+  BUILTIN_THEMES,
+  FALLBACK_THEME,
+  THEME_COLOR_TOKENS,
+  type CustomTheme,
+  type ThemeColorToken,
+  type ThemeColors,
+} from '../utils/themeRegistry'
 
 interface Theme {
   value: string
   label: string
   colors: string[]
+  custom: boolean
+}
+
+/** Default hex value used when seeding a new custom theme form. */
+const DEFAULT_NEW_THEME_COLORS: ThemeColors = {
+  primary:       '#ef4444',
+  primary_light: '#f87171',
+  primary_dark:  '#dc2626',
+  accent:        '#f59e0b',
+  success:       '#16a34a',
+  success_light: '#22c55e',
+  success_dark:  '#15803d',
+  surface_dark:  '#0f172a',
+  surface_light: '#1e293b',
+  text:          '#f8fafc',
+  text_muted:    '#94a3b8',
 }
 
 interface DefaultFormatMapping {
@@ -30,16 +54,18 @@ interface ConverterInfo {
   qualities: string[]
 }
 
-const THEMES: Theme[] = [
-  { value: 'rubedo',     label: 'Rubedo',     colors: ['#ef4444', '#171e2f'] },  // Red / Dark Blue
-  { value: 'citrinitas', label: 'Citrinitas', colors: ['#fbbf24', '#140d2d'] },  // Gold / Deep Violet
-  { value: 'viriditas',  label: 'Viriditas',  colors: ['#16a34a', '#000000'] },  // Green / Black
-  { value: 'nigredo',    label: 'Nigredo',    colors: ['#3c00a4', '#000000'] },  // Purple / Black
-  { value: 'albedo',     label: 'Albedo',     colors: ['#f8fafc', '#cbd5e1'] },  // Light / Silver
-  { value: 'aurora',     label: 'Aurora',     colors: ['#ea580c', '#fffbf0'] },  // Orange / Warm Cream
-  { value: 'caelum',     label: 'Caelum',     colors: ['#0284c7', '#f0f9ff'] },  // Sky Blue / Cool White
-  { value: 'argentum',   label: 'Argentum',   colors: ['#8b7aa8', '#faf7ff'] },  // Silver Violet / Porcelain White
-]
+/**
+  Built-in themes are baked into index.css; we only need their swatch
+  metadata here. Custom themes are appended from the runtime registry
+  (`useTheme().customThemes`), with their swatch derived from the live
+  color values.
+*/
+const BUILTIN_THEME_OPTIONS: Theme[] = BUILTIN_THEMES.map(b => ({
+  value: b.key,
+  label: b.label,
+  colors: [b.swatch[0], b.swatch[1]],
+  custom: false,
+}))
 
 function ThemeSwatch({ colors }: { colors: string[] }) {
   if (colors.length >= 2) {
@@ -67,9 +93,29 @@ interface AppSettings {
 }
 
 function Settings() {
-  const { theme, setTheme, setKeepOriginals } = useTheme()
+  const { theme, setTheme, setKeepOriginals, customThemes, refreshThemes } = useTheme()
   const { isAdmin } = useAuth()
   const { t } = useTranslation()
+
+  // Merge built-ins with the runtime-registered custom themes. Memoised so
+  // dropdown identity is stable across re-renders.
+  const allThemes = useMemo<Theme[]>(() => {
+    const customOptions: Theme[] = customThemes.map(ct => ({
+      value: ct.key,
+      label: ct.name,
+      colors: [ct.colors.primary, ct.colors.surface_dark],
+      custom: true,
+    }))
+    return [...BUILTIN_THEME_OPTIONS, ...customOptions]
+  }, [customThemes])
+
+  // ===== Custom theme CRUD state =====
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [editingKey, setEditingKey] = useState<string | null>(null)
+  const [newThemeName, setNewThemeName] = useState('')
+  const [newThemeColors, setNewThemeColors] = useState<ThemeColors>({ ...DEFAULT_NEW_THEME_COLORS })
+  const [themeFormError, setThemeFormError] = useState<string | null>(null)
+  const [themeFormSaving, setThemeFormSaving] = useState(false)
   const [autoDownload, setAutoDownload] = useState(false)
   const [saveOriginals, setSaveOriginals] = useState(true)
   const [cleanupEnabled, setCleanupEnabled] = useState(true)
@@ -290,6 +336,84 @@ function Settings() {
     }
   }
 
+  // ===== Custom theme handlers =====
+
+  const resetThemeForm = useCallback(() => {
+    setEditingKey(null)
+    setNewThemeName('')
+    setNewThemeColors({ ...DEFAULT_NEW_THEME_COLORS })
+    setThemeFormError(null)
+  }, [])
+
+  const startEditTheme = useCallback((ct: CustomTheme) => {
+    setEditingKey(ct.key)
+    setNewThemeName(ct.name)
+    setNewThemeColors({ ...ct.colors })
+    setThemeFormError(null)
+    setShowCreateForm(true)
+  }, [])
+
+  const handleSaveCustomTheme = async () => {
+    if (!newThemeName.trim()) {
+      setThemeFormError(t('settings.themeNameRequired'))
+      return
+    }
+    setThemeFormSaving(true)
+    setThemeFormError(null)
+    try {
+      const isEdit = editingKey !== null
+      const url = isEdit
+        ? `/api/settings/themes/${encodeURIComponent(editingKey!)}`
+        : '/api/settings/themes'
+      const response = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newThemeName.trim(), colors: newThemeColors }),
+      })
+      if (!response.ok) {
+        const body = await response.json().catch(() => null)
+        throw new Error(body?.detail || t('settings.saveFailed'))
+      }
+      await refreshThemes()
+      resetThemeForm()
+      setShowCreateForm(false)
+    } catch (err) {
+      setThemeFormError(err instanceof Error ? err.message : t('settings.saveFailed'))
+    } finally {
+      setThemeFormSaving(false)
+    }
+  }
+
+  const handleDeleteCustomTheme = (ct: CustomTheme) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: t('settings.deleteCustomThemeTitle'),
+      message: t('settings.deleteCustomThemeMessage', { name: ct.name }),
+      confirmLabel: t('settings.deleteCustomThemeConfirm'),
+      onConfirm: () => {
+        setConfirmDialog(null)
+        void (async () => {
+          try {
+            const response = await fetch(
+              `/api/settings/themes/${encodeURIComponent(ct.key)}`,
+              { method: 'DELETE' },
+            )
+            if (!response.ok && response.status !== 204) {
+              throw new Error(t('settings.saveFailed'))
+            }
+            // If we just deleted the active theme, reset to the fallback.
+            if (theme === ct.key) {
+              setTheme(FALLBACK_THEME)
+            }
+            await refreshThemes()
+          } catch (err) {
+            setError(err instanceof Error ? err.message : t('settings.saveFailed'))
+          }
+        })()
+      },
+    })
+  }
+
   // Available input formats that don't already have a default set
   const availableInputFormats = Object.keys(conversionMap)
     .filter(f => !defaultFormats.some(d => d.input_format === f))
@@ -391,32 +515,168 @@ function Settings() {
                     onClick={() => setThemeOpen(o => !o)}
                     className="flex items-center gap-2 bg-surface-dark text-text border border-surface-light rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition duration-200 min-w-[200px]"
                   >
-                    <ThemeSwatch colors={THEMES.find(t => t.value === theme)?.colors ?? []} />
-                    <span className="flex-1 text-left">{THEMES.find(t => t.value === theme)?.label}</span>
+                    <ThemeSwatch colors={allThemes.find(t => t.value === theme)?.colors ?? []} />
+                    <span className="flex-1 text-left">{allThemes.find(t => t.value === theme)?.label ?? theme}</span>
                     <svg className={`w-4 h-4 transition-transform duration-200 ${themeOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
                   {themeOpen && (
-                    <div className="absolute right-0 mt-1 w-full bg-surface-dark border border-surface-light rounded-lg shadow-xl z-10 overflow-hidden">
-                      {THEMES.map(t => (
+                    <div className="absolute right-0 mt-1 w-full bg-surface-dark border border-surface-light rounded-lg shadow-xl z-10 overflow-hidden max-h-80 overflow-y-auto">
+                      {allThemes.map(opt => (
                         <button
-                          key={t.value}
-                          onClick={() => { setTheme(t.value as ThemeName); setThemeOpen(false) }}
+                          key={opt.value}
+                          onClick={() => { setTheme(opt.value as ThemeName); setThemeOpen(false) }}
                           className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left transition duration-150 ${
-                            theme === t.value
+                            theme === opt.value
                               ? 'bg-primary/20 text-primary-light'
                               : 'text-text hover:bg-surface-light'
                           }`}
                         >
-                          <ThemeSwatch colors={t.colors} />
-                          {t.label}
+                          <ThemeSwatch colors={opt.colors} />
+                          <span className="flex-1">{opt.label}</span>
+                          {opt.custom && (
+                            <span className="text-[10px] uppercase tracking-wider text-text-muted">
+                              {t('settings.customThemeBadge')}
+                            </span>
+                          )}
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
               </div>
+
+              {isAdmin && (
+                <div className="border-t border-surface-dark pt-4 mt-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-text font-medium">{t('settings.customThemes')}</p>
+                      <p className="text-text-muted text-sm">{t('settings.customThemesDescription')}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (showCreateForm) {
+                          resetThemeForm()
+                          setShowCreateForm(false)
+                        } else {
+                          resetThemeForm()
+                          setShowCreateForm(true)
+                        }
+                      }}
+                      className="bg-primary text-white text-sm py-2 px-3 rounded-lg hover:bg-primary-dark transition-colors duration-150"
+                    >
+                      {showCreateForm
+                        ? t('settings.cancelCustomTheme')
+                        : t('settings.createCustomTheme')}
+                    </button>
+                  </div>
+
+                  {customThemes.length === 0 && !showCreateForm && (
+                    <p className="text-text-muted text-sm italic">{t('settings.customThemesEmpty')}</p>
+                  )}
+
+                  {customThemes.length > 0 && (
+                    <ul className="flex flex-col gap-2 mb-3">
+                      {customThemes.map(ct => (
+                        <li
+                          key={ct.key}
+                          className="flex items-center gap-3 bg-surface-dark border border-surface-light rounded-lg py-2 px-3"
+                        >
+                          <ThemeSwatch colors={[ct.colors.primary, ct.colors.surface_dark]} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-text text-sm truncate">{ct.name}</p>
+                            <p className="text-text-muted text-xs truncate font-mono">{ct.key}</p>
+                          </div>
+                          <button
+                            onClick={() => startEditTheme(ct)}
+                            className="text-text-muted hover:text-text text-xs uppercase tracking-wider px-2 py-1"
+                          >
+                            {t('settings.editCustomTheme')}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCustomTheme(ct)}
+                            className="text-primary-light hover:text-primary text-xs uppercase tracking-wider px-2 py-1"
+                          >
+                            {t('settings.deleteCustomTheme')}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {showCreateForm && (
+                    <div className="bg-surface-dark border border-surface-light rounded-lg p-4 flex flex-col gap-3">
+                      <div>
+                        <label className="text-text text-sm font-medium block mb-1" htmlFor="custom-theme-name">
+                          {t('settings.themeName')}
+                        </label>
+                        <input
+                          id="custom-theme-name"
+                          type="text"
+                          value={newThemeName}
+                          onChange={e => setNewThemeName(e.target.value)}
+                          placeholder={t('settings.themeNamePlaceholder')}
+                          maxLength={64}
+                          className="w-full bg-surface-light text-text border border-surface-light rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {THEME_COLOR_TOKENS.map(token => (
+                          <div key={token} className="flex items-center justify-between gap-3 bg-surface-light rounded-lg py-2 px-3">
+                            <label
+                              htmlFor={`custom-theme-${token}`}
+                              className="text-text-muted text-xs uppercase tracking-wider"
+                            >
+                              {t(`settings.themeToken.${token}`)}
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                id={`custom-theme-${token}`}
+                                type="color"
+                                value={newThemeColors[token as ThemeColorToken]}
+                                onChange={e => setNewThemeColors(prev => ({
+                                  ...prev,
+                                  [token]: e.target.value,
+                                }))}
+                                className="w-8 h-8 rounded cursor-pointer bg-transparent border border-surface-dark"
+                              />
+                              <span className="text-text text-xs font-mono uppercase">
+                                {newThemeColors[token as ThemeColorToken]}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {themeFormError && (
+                        <p className="text-primary-light text-sm">{themeFormError}</p>
+                      )}
+
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => { resetThemeForm(); setShowCreateForm(false) }}
+                          className="bg-surface-light text-text text-sm py-2 px-3 rounded-lg hover:bg-surface-dark border border-surface-light transition-colors duration-150"
+                        >
+                          {t('settings.cancelCustomTheme')}
+                        </button>
+                        <button
+                          onClick={handleSaveCustomTheme}
+                          disabled={themeFormSaving}
+                          className="bg-primary text-white text-sm py-2 px-3 rounded-lg hover:bg-primary-dark transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {themeFormSaving
+                            ? t('settings.saving')
+                            : editingKey
+                              ? t('settings.updateCustomTheme')
+                              : t('settings.saveCustomTheme')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </section>
 
