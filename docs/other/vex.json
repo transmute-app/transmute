@@ -2,8 +2,8 @@
   "@context": "https://openvex.dev/ns/v0.2.0",
   "@id": "https://github.com/transmute-app/transmute/blob/main/docs/other/vex.json",
   "author": "transmute-app",
-  "timestamp": "2026-05-28T00:00:00Z",
-  "version": 3,
+  "timestamp": "2026-05-29T00:00:00Z",
+  "version": 6,
   "statements": [
     {
       "vulnerability": { 
@@ -32,7 +32,7 @@
           "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
           "subcomponents": [
             {
-              "@id": "pkg:deb/debian/perl-modules-5.40@5.40.1-6?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+              "@id": "pkg:deb/debian/perl@5.40.1-6?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
             }
           ]
         }
@@ -50,7 +50,7 @@
           "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
           "subcomponents": [
             {
-              "@id": "pkg:deb/debian/perl-modules-5.40@5.40.1-6?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+              "@id": "pkg:deb/debian/perl@5.40.1-6?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
             }
           ]
         }
@@ -71,6 +71,42 @@
       "status": "not_affected",
       "justification": "component_not_present",
       "impact_statement": "Transmute does not include the vulnerable Perl IO::Compress component in its container image, and the application does not use Perl File::GlobMapper or attacker-controlled output globs. Inspection of the built image shows no installed IO::Compress module in Perl's @INC and no Debian IO::Compress package such as libio-compress-perl in the package inventory, so the vulnerable component is not present in the product."
+    },
+    {
+      "vulnerability": {
+        "@id": "CVE-2026-9538"
+      },
+      "products": [
+        {
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            {
+              "@id": "pkg:deb/debian/perl@5.40.1-6?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Transmute does not use Perl Archive::Tar to parse or extract untrusted tar archives. Its tar-handling path is implemented in Python via backend/converters/archive_convert.py and uses Python tarfile rather than Perl Archive::Tar. The vulnerable Archive::Tar _read_tar() memory-exhaustion path is not in the execute path of Transmute and cannot be reached by an attacker through the application."
+    },
+    {
+      "vulnerability": {
+        "@id": "CVE-2026-8450"
+      },
+      "products": [
+        {
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            {
+              "@id": "pkg:deb/debian/libhttp-daemon-perl@6.16-1?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Transmute does not use Perl HTTP::Daemon or its send_file() method. Its HTTP download path is implemented in Python in backend/downloaders/http_downloader.py using httpx, and the application does not expose attacker-controlled input to Perl HTTP::Daemon::send_file(). The vulnerable HTTP::Daemon send_file() command-injection path is not in the execute path of Transmute and cannot be reached by an attacker through the application."
     }
   ]
 }
