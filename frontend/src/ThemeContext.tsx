@@ -2,6 +2,11 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import { useAuth } from './AuthContext'
 import { authFetch as fetch } from './utils/api'
 import {
+  DEFAULT_DATETIME_DISPLAY_FORMAT,
+  readStoredDateTimeDisplayFormat,
+  setStoredDateTimeDisplayFormat,
+} from './utils/datetime'
+import {
   BUILTIN_THEMES,
   FALLBACK_THEME,
   THEME_STORAGE_KEY,
@@ -25,6 +30,8 @@ interface ThemeContextValue {
   setTheme: (theme: ThemeName) => void
   keepOriginals: boolean
   setKeepOriginals: (value: boolean) => void
+  dateTimeDisplayFormat: string
+  setDateTimeDisplayFormat: (value: string) => void
   customThemes: CustomTheme[]
   /** Re-fetch the registry from the backend and re-inject the CSS rules. */
   refreshThemes: () => Promise<void>
@@ -35,6 +42,8 @@ const ThemeContext = createContext<ThemeContextValue>({
   setTheme: () => {},
   keepOriginals: true,
   setKeepOriginals: () => {},
+  dateTimeDisplayFormat: DEFAULT_DATETIME_DISPLAY_FORMAT,
+  setDateTimeDisplayFormat: () => {},
   customThemes: [],
   refreshThemes: async () => {},
 })
@@ -75,6 +84,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // script already applied to the DOM — avoids a redundant re-render.
   const [theme, setThemeState] = useState<ThemeName>(readStoredTheme)
   const [keepOriginals, setKeepOriginalsState] = useState(readStoredKeepOriginals)
+  const [dateTimeDisplayFormat, setDateTimeDisplayFormatState] = useState(readStoredDateTimeDisplayFormat)
   // Seed from cache so the Settings page can render custom themes immediately
   // even before the network round-trip completes.
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>(readCachedRegistry)
@@ -87,6 +97,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setKeepOriginals = useCallback((value: boolean) => {
     setKeepOriginalsState(value)
     try { localStorage.setItem(KEEP_ORIGINALS_KEY, String(value)) } catch { /* storage unavailable */ }
+  }, [])
+
+  const setDateTimeDisplayFormat = useCallback((value: string) => {
+    const normalized = setStoredDateTimeDisplayFormat(value)
+    setDateTimeDisplayFormatState(normalized)
   }, [])
 
   const refreshThemes = useCallback(async () => {
@@ -140,6 +155,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
           }
           return prev
         })
+        setDateTimeDisplayFormatState(prev => {
+          const next = setStoredDateTimeDisplayFormat(settingsData.datetime_display_format ?? DEFAULT_DATETIME_DISPLAY_FORMAT)
+          return prev === next ? prev : next
+        })
       }
     })
 
@@ -147,7 +166,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [status])
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, keepOriginals, setKeepOriginals, customThemes, refreshThemes }}>
+    <ThemeContext.Provider value={{ theme, setTheme, keepOriginals, setKeepOriginals, dateTimeDisplayFormat, setDateTimeDisplayFormat, customThemes, refreshThemes }}>
       {children}
     </ThemeContext.Provider>
   )

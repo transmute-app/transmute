@@ -169,6 +169,13 @@
       "text": "Texto",
       "text_muted": "Texto atenuado"
     },
+    "dateTimeDisplayFormat": "Formato de fecha y hora",
+    "dateTimeDisplayFormatDescription": "Usa locale para el formato predeterminado del navegador o escribe tokens como DD/MM/YYYY - HH:mm:ss.",
+    "dateTimeDisplayFormatHint": "Tokens admitidos: YYYY, MMM, MM, DD, HH, hh, mm, ss, A",
+    "dateTimeDisplayFormatPlaceholder": "locale",
+    "dateTimeDisplayFormatPreview": "Vista previa",
+    "useBrowserLocale": "Usar formato del navegador",
+    "dateTimeDisplayFormatInvalid": "Usa locale o solo los tokens admitidos en este campo",
     "conversion": "Conversión",
     "autoDownload": "Descargar automáticamente al completar",
     "autoDownloadDescription": "Automáticamente iniciará la descarga cuando la conversión finalice",

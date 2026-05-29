@@ -6,6 +6,11 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import FormatDropdown from '../components/FormatDropdown'
 import { authFetch as fetch } from '../utils/api'
 import {
+  DEFAULT_DATETIME_DISPLAY_FORMAT,
+  formatDateTimeForDisplay,
+  isValidDateTimeDisplayFormat,
+} from '../utils/datetime'
+import {
   BUILTIN_THEMES,
   FALLBACK_THEME,
   THEME_COLOR_TOKENS,
@@ -90,10 +95,21 @@ interface AppSettings {
   keep_originals: boolean
   cleanup_enabled: boolean
   cleanup_ttl_minutes: number
+  datetime_display_format: string
 }
 
+const DATETIME_FORMAT_PREVIEW_VALUE = new Date(2026, 4, 28, 14, 30, 38)
+
 function Settings() {
-  const { theme, setTheme, setKeepOriginals, customThemes, refreshThemes } = useTheme()
+  const {
+    theme,
+    setTheme,
+    setKeepOriginals,
+    dateTimeDisplayFormat,
+    setDateTimeDisplayFormat,
+    customThemes,
+    refreshThemes,
+  } = useTheme()
   const { isAdmin } = useAuth()
   const { t } = useTranslation()
 
@@ -118,6 +134,7 @@ function Settings() {
   const [themeFormSaving, setThemeFormSaving] = useState(false)
   const [autoDownload, setAutoDownload] = useState(false)
   const [saveOriginals, setSaveOriginals] = useState(true)
+  const [dateTimeFormat, setDateTimeFormat] = useState(dateTimeDisplayFormat)
   const [cleanupEnabled, setCleanupEnabled] = useState(true)
   const [cleanupTtl, setCleanupTtl] = useState(60)
   const [themeOpen, setThemeOpen] = useState(false)
@@ -209,6 +226,7 @@ function Settings() {
         setTheme(data.theme as ThemeName)
         setAutoDownload(data.auto_download)
         setSaveOriginals(data.keep_originals)
+        setDateTimeFormat(data.datetime_display_format || DEFAULT_DATETIME_DISPLAY_FORMAT)
         setCleanupEnabled(data.cleanup_enabled)
         setCleanupTtl(data.cleanup_ttl_minutes)
         setLoaded(true)
@@ -230,10 +248,20 @@ function Settings() {
   }, [])
 
   const handleSave = async () => {
+    if (!isValidDateTimeDisplayFormat(dateTimeFormat)) {
+      setError(t('settings.dateTimeDisplayFormatInvalid'))
+      return
+    }
+
     setSaving(true)
     setError(null)
     try {
-      const payload: Record<string, unknown> = { theme, auto_download: autoDownload, keep_originals: saveOriginals }
+      const payload: Record<string, unknown> = {
+        theme,
+        auto_download: autoDownload,
+        keep_originals: saveOriginals,
+        datetime_display_format: dateTimeFormat.trim(),
+      }
       if (isAdmin) {
         payload.cleanup_enabled = cleanupEnabled
         payload.cleanup_ttl_minutes = cleanupTtl
@@ -245,6 +273,7 @@ function Settings() {
       })
       if (!response.ok) throw new Error(t('settings.saveFailed'))
       setKeepOriginals(saveOriginals)
+      setDateTimeDisplayFormat(dateTimeFormat)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
@@ -253,6 +282,13 @@ function Settings() {
       setSaving(false)
     }
   }
+
+  const stableDateTimeFormatPreview = formatDateTimeForDisplay(
+    DATETIME_FORMAT_PREVIEW_VALUE,
+    { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' },
+    undefined,
+    dateTimeFormat,
+  )
 
   const handleAddDefaultFormat = async () => {
     if (!newInputFormat || !newOutputFormat) return
@@ -544,6 +580,35 @@ function Settings() {
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+
+              <div className="border-t border-surface-dark pt-4 mt-2">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="max-w-2xl">
+                    <p className="text-text font-medium">{t('settings.dateTimeDisplayFormat')}</p>
+                    <p className="text-text-muted text-sm">{t('settings.dateTimeDisplayFormatDescription')}</p>
+                    <p className="text-text-muted text-xs mt-2">{t('settings.dateTimeDisplayFormatHint')}</p>
+                  </div>
+                  <button
+                    onClick={() => setDateTimeFormat(DEFAULT_DATETIME_DISPLAY_FORMAT)}
+                    className="self-start rounded-lg border border-surface-dark px-3 py-2 text-xs font-semibold uppercase tracking-wide text-text-muted transition-colors duration-150 hover:border-surface-light hover:text-text"
+                  >
+                    {t('settings.useBrowserLocale')}
+                  </button>
+                </div>
+                <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-center">
+                  <input
+                    type="text"
+                    value={dateTimeFormat}
+                    onChange={e => setDateTimeFormat(e.target.value)}
+                    placeholder={t('settings.dateTimeDisplayFormatPlaceholder')}
+                    className="w-full rounded-lg border border-surface-dark bg-surface-dark px-4 py-2.5 text-sm text-text outline-none transition duration-200 focus:border-primary focus:ring-2 focus:ring-primary/30 lg:max-w-md"
+                  />
+                  <div className="text-sm text-text-muted">
+                    <span className="font-medium text-text">{t('settings.dateTimeDisplayFormatPreview')}:</span>{' '}
+                    <span className="font-mono">{stableDateTimeFormatPreview}</span>
+                  </div>
                 </div>
               </div>
 

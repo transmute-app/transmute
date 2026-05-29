@@ -169,6 +169,13 @@
       "text": "पाठ",
       "text_muted": "मद्धिम पाठ"
     },
+    "dateTimeDisplayFormat": "तारीख और समय प्रदर्शन प्रारूप",
+    "dateTimeDisplayFormatDescription": "ब्राउज़र के डिफ़ॉल्ट प्रारूप के लिए locale का उपयोग करें, या DD/MM/YYYY - HH:mm:ss जैसे टोकन लिखें।",
+    "dateTimeDisplayFormatHint": "समर्थित टोकन: YYYY, MMM, MM, DD, HH, hh, mm, ss, A",
+    "dateTimeDisplayFormatPlaceholder": "locale",
+    "dateTimeDisplayFormatPreview": "पूर्वावलोकन",
+    "useBrowserLocale": "ब्राउज़र प्रारूप का उपयोग करें",
+    "dateTimeDisplayFormatInvalid": "इस फ़ील्ड में locale या केवल समर्थित टोकन का उपयोग करें",
     "conversion": "रूपांतरण",
     "autoDownload": "पूर्ण होने पर स्वतः डाउनलोड",
     "autoDownloadDescription": "रूपांतरण समाप्त होने पर फ़ाइलें स्वतः डाउनलोड करें",

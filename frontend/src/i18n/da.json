@@ -169,6 +169,13 @@
       "text": "Tekst",
       "text_muted": "Dæmpet tekst"
     },
+    "dateTimeDisplayFormat": "Visningsformat for dato og tid",
+    "dateTimeDisplayFormatDescription": "Brug locale for browserens standardformat, eller indtast tokens som DD/MM/YYYY - HH:mm:ss.",
+    "dateTimeDisplayFormatHint": "Understøttede tokens: YYYY, MMM, MM, DD, HH, hh, mm, ss, A",
+    "dateTimeDisplayFormatPlaceholder": "locale",
+    "dateTimeDisplayFormatPreview": "Forhåndsvisning",
+    "useBrowserLocale": "Brug browserformat",
+    "dateTimeDisplayFormatInvalid": "Brug locale eller kun de understøttede tokens i dette felt",
     "conversion": "Konvertering",
     "autoDownload": "Auto-download ved fuldførelse",
     "autoDownloadDescription": "Download automatisk filer når konvertering er færdig",

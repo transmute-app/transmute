@@ -55,6 +55,18 @@ _HEX_COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
 # Reserve a name prefix to prevent collisions with built-ins, even if a
 # new built-in is added later.
 BUILTIN_THEME_KEYS: frozenset[str] = frozenset(t.value for t in Theme)
+SUPPORTED_DATETIME_DISPLAY_FORMAT_TOKENS: tuple[str, ...] = (
+    "YYYY",
+    "MMM",
+    "MM",
+    "DD",
+    "HH",
+    "hh",
+    "mm",
+    "ss",
+    "A",
+)
+DEFAULT_DATETIME_DISPLAY_FORMAT = "locale"
 
 
 def _normalize_hex_color(value: str) -> str:
@@ -78,13 +90,40 @@ def _slugify_theme_name(name: str) -> str:
     return slug
 
 
+def normalize_datetime_display_format(value: str) -> str:
+    """Validate and normalize a per-user datetime display format string."""
+    if not isinstance(value, str):
+        raise ValueError("Datetime display format must be a string")
+
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError("Datetime display format must not be empty")
+    if normalized.lower() == DEFAULT_DATETIME_DISPLAY_FORMAT:
+        return DEFAULT_DATETIME_DISPLAY_FORMAT
+    if len(normalized) > 64:
+        raise ValueError("Datetime display format must be 64 characters or fewer")
+
+    remaining = normalized
+    for token in sorted(SUPPORTED_DATETIME_DISPLAY_FORMAT_TOKENS, key=len, reverse=True):
+        remaining = remaining.replace(token, "")
+
+    if any(ch.isalpha() or ch.isdigit() for ch in remaining):
+        raise ValueError(
+            "Datetime display format contains unsupported tokens. "
+            "Supported tokens: YYYY, MMM, MM, DD, HH, hh, mm, ss, A, or locale."
+        )
+
+    return normalized
+
+
 # Defaults applied when a user has no settings row yet
 _DEFAULT_SETTINGS = {
     "theme":            Theme.RUBEDO.value,
     "auto_download":    False,
     "keep_originals":   True,
     "cleanup_enabled":  True,
-    "cleanup_ttl_minutes": 60
+    "cleanup_ttl_minutes": 60,
+    "datetime_display_format": DEFAULT_DATETIME_DISPLAY_FORMAT,
 }
 
 
@@ -147,7 +186,8 @@ class SettingsDB:
                     auto_download  INTEGER NOT NULL DEFAULT 0,
                     keep_originals INTEGER NOT NULL DEFAULT 1,
                     cleanup_enabled INTEGER NOT NULL DEFAULT 1,
-                    cleanup_ttl_minutes INTEGER NOT NULL DEFAULT 60
+                    cleanup_ttl_minutes INTEGER NOT NULL DEFAULT 60,
+                    datetime_display_format TEXT NOT NULL DEFAULT '{DEFAULT_DATETIME_DISPLAY_FORMAT}'
                 )
             """)  # nosec B608
 
@@ -159,6 +199,7 @@ class SettingsDB:
             "keep_originals":      "INTEGER NOT NULL DEFAULT 1",
             "cleanup_enabled":     "INTEGER NOT NULL DEFAULT 1",
             "cleanup_ttl_minutes": "INTEGER NOT NULL DEFAULT 60",
+            "datetime_display_format": f"TEXT NOT NULL DEFAULT '{DEFAULT_DATETIME_DISPLAY_FORMAT}'",
         })  # nosec B608
 
         # Assign pre-auth orphaned rows to the first admin
@@ -194,8 +235,8 @@ class SettingsDB:
         if cursor.fetchone() is None:
             with self.conn:
                 self.conn.execute(
-                    f"INSERT INTO {self.TABLE_NAME} (user_id, theme, auto_download, keep_originals, cleanup_enabled, cleanup_ttl_minutes) "  # nosec B608
-                    f"VALUES (?, ?, ?, ?, ?, ?)",
+                    f"INSERT INTO {self.TABLE_NAME} (user_id, theme, auto_download, keep_originals, cleanup_enabled, cleanup_ttl_minutes, datetime_display_format) "  # nosec B608
+                    f"VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (
                         user_id,
                         _DEFAULT_SETTINGS["theme"],
@@ -203,6 +244,7 @@ class SettingsDB:
                         int(_DEFAULT_SETTINGS["keep_originals"]),
                         int(_DEFAULT_SETTINGS["cleanup_enabled"]),
                         int(_DEFAULT_SETTINGS["cleanup_ttl_minutes"]),
+                        _DEFAULT_SETTINGS["datetime_display_format"],
                     )
                 )
 
@@ -216,8 +258,8 @@ class SettingsDB:
 
         Returns:
             A dictionary with keys theme (str), auto_download (bool),
-            keep_originals (bool), cleanup_enabled (bool), and
-            cleanup_ttl_minutes (int).
+            keep_originals (bool), cleanup_enabled (bool),
+            cleanup_ttl_minutes (int), and datetime_display_format (str).
         """
         return {
             "theme":               row["theme"],
@@ -225,6 +267,7 @@ class SettingsDB:
             "keep_originals":      bool(row["keep_originals"]),
             "cleanup_enabled":     bool(row["cleanup_enabled"]),
             "cleanup_ttl_minutes": int(row["cleanup_ttl_minutes"]),
+            "datetime_display_format": row["datetime_display_format"],
         }
 
     def get_settings(self, user_id: str) -> dict:
@@ -245,7 +288,7 @@ class SettingsDB:
         """Apply a partial or full update to a user's settings."""
         self._ensure_user_row(user_id)
         # Prevent SQL injection by allowing only known columns
-        allowed = {"theme", "auto_download", "keep_originals", "cleanup_enabled", "cleanup_ttl_minutes"}
+        allowed = {"theme", "auto_download", "keep_originals", "cleanup_enabled", "cleanup_ttl_minutes", "datetime_display_format"}
         filtered = {k: v for k, v in updates.items() if k in allowed}
 
         if not filtered:
@@ -273,6 +316,8 @@ class SettingsDB:
             filtered["cleanup_enabled"] = int(bool(filtered["cleanup_enabled"]))
         if "cleanup_ttl_minutes" in filtered:
             filtered["cleanup_ttl_minutes"] = int(filtered["cleanup_ttl_minutes"])
+        if "datetime_display_format" in filtered:
+            filtered["datetime_display_format"] = normalize_datetime_display_format(filtered["datetime_display_format"])
 
         set_clause = ", ".join(f"{col} = ?" for col in filtered)
         values = list(filtered.values()) + [user_id]

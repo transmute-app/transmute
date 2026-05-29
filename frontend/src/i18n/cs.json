@@ -169,6 +169,13 @@
       "text": "Text",
       "text_muted": "Tlumený text"
     },
+    "dateTimeDisplayFormat": "Formát zobrazení data a času",
+    "dateTimeDisplayFormatDescription": "Použijte locale pro výchozí formát prohlížeče nebo zadejte tokeny jako DD/MM/YYYY - HH:mm:ss.",
+    "dateTimeDisplayFormatHint": "Podporované tokeny: YYYY, MMM, MM, DD, HH, hh, mm, ss, A",
+    "dateTimeDisplayFormatPlaceholder": "locale",
+    "dateTimeDisplayFormatPreview": "Náhled",
+    "useBrowserLocale": "Použít formát prohlížeče",
+    "dateTimeDisplayFormatInvalid": "Použijte locale nebo v tomto poli jen podporované tokeny",
     "conversion": "Konverze",
     "autoDownload": "Automatické stažení po dokončení",
     "autoDownloadDescription": "Automaticky stáhnout soubory po dokončení konverze",

@@ -142,6 +142,7 @@ class AppSettingsResponse(BaseModel):
     keep_originals: bool = Field(..., description="Retain uploaded source files after conversion", json_schema_extra={"example": True})
     cleanup_enabled: bool = Field(..., description="Enable automatic cleanup of old files", json_schema_extra={"example": True})
     cleanup_ttl_minutes: int = Field(..., description="Time-to-live in minutes for cleanup", json_schema_extra={"example": 60})
+    datetime_display_format: str = Field(..., description="Datetime display format pattern or 'locale'", json_schema_extra={"example": "DD/MM/YYYY - HH:mm:ss"})
 
 
 class AppSettingsUpdate(BaseModel):
@@ -150,6 +151,7 @@ class AppSettingsUpdate(BaseModel):
     keep_originals: Optional[bool] = Field(None, description="Keep original files after conversion", json_schema_extra={"example": True})
     cleanup_enabled: Optional[bool] = Field(None, description="Enable automatic cleanup of old files", json_schema_extra={"example": True})
     cleanup_ttl_minutes: Optional[int] = Field(None, description="Time-to-live in minutes for cleanup", json_schema_extra={"example": 60})
+    datetime_display_format: Optional[str] = Field(None, description="Datetime display format pattern or 'locale'", json_schema_extra={"example": "DD/MM/YYYY - HH:mm:ss"})
 
 
 # Hex color regex: #rgb or #rrggbb

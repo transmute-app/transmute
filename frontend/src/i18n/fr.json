@@ -169,6 +169,13 @@
       "text": "Texte",
       "text_muted": "Texte atténué"
     },
+    "dateTimeDisplayFormat": "Format d'affichage date et heure",
+    "dateTimeDisplayFormatDescription": "Utilisez locale pour le format par défaut du navigateur, ou saisissez des jetons comme DD/MM/YYYY - HH:mm:ss.",
+    "dateTimeDisplayFormatHint": "Jetons pris en charge : YYYY, MMM, MM, DD, HH, hh, mm, ss, A",
+    "dateTimeDisplayFormatPlaceholder": "locale",
+    "dateTimeDisplayFormatPreview": "Aperçu",
+    "useBrowserLocale": "Utiliser le format du navigateur",
+    "dateTimeDisplayFormatInvalid": "Utilisez locale ou seulement les jetons pris en charge dans ce champ",
     "conversion": "Conversion",
     "autoDownload": "Téléchargement automatique une fois terminé",
     "autoDownloadDescription": "Télécharger automatiquement les fichiers quand la conversion est terminée",
