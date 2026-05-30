@@ -127,6 +127,66 @@
   --color-text-muted:    108 101 124;  /* #6c657c */
 }
 
+/* ── catppuccin mocha ── pastel blue on deep indigo */
+[data-theme="catppuccin_mocha"] {
+  --color-primary:       137 180 250;  /* #89b4fa */
+  --color-primary-light: 180 190 254;  /* #b4befe */
+  --color-primary-dark:  116 199 236;  /* #74c7ec */
+  --color-accent:        203 166 247;  /* #cba6f7 */
+  --color-success:       166 227 161;  /* #a6e3a1 */
+  --color-success-light: 137 220 235;  /* #89dceb */
+  --color-success-dark:  148 226 213;  /* #94e2d5 */
+  --color-surface-dark:  30  30  46;   /* #1e1e2e */
+  --color-surface-light: 49  50  68;   /* #313244 */
+  --color-text:          205 214 244;  /* #cdd6f4 */
+  --color-text-muted:    166 173 200;  /* #a6adc8 */
+}
+
+/* ── catppuccin macchiato ── soft blue on midnight slate */
+[data-theme="catppuccin_macchiato"] {
+  --color-primary:       138 173 244;  /* #8aadf4 */
+  --color-primary-light: 183 189 248;  /* #b7bdf8 */
+  --color-primary-dark:  125 196 228;  /* #7dc4e4 */
+  --color-accent:        198 160 246;  /* #c6a0f6 */
+  --color-success:       166 218 149;  /* #a6da95 */
+  --color-success-light: 145 215 227;  /* #91d7e3 */
+  --color-success-dark:  139 213 202;  /* #8bd5ca */
+  --color-surface-dark:  36  39  58;   /* #24273a */
+  --color-surface-light: 54  58  79;   /* #363a4f */
+  --color-text:          202 211 245;  /* #cad3f5 */
+  --color-text-muted:    165 173 203;  /* #a5adcb */
+}
+
+/* ── catppuccin frappe ── muted blue on dusky navy */
+[data-theme="catppuccin_frappe"] {
+  --color-primary:       140 170 238;  /* #8caaee */
+  --color-primary-light: 186 187 241;  /* #babbf1 */
+  --color-primary-dark:  133 193 220;  /* #85c1dc */
+  --color-accent:        202 158 230;  /* #ca9ee6 */
+  --color-success:       166 209 137;  /* #a6d189 */
+  --color-success-light: 153 209 219;  /* #99d1db */
+  --color-success-dark:  129 200 190;  /* #81c8be */
+  --color-surface-dark:  48  52  70;   /* #303446 */
+  --color-surface-light: 65  69  89;   /* #414559 */
+  --color-text:          198 208 245;  /* #c6d0f5 */
+  --color-text-muted:    165 173 206;  /* #a5adce */
+}
+
+/* ── catppuccin latte ── vivid blue on airy porcelain */
+[data-theme="catppuccin_latte"] {
+  --color-primary:       30  102 245;  /* #1e66f5 */
+  --color-primary-light: 114 135 253;  /* #7287fd */
+  --color-primary-dark:  32  159 181;  /* #209fb5 */
+  --color-accent:        136 57  239;  /* #8839ef */
+  --color-success:       64  160 43;   /* #40a02b */
+  --color-success-light: 4   165 229;  /* #04a5e5 */
+  --color-success-dark:  23  146 153;  /* #179299 */
+  --color-surface-dark:  230 233 239;  /* #e6e9ef */
+  --color-surface-light: 239 241 245;  /* #eff1f5 */
+  --color-text:          76  79  105;  /* #4c4f69 */
+  --color-text-muted:    108 111 133;  /* #6c6f85 */
+}
+
 @layer base {
   html, body {
     background-color: rgb(var(--color-surface-dark));

@@ -42,7 +42,7 @@ Want to see a video demo? Check out our [YouTube](https://www.youtube.com/watch?
 - **Built-in authentication**: User accounts, role-based access, and API key support out of the box
 - **Docker ready**: Deploy with a single command, no complex setup required
 - **REST API**: Automate and integrate file conversions via the built-in OpenAPI-documented API
-- **Multiple themes**: Seven built-in light and dark UI themes
+- **Multiple themes**: Twelve built-in light and dark UI themes
 
 > [!WARNING]
 > **Think carefully before exposing Transmute to the public internet / WAN.**
@@ -79,6 +79,8 @@ Transmute supports conversion across a wide range of file types, including image
 | Citrinitas       | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/citrinitas.png" width=100%> | Aurora           | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/aurora.png" width=100%> |
 | Viriditas        | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/viriditas.png" width=100%> | Caelum           | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/caelum.png" width=100%> |
 | Nigredo          | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/nigredo.png" width=100%> | Argentum | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/argentum.png" width=100%> |
+| Catppuccin Mocha | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/catppuccin_mocha.png" width=100%> | Catppuccin Latte | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/catppuccin_latte.png" width=100%> |
+| Catppuccin Macchiato | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/catppuccin_macchiato.png" width=100%> | Catppuccin Frappé | <img src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/screenshots/catppuccin_frappe.png" width=100%> |
 
 ## API Documentation
 When the app is running the API docs are available at http://TRANSMUTE_IP:3313/api/docs

@@ -55,14 +55,18 @@ export interface BuiltinThemeMeta {
 }
 
 export const BUILTIN_THEMES: BuiltinThemeMeta[] = [
-  { key: 'rubedo',     label: 'Rubedo',     swatch: ['#ef4444', '#171e2f'] },
-  { key: 'citrinitas', label: 'Citrinitas', swatch: ['#fbbf24', '#140d2d'] },
-  { key: 'viriditas',  label: 'Viriditas',  swatch: ['#16a34a', '#000000'] },
-  { key: 'nigredo',    label: 'Nigredo',    swatch: ['#3c00a4', '#000000'] },
-  { key: 'albedo',     label: 'Albedo',     swatch: ['#f8fafc', '#cbd5e1'] },
-  { key: 'aurora',     label: 'Aurora',     swatch: ['#ea580c', '#fffbf0'] },
-  { key: 'caelum',     label: 'Caelum',     swatch: ['#0284c7', '#f0f9ff'] },
-  { key: 'argentum',   label: 'Argentum',   swatch: ['#8b7aa8', '#faf7ff'] },
+  { key: 'rubedo',               label: 'Rubedo',     swatch: ['#ef4444', '#171e2f'] },
+  { key: 'citrinitas',           label: 'Citrinitas', swatch: ['#fbbf24', '#140d2d'] },
+  { key: 'viriditas',            label: 'Viriditas',  swatch: ['#16a34a', '#000000'] },
+  { key: 'nigredo',              label: 'Nigredo',    swatch: ['#3c00a4', '#000000'] },
+  { key: 'albedo',               label: 'Albedo',     swatch: ['#f8fafc', '#cbd5e1'] },
+  { key: 'aurora',               label: 'Aurora',     swatch: ['#ea580c', '#fffbf0'] },
+  { key: 'caelum',               label: 'Caelum',     swatch: ['#0284c7', '#f0f9ff'] },
+  { key: 'argentum',             label: 'Argentum',   swatch: ['#8b7aa8', '#faf7ff'] },
+  { key: 'catppuccin_mocha',     label: 'Catppuccin Mocha',     swatch: ['#89b4fa', '#1e1e2e'] },
+  { key: 'catppuccin_macchiato', label: 'Catppuccin Macchiato', swatch: ['#8aadf4', '#24273a'] },
+  { key: 'catppuccin_frappe',    label: 'Catppuccin Frappé',    swatch: ['#8caaee', '#303446'] },
+  { key: 'catppuccin_latte',     label: 'Catppuccin Latte',     swatch: ['#1e66f5', '#e6e9ef'] },
 ]
 
 export const BUILTIN_THEME_KEYS: ReadonlySet<string> = new Set(

@@ -28,6 +28,10 @@ class Theme(str, Enum):
     AURORA     = "aurora"
     CAELUM     = "caelum"
     ARGENTUM   = "argentum"
+    CATPPUCCIN_MOCHA = "catppuccin_mocha"
+    CATPPUCCIN_MACCHIATO = "catppuccin_macchiato"
+    CATPPUCCIN_FRAPPE = "catppuccin_frappe"
+    CATPPUCCIN_LATTE = "catppuccin_latte"
 
 
 # Color tokens every theme (built-in or custom) must define. Order matters
