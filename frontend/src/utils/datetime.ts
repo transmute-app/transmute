@@ -6,6 +6,16 @@ export const DATETIME_DISPLAY_FORMAT_STORAGE_KEY = 'transmute-datetime-display-f
 
 type SupportedDateTimeToken = typeof SUPPORTED_DATETIME_DISPLAY_FORMAT_TOKENS[number]
 
+function getBrowserLocalStorage(): Storage | null {
+  if (typeof window === 'undefined') return null
+
+  try {
+    return window.localStorage
+  } catch {
+    return null
+  }
+}
+
 function pad(value: number): string {
   return String(value).padStart(2, '0')
 }
@@ -72,8 +82,9 @@ export function isValidDateTimeDisplayFormat(value?: string | null): boolean {
 }
 
 export function readStoredDateTimeDisplayFormat(): string {
+  const storage = getBrowserLocalStorage()
   try {
-    return normalizeDateTimeDisplayFormat(localStorage.getItem(DATETIME_DISPLAY_FORMAT_STORAGE_KEY))
+    return normalizeDateTimeDisplayFormat(storage?.getItem(DATETIME_DISPLAY_FORMAT_STORAGE_KEY))
   } catch {
     return DEFAULT_DATETIME_DISPLAY_FORMAT
   }
@@ -81,8 +92,9 @@ export function readStoredDateTimeDisplayFormat(): string {
 
 export function setStoredDateTimeDisplayFormat(value: string): string {
   const normalized = normalizeDateTimeDisplayFormat(value)
+  const storage = getBrowserLocalStorage()
   try {
-    localStorage.setItem(DATETIME_DISPLAY_FORMAT_STORAGE_KEY, normalized)
+    storage?.setItem(DATETIME_DISPLAY_FORMAT_STORAGE_KEY, normalized)
   } catch {
     // ignore storage failures and still return the normalized value
   }
