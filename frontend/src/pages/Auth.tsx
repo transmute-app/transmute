@@ -173,6 +173,7 @@ function Auth() {
                   <input
                     value={username}
                     onChange={event => setUsername(event.target.value)}
+                    autoComplete="username"
                     className="w-full rounded-xl border border-white/10 bg-surface-light/70 px-4 py-3 text-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                     placeholder="operator"
                     required
@@ -186,6 +187,7 @@ function Auth() {
                       <input
                         value={fullName}
                         onChange={event => setFullName(event.target.value)}
+                        autoComplete="name"
                         className="w-full rounded-xl border border-white/10 bg-surface-light/70 px-4 py-3 text-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                         placeholder="Alex Operator"
                       />
@@ -195,6 +197,7 @@ function Auth() {
                       <input
                         value={email}
                         onChange={event => setEmail(event.target.value)}
+                        autoComplete="email"
                         className="w-full rounded-xl border border-white/10 bg-surface-light/70 px-4 py-3 text-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                         placeholder="alex@example.com"
                         type="email"
@@ -211,6 +214,7 @@ function Auth() {
                   <PasswordField
                     value={password}
                     onChange={event => setPassword(event.target.value)}
+                    autoComplete={requiresSetup ? 'new-password' : 'current-password'}
                     inputClassName="rounded-xl border border-white/10 bg-surface-light/70 px-4 py-3 text-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                     toggleButtonClassName="rounded-xl border border-white/10 bg-surface-light/70 px-4 text-text-muted transition hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/20"
                     placeholder="••••••••"
