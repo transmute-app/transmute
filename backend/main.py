@@ -111,6 +111,10 @@ def create_app() -> FastAPI:
         # Catch-all route for SPA - serves index.html for non-API routes
         @app.get("/{path:path}", include_in_schema=False)
         async def spa_fallback(request: Request, path: str):
+            requested_file = (web_dir / path).resolve()
+            if requested_file.is_file() and requested_file.is_relative_to(web_dir.resolve()):
+                return FileResponse(requested_file)
+
             index_file = web_dir / "index.html"
             if index_file.exists():
                 return FileResponse(index_file)
