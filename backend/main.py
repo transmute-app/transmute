@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
 import logging
+import re
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.openapi.utils import get_openapi
 from textwrap import dedent
 from api import router
@@ -16,6 +17,25 @@ from background import (
 import uvicorn
 
 logger = logging.getLogger(__name__)
+
+
+def render_index_html(raw_html: str, root_path: str) -> str:
+    """Inject the runtime sub-path into the SPA shell's <base> tag and
+    window.__BASE_PATH__ placeholder (both no-ops when root_path is empty)."""
+    base_href = f"{root_path}/" if root_path else "/"
+    html = re.sub(
+        r'<base\s+href="[^"]*"\s*/?>',
+        f'<base href="{base_href}" />',
+        raw_html,
+        count=1,
+    )
+    html = re.sub(
+        r'window\.__BASE_PATH__\s*=\s*"[^"]*"',
+        f'window.__BASE_PATH__ = "{root_path}"',
+        html,
+        count=1,
+    )
+    return html
 
 
 def build_api_description(app_name: str) -> str:
@@ -66,6 +86,11 @@ def create_app() -> FastAPI:
         docs_url=None,
         redoc_url=None,
         redirect_slashes=True,
+        # Fixes OpenAPI/docs/url_for URLs under a reverse-proxy sub-path ("" = root).
+        root_path=settings.root_path,
+        # We already advertise the full URL via `servers`, so skip the
+        # auto-added relative root_path entry to avoid a duplicate.
+        root_path_in_servers=False,
         lifespan=lifespan,
     )
 
@@ -107,7 +132,15 @@ def create_app() -> FastAPI:
     if web_dir.exists():
         app.mount("/assets", StaticFiles(directory=web_dir / "assets"), name="assets")
         app.mount("/icons", StaticFiles(directory=web_dir / "icons"), name="icons")
-        
+
+        # Template the SPA shell once with the runtime sub-path.
+        index_file = web_dir / "index.html"
+        index_html = (
+            render_index_html(index_file.read_text(encoding="utf-8"), settings.root_path)
+            if index_file.exists()
+            else None
+        )
+
         # Catch-all route for SPA - serves index.html for non-API routes
         @app.get("/{path:path}", include_in_schema=False)
         async def spa_fallback(request: Request, path: str):
@@ -115,11 +148,10 @@ def create_app() -> FastAPI:
             if requested_file.is_file() and requested_file.is_relative_to(web_dir.resolve()):
                 return FileResponse(requested_file)
 
-            index_file = web_dir / "index.html"
-            if index_file.exists():
-                return FileResponse(index_file)
+            if index_html is not None:
+                return HTMLResponse(index_html)
             raise HTTPException(status_code=404, detail="SPA index not found")
-    
+
     return app
 
 

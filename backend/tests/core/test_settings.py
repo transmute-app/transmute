@@ -52,6 +52,26 @@ def test_api_server_url_from_app_url(tmp_path):
     assert s.api_server_url == "https://example.com"
 
 
+def test_root_path_empty_by_default(tmp_path):
+    s = Settings(data_dir=tmp_path / "data")
+    assert s.root_path == ""
+
+
+def test_root_path_empty_for_bare_host_app_url(tmp_path):
+    s = Settings(data_dir=tmp_path / "data", app_url="https://example.com")
+    assert s.root_path == ""
+
+
+def test_root_path_derived_from_app_url_subpath(tmp_path):
+    s = Settings(data_dir=tmp_path / "data", app_url="https://example.com/transmute")
+    assert s.root_path == "/transmute"
+
+
+def test_root_path_strips_trailing_slash(tmp_path):
+    s = Settings(data_dir=tmp_path / "data", app_url="https://example.com/transmute/")
+    assert s.root_path == "/transmute"
+
+
 def test_quoted_url_settings_are_normalized(tmp_path):
     s = Settings(
         data_dir=tmp_path / "data",
