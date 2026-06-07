@@ -70,6 +70,11 @@ spec:
             # The value of APP_URL should be configured to match the host setting in the Ingress (below).
             # If your ingress provider is providing SSL into the cluster, you should prefix this URL
             # with "https" even though Transmute itself is not providing SSL.
+            #
+            # To serve Transmute under a sub-path instead of a dedicated host, include the path here
+            # (e.g. "https://your-domain.example/transmute"). Transmute serves itself under that
+            # sub-path, so the Ingress just routes the path as-is; do NOT strip the prefix. You would
+            # also change the Ingress "path" below from "/" to "/transmute".
             - name: APP_URL
               value: "https://transmute.your-domain.example"
           ports:
