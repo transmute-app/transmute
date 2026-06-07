@@ -1,6 +1,13 @@
 const AUTH_TOKEN_KEY = 'transmute-access-token'
 export const AUTH_EXPIRED_EVENT = 'transmute:auth-expired'
 
+declare global {
+  interface Window {
+    // Injected into index.html at runtime by the backend; "" at the domain root.
+    __BASE_PATH__?: string
+  }
+}
+
 export class ApiError extends Error {
   status: number
   detail: string
@@ -70,44 +77,73 @@ async function buildApiError(response: Response) {
   return new ApiError(response.status, getErrorDetail(payload, response.statusText || 'Request failed'))
 }
 
-export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) {
-  const shouldUseAuth = options.auth !== false
-  const headers = new Headers(init.headers)
+/**
+ * HTTP client for the backend API. Prefixes every absolute ("/...") path with
+ * the reverse-proxy sub-path, attaches the bearer token, and surfaces ApiError
+ * on non-2xx responses for the json/blob/text helpers.
+ */
+export class ApiClient {
+  /** Normalized sub-path with no trailing slash ("" at the domain root). */
+  readonly basePath: string
 
-  if (shouldUseAuth) {
-    const token = getStoredToken()
-    if (token && !headers.has('Authorization')) {
-      headers.set('Authorization', `Bearer ${token}`)
+  constructor(basePath: string = window.__BASE_PATH__ ?? '') {
+    this.basePath = basePath.replace(/\/+$/, '')
+  }
+
+  /** Prefix an absolute ("/...") path with the sub-path; other inputs pass through. */
+  url(path: string): string {
+    return path.startsWith('/') ? `${this.basePath}${path}` : path
+  }
+
+  async fetch(input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) {
+    if (typeof input === 'string') input = this.url(input)
+
+    const shouldUseAuth = options.auth !== false
+    const headers = new Headers(init.headers)
+
+    if (shouldUseAuth) {
+      const token = getStoredToken()
+      if (token && !headers.has('Authorization')) {
+        headers.set('Authorization', `Bearer ${token}`)
+      }
     }
+
+    const response = await window.fetch(input, { ...init, headers })
+
+    if (response.status === 401 && shouldUseAuth && getStoredToken()) {
+      window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT))
+    }
+
+    return response
   }
 
-  const response = await fetch(input, { ...init, headers })
-
-  if (response.status === 401 && shouldUseAuth && getStoredToken()) {
-    window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT))
+  async json<T>(input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) {
+    const response = await this.fetch(input, init, options)
+    if (!response.ok) throw await buildApiError(response)
+    if (response.status === 204) return undefined as T
+    return response.json() as Promise<T>
   }
 
-  return response
+  async blob(input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) {
+    const response = await this.fetch(input, init, options)
+    if (!response.ok) throw await buildApiError(response)
+    return response.blob()
+  }
+
+  async text(input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) {
+    const response = await this.fetch(input, init, options)
+    if (!response.ok) throw await buildApiError(response)
+    return response.text()
+  }
 }
 
-export const authFetch = (input: RequestInfo | URL, init: RequestInit = {}) => apiFetch(input, init, { auth: true })
-export const publicFetch = (input: RequestInfo | URL, init: RequestInit = {}) => apiFetch(input, init, { auth: false })
+/** Shared client configured from the runtime sub-path. */
+export const api = new ApiClient()
 
-export async function apiJson<T>(input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) {
-  const response = await apiFetch(input, init, options)
-  if (!response.ok) throw await buildApiError(response)
-  if (response.status === 204) return undefined as T
-  return response.json() as Promise<T>
-}
-
-export async function apiBlob(input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) {
-  const response = await apiFetch(input, init, options)
-  if (!response.ok) throw await buildApiError(response)
-  return response.blob()
-}
-
-export async function apiText(input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) {
-  const response = await apiFetch(input, init, options)
-  if (!response.ok) throw await buildApiError(response)
-  return response.text()
-}
+// Backward-compatible function exports delegating to the shared client.
+export const apiFetch = (input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) => api.fetch(input, init, options)
+export const authFetch = (input: RequestInfo | URL, init: RequestInit = {}) => api.fetch(input, init, { auth: true })
+export const publicFetch = (input: RequestInfo | URL, init: RequestInit = {}) => api.fetch(input, init, { auth: false })
+export const apiJson = <T,>(input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) => api.json<T>(input, init, options)
+export const apiBlob = (input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) => api.blob(input, init, options)
+export const apiText = (input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) => api.text(input, init, options)
