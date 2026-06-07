@@ -363,6 +363,13 @@ function Converter() {
           compatible_formats: data.metadata.compatible_formats,
         }
 
+        // In compress mode, a file may upload successfully (it has conversions)
+        // yet have no compressor for its media type. Treat those as ignored.
+        if (mode === 'compress' && !isCompressible(fileInfo)) {
+          setIgnoredUploadCount((prev) => prev + 1)
+          return null
+        }
+
         const pending: PendingFile = makePendingFile(fileInfo, mode)
 
         // Add to pending list immediately as each upload completes
@@ -432,9 +439,22 @@ function Converter() {
         return
       }
 
-      setUploadCount(uploadedFiles.length)
+      // In compress mode, drop any uploaded files that have no compressor.
+      const compressibleFiles = mode === 'compress'
+        ? uploadedFiles.filter(f => isCompressible(f))
+        : uploadedFiles
+      const ignoredCount = uploadedFiles.length - compressibleFiles.length
+      if (ignoredCount > 0) {
+        setIgnoredUploadCount(ignoredCount)
+      }
 
-      const pendings: PendingFile[] = uploadedFiles.map((fileInfo) => makePendingFile(fileInfo, mode))
+      if (compressibleFiles.length === 0) {
+        return
+      }
+
+      setUploadCount(compressibleFiles.length)
+
+      const pendings: PendingFile[] = compressibleFiles.map((fileInfo) => makePendingFile(fileInfo, mode))
 
       setPendingFiles((prev) => [...prev, ...pendings])
       setUrlInput('')
@@ -1053,7 +1073,7 @@ function Converter() {
 
             {ignoredUploadCount > 0 && (
               <div className="rounded-lg border border-text-muted/20 bg-surface-dark/40 px-3 py-2 text-xs text-text-muted">
-                {t('converter.ignoredUnsupported', { count: ignoredUploadCount })}
+                {t(mode === 'compress' ? 'converter.ignoredNoCompression' : 'converter.ignoredUnsupported', { count: ignoredUploadCount })}
               </div>
             )}
           </div>
@@ -1125,7 +1145,7 @@ function Converter() {
 
         {ignoredUploadCount > 0 && (
           <div className="mb-4 rounded-lg border border-text-muted/20 bg-surface-dark/40 px-3 py-2 text-xs text-text-muted">
-            {t('converter.ignoredUnsupported', { count: ignoredUploadCount })}
+            {t(mode === 'compress' ? 'converter.ignoredNoCompression' : 'converter.ignoredUnsupported', { count: ignoredUploadCount })}
           </div>
         )}
 

@@ -100,6 +100,8 @@
     "downloading": "Downloader...",
     "ignoredUnsupported": "Ignoreret {{count}} fil uden understøttede konverteringer.",
     "ignoredUnsupported_other": "Ignoreret {{count}} filer uden understøttede konverteringer.",
+    "ignoredNoCompression": "Ignorerede {{count}} fil uden understøttet komprimering.",
+    "ignoredNoCompression_other": "Ignorerede {{count}} filer uden understøttet komprimering.",
     "jobsInQueue": "{{count}} kørende jobs",
     "jobsInQueue_other": "{{count}} kørende jobs",
     "jobsInProgressHint": "Dine konverteringer behandles i baggrunden. Du kan fortsætte med at arbejde.",

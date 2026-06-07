@@ -100,6 +100,8 @@
     "downloading": "Pobieranie...",
     "ignoredUnsupported": "Zignorowano {{count}} plik bez wsparcia konwersji.",
     "ignoredUnsupported_other": "Zignorowano {{count}} plików bez wsparcia konwersji.",
+    "ignoredNoCompression": "Zignorowano {{count}} plik bez obsługiwanej kompresji.",
+    "ignoredNoCompression_other": "Zignorowano {{count}} plików bez obsługiwanej kompresji.",
     "jobsInQueue": "{{count}} zadanie w trakcie",
     "jobsInQueue_other": "{{count}} zadań w trakcie",
     "jobsInProgressHint": "Twoje konwersje są przetwarzane w tle. Możesz dalej pracować.",

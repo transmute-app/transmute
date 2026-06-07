@@ -100,6 +100,8 @@
     "downloading": "下载中...",
     "ignoredUnsupported": "已忽略 {{count}} 个不支持转换的文件。",
     "ignoredUnsupported_other": "已忽略 {{count}} 个不支持转换的文件。",
+    "ignoredNoCompression": "已忽略 {{count}} 个不支持压缩的文件。",
+    "ignoredNoCompression_other": "已忽略 {{count}} 个不支持压缩的文件。",
     "jobsInQueue": "有 {{count}} 个任务正在运行",
     "jobsInQueue_other": "有 {{count}} 个任务正在运行",
     "jobsInProgressHint": "你的转换任务正在后台处理中。你可以继续操作。",

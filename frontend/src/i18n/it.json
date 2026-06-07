@@ -100,6 +100,8 @@
     "downloading": "Download in corso...",
     "ignoredUnsupported": "Ignorato {{count}} file, non ci sono conversioni supportate.",
     "ignoredUnsupported_other": "Ignorati {{count}} file, non ci sono conversioni supportate.",
+    "ignoredNoCompression": "Ignorato {{count}} file senza compressioni supportate.",
+    "ignoredNoCompression_other": "Ignorati {{count}} file senza compressioni supportate.",
     "jobsInQueue": "{{count}} lavoro in esecuzione",
     "jobsInQueue_other": "{{count}} lavori in esecuzione",
     "jobsInProgressHint": "Le tue conversioni vengono elaborate in background. Puoi continuare a lavorare.",

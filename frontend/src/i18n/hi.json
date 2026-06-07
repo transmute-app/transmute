@@ -100,6 +100,8 @@
     "downloading": "डाउनलोड हो रहा है...",
     "ignoredUnsupported": "{{count}} फ़ाइल अनदेखी की — कोई समर्थित रूपांतरण नहीं।",
     "ignoredUnsupported_other": "{{count}} फ़ाइलें अनदेखी की — कोई समर्थित रूपांतरण नहीं।",
+    "ignoredNoCompression": "{{count}} फ़ाइल को बिना समर्थित संपीड़न के अनदेखा किया गया।",
+    "ignoredNoCompression_other": "{{count}} फ़ाइलों को बिना समर्थित संपीड़न के अनदेखा किया गया।",
     "jobsInQueue": "{{count}} job चल रहा है",
     "jobsInQueue_other": "{{count}} jobs चल रहे हैं",
     "jobsInProgressHint": "आपके रूपांतरण पृष्ठभूमि में हो रहे हैं। आप काम जारी रख सकते हैं।",
