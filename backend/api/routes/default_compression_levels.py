@@ -1,7 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
+from core import media_type_aliases
 from db import DefaultCompressionLevelsDB
 from api.deps import get_current_active_user, get_default_compression_levels_db
 from api.schemas import DefaultCompressionLevelMapping, DefaultCompressionLevelListResponse
+
+
+def _normalize_format(media_format: str) -> str:
+    """Map an alias (e.g. ``jpg``) to its canonical format (e.g. ``jpeg``)."""
+    lower = media_format.lower()
+    return media_type_aliases.get(lower, lower)
 
 router = APIRouter(prefix="/default-compression-levels", tags=["default-compression-levels"])
 
@@ -38,7 +45,7 @@ def upsert_default_compression_level(
     current_user: dict = Depends(get_current_active_user),
 ):
     """Create or update a default compression level for a given media format."""
-    return db.upsert(current_user["uuid"], mapping.media_format, mapping.compression_level)
+    return db.upsert(current_user["uuid"], _normalize_format(mapping.media_format), mapping.compression_level)
 
 @router.delete(
     "/{media_format}",
@@ -54,6 +61,7 @@ def delete_default_compression_level(
     current_user: dict = Depends(get_current_active_user),
 ):
     """Remove a default compression-level mapping for the given media format."""
-    if not db.delete(current_user["uuid"], media_format):
+    normalized_format = _normalize_format(media_format)
+    if not db.delete(current_user["uuid"], normalized_format):
         raise HTTPException(status_code=404, detail=f"No default compression level for '{media_format}'")
     return {"message": f"Default compression level for '{media_format}' deleted"}

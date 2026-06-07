@@ -23,6 +23,7 @@ from core import (
     compute_sha256_checksum,
     delete_file_and_metadata,
     get_settings,
+    media_type_aliases,
     media_type_extensions,
     validate_safe_path,
 )
@@ -103,7 +104,11 @@ def run_compression_job(
 
     # Resolve default compression level lazily so the user's current setting wins.
     if compression_level is None and default_compression_levels_db is not None:
-        default_level = default_compression_levels_db.get(user_id, media_format)
+        # Defaults are stored under the canonical compressor format (e.g.
+        # ``jpeg``), so normalize the source media type (e.g. ``jpg``) before
+        # looking one up. Relies on the reported media type, not the filename.
+        normalized_format = media_type_aliases.get(media_format.lower(), media_format.lower())
+        default_level = default_compression_levels_db.get(user_id, normalized_format)
         if default_level:
             compression_level = default_level["compression_level"]
 

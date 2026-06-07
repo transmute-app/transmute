@@ -284,12 +284,15 @@ function Converter() {
   const computeCompressSelection = useCallback((file: FileInfo) => {
     const levels = compressionLevelsForFile(file)
     if (levels.length === 0) return { selectedCompressionLevel: undefined as string | undefined }
-    const dq = defaultCompressionLevels[file.media_type]
+    // Defaults are stored under the canonical format (e.g. ``jpeg``), so fall
+    // back to the aliased media type so a ``jpg`` upload picks up a ``jpeg`` default.
+    const aliased = formatAliases[file.media_type]
+    const dq = defaultCompressionLevels[file.media_type] ?? (aliased ? defaultCompressionLevels[aliased] : undefined)
     const selectedCompressionLevel = (dq && levels.includes(dq))
       ? dq
       : (levels.includes('balanced') ? 'balanced' : sortCompressionLevels(levels)[0])
     return { selectedCompressionLevel }
-  }, [compressionLevelsForFile, defaultCompressionLevels])
+  }, [compressionLevelsForFile, defaultCompressionLevels, formatAliases])
 
   const makePendingFile = useCallback((file: FileInfo, forMode: ConversionMode): PendingFile => {
     if (forMode === 'compress') {

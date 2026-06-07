@@ -125,7 +125,7 @@ def test_compression_resolves_default_level_when_none(patched_settings, fake_dbs
     compressor_cls = _make_compressor(("out.jpg", b"smaller"))
 
     default_db = MagicMock()
-    default_db.get.return_value = {"media_format": "jpg", "compression_level": "max"}
+    default_db.get.return_value = {"media_format": "jpeg", "compression_level": "max"}
 
     result = compression_service.run_compression_job(
         source_metadata=src_meta,
@@ -139,7 +139,9 @@ def test_compression_resolves_default_level_when_none(patched_settings, fake_dbs
         default_compression_levels_db=default_db,
     )
 
-    default_db.get.assert_called_once_with("user-a", "jpg")
+    # The source media type ``jpg`` is normalized to its canonical format
+    # ``jpeg`` before resolving the user's stored default.
+    default_db.get.assert_called_once_with("user-a", "jpeg")
     assert result["compression_level"] == "max"
 
 
