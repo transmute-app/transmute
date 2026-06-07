@@ -83,6 +83,15 @@ class ConverterMetadata(BaseModel):
 class ConverterMetadataListResponse(BaseModel):
     converters: list[ConverterMetadata] = Field(..., description="List of the available converters")
 
+class CompressorMetadata(BaseModel):
+    name: str = Field(..., json_schema_extra={"example": "image_compress"})
+    supported_formats: list[str] = Field(..., description="Media formats this compressor can compress (input == output)", json_schema_extra={"example": ["jpeg", "png"]})
+    formats_with_compression_levels: list[str] = Field(..., description="Subset of supported formats that honor a compression-level preset", json_schema_extra={"example": ["jpeg"]})
+    compression_levels: list[str] = Field(..., description="Available compression-level presets", json_schema_extra={"example": ["light", "balanced", "max"]})
+
+class CompressorMetadataListResponse(BaseModel):
+    compressors: list[CompressorMetadata] = Field(..., description="List of the available compressors")
+
 class ErrorResponse(BaseModel):
     detail: str = Field(..., description="Error message", json_schema_extra={"example": "No converter found for jpg to png"})
 
@@ -366,12 +375,12 @@ class UserStatsItem(BaseModel):
     user_uuid: str = Field(..., description="User UUID", json_schema_extra={"example": "123e4567-e89b-12d3-a456-426614174000"})
     username: str = Field(..., description="Username", json_schema_extra={"example": "alice"})
     files_uploaded: int = Field(..., description="Number of files uploaded", json_schema_extra={"example": 12})
-    conversions: int = Field(..., description="Number of conversions performed", json_schema_extra={"example": 8})
-    storage_bytes: int = Field(..., description="Total storage used in bytes (uploads + conversions)", json_schema_extra={"example": 10485760})
+    output_files: int = Field(..., description="Number of output files produced (conversions + compressions)", json_schema_extra={"example": 8})
+    storage_bytes: int = Field(..., description="Total storage used in bytes (uploads + conversions + compressions)", json_schema_extra={"example": 10485760})
 
 
 class StatsResponse(BaseModel):
     total_files_uploaded: int = Field(..., description="Total files uploaded across all users", json_schema_extra={"example": 42})
-    total_conversions: int = Field(..., description="Total conversions across all users", json_schema_extra={"example": 30})
+    total_output_files: int = Field(..., description="Total output files produced across all users (conversions + compressions)", json_schema_extra={"example": 30})
     total_storage_bytes: int = Field(..., description="Total storage used in bytes across all users", json_schema_extra={"example": 104857600})
     users: list[UserStatsItem] = Field(..., description="Per-user breakdown of stats")

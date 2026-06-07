@@ -9,9 +9,9 @@ from fastapi.responses import FileResponse
 from zipfile import ZipFile
 from pathlib import Path
 from core import get_settings, detect_media_type, sanitize_extension, sanitize_filename, delete_file_and_metadata, validate_safe_path, get_file_extension
-from db import FileDB, ConversionDB
+from db import FileDB, ConversionDB, CompressionDB
 from registry import registry as converter_registry
-from api.deps import get_current_active_user, get_file_db, get_conversion_db
+from api.deps import get_current_active_user, get_file_db, get_conversion_db, get_compression_db
 from api.schemas import FileListResponse, FileUploadResponse, FileUrlUploadResponse, FileDeleteResponse, ErrorResponse, BatchDownloadRequest, UrlUploadRequest
 from registry import downloader_registry
 from downloaders import DownloadError, YtDlpDownloader
@@ -262,11 +262,12 @@ def get_file(
     file_id: str,
     file_db: FileDB = Depends(get_file_db),
     conv_db: ConversionDB = Depends(get_conversion_db),
+    comp_db: CompressionDB = Depends(get_compression_db),
     current_user: dict = Depends(get_current_active_user),
 ):
     """Download a file"""
     # First check if file_id corresponds to an original uploaded file
-    for db in [file_db, conv_db]:
+    for db in [file_db, conv_db, comp_db]:
         metadata = db.get_file_metadata(file_id)
         if metadata is not None:
             # Verify the file belongs to the current user
@@ -281,7 +282,7 @@ def get_file(
             mime_type = mimetypes.guess_type(f"file.{ext}")[0] or "application/octet-stream"
             return FileResponse(
                 path=file_path,
-                filename=build_zip_entry_name(metadata, db is conv_db),
+                filename=build_zip_entry_name(metadata, db is not file_db),
                 media_type=mime_type
             )
     raise HTTPException(status_code=404, detail="File not found")
@@ -306,6 +307,7 @@ def batch_download_files(
     background_tasks: BackgroundTasks,
     file_db: FileDB = Depends(get_file_db),
     conv_db: ConversionDB = Depends(get_conversion_db),
+    comp_db: CompressionDB = Depends(get_compression_db),
     current_user: dict = Depends(get_current_active_user),
 ):
     """Batch download converted files as a ZIP archive"""
@@ -319,8 +321,8 @@ def batch_download_files(
         for file_id in request.file_ids:
             found_file_in_db = False
             is_converted_file = False
-            # Check both original and converted file databases for the file ID
-            for db in [file_db, conv_db]:
+            # Check original, converted, and compressed file databases for the file ID
+            for db in [file_db, conv_db, comp_db]:
                 file_metadata = db.get_file_metadata(file_id)
                 if file_metadata is not None:
                     # Verify the file belongs to the current user
@@ -328,7 +330,7 @@ def batch_download_files(
                         file_metadata = None
                         continue
                     found_file_in_db = True
-                    is_converted_file = db is conv_db
+                    is_converted_file = db is not file_db
                     break
             
             if not found_file_in_db:
