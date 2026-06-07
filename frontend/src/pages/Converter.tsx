@@ -10,17 +10,32 @@ import { downloadBlob } from '../utils/download'
 import { stripExtension } from '../utils/filename'
 import {
   createJob,
+  createCompressionJob,
   isTerminalJobStatus,
   listJobs,
+  listCompressionJobs,
   type ConversionJob,
+  type CompressionJob,
 } from '../utils/jobs'
 
 const PreviewModal = lazy(() => import('../components/PreviewModal'))
 
+type ConversionMode = 'convert' | 'compress'
+type JobKind = ConversionMode
+
+/** Logical ordering for compression-level presets (weakest → strongest). */
+const COMPRESSION_LEVEL_ORDER: Record<string, number> = { light: 0, balanced: 1, max: 2 }
+
+function sortCompressionLevels(levels: string[]): string[] {
+  return [...levels].sort((a, b) => (COMPRESSION_LEVEL_ORDER[a] ?? 99) - (COMPRESSION_LEVEL_ORDER[b] ?? 99))
+}
+
 interface PendingFile {
   file: FileInfo
+  mode: ConversionMode
   selectedFormat: string
   selectedQuality?: string
+  selectedCompressionLevel?: string
   status: 'pending' | 'queued' | 'running' | 'failed'
   errorMessage?: string
 }
@@ -28,6 +43,7 @@ interface PendingFile {
 interface CompletedConversion {
   file: FileInfo
   conversion: ConversionInfo
+  mode: ConversionMode
 }
 
 function getIsMacPlatform() {
@@ -44,6 +60,47 @@ function HotkeyHint({ label, className = '' }: { label: string; className?: stri
     <span className={`text-[11px] tracking-[0.12em] ${className || 'text-text-muted/70'}`}>
       {label}
     </span>
+  )
+}
+
+function ModeToggle({
+  mode,
+  onChange,
+  disabled = false,
+}: {
+  mode: ConversionMode
+  onChange: (mode: ConversionMode) => void
+  disabled?: boolean
+}) {
+  const { t } = useTranslation()
+  const options: ConversionMode[] = ['convert', 'compress']
+  return (
+    <div
+      role="tablist"
+      aria-label={t('converter.modeToggleLabel')}
+      className="inline-flex items-center rounded-lg border border-surface-dark bg-surface-dark/40 p-0.5"
+    >
+      {options.map((option) => {
+        const active = mode === option
+        return (
+          <button
+            key={option}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            disabled={disabled}
+            onClick={() => onChange(option)}
+            className={`rounded-md px-3 py-1.5 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${
+              active
+                ? 'bg-primary text-text shadow-sm'
+                : 'text-text-muted hover:text-text'
+            }`}
+          >
+            {t(`converter.mode.${option}`)}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
@@ -110,6 +167,7 @@ function Converter() {
   const { t } = useTranslation()
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([])
   const [completedConversions, setCompletedConversions] = useState<CompletedConversion[]>([])
+  const [mode, setMode] = useState<ConversionMode>('convert')
   const [uploading, setUploading] = useState(false)
   const [uploadCount, setUploadCount] = useState(0)
   const [ignoredUploadCount, setIgnoredUploadCount] = useState(0)
@@ -124,17 +182,20 @@ function Converter() {
   const [defaultFormats, setDefaultFormats] = useState<Record<string, string>>({})
   const [formatAliases, setFormatAliases] = useState<Record<string, string>>({})
   const [defaultQualities, setDefaultQualities] = useState<Record<string, string>>({})
+  const [defaultCompressionLevels, setDefaultCompressionLevels] = useState<Record<string, string>>({})
+  const [compressionLevelsByFormat, setCompressionLevelsByFormat] = useState<Record<string, string[]>>({})
+  const [compressibleFormats, setCompressibleFormats] = useState<Set<string>>(new Set())
   const [previewFile, setPreviewFile] = useState<{ id: string; filename: string; mediaType: string } | null>(null)
   const [activeJobCount, setActiveJobCount] = useState(0)
 
   // Keep mutable references so polling can read latest values without
   // forcing the interval effect to restart on every render.
-  const submittedJobsRef = useRef<Map<string, ConversionJob>>(new Map())
+  const submittedJobKindsRef = useRef<Map<string, JobKind>>(new Map())
   const knownStatusRef = useRef<Map<string, ConversionJob['status']>>(new Map())
   const pendingFilesRef = useRef(pendingFiles)
   const autoDownloadRef = useRef(autoDownload)
   const handleDownloadRef = useRef<(c: ConversionInfo) => Promise<void>>(async () => {})
-  const handleJobTransitionRef = useRef<(job: ConversionJob) => Promise<void>>(async () => {})
+  const handleJobTransitionRef = useRef<(job: ConversionJob | CompressionJob, kind: JobKind) => Promise<void>>(async () => {})
   const pollJobsRef = useRef<() => Promise<boolean>>(async () => false)
 
   // Load auto-download setting, default format mappings, and default quality mappings
@@ -160,38 +221,109 @@ function Converter() {
         setDefaultQualities(map)
       })
       .catch(() => {})
+    fetch('/api/compressors')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((data: { compressors: { name: string; supported_formats: string[]; formats_with_compression_levels: string[]; compression_levels: string[] }[] }) => {
+        const levelsByFormat: Record<string, Set<string>> = {}
+        const compressible = new Set<string>()
+        for (const c of data.compressors) {
+          for (const fmt of c.supported_formats) {
+            compressible.add(fmt)
+            if (!levelsByFormat[fmt]) levelsByFormat[fmt] = new Set()
+          }
+          for (const fmt of c.formats_with_compression_levels) {
+            if (!levelsByFormat[fmt]) levelsByFormat[fmt] = new Set()
+            for (const level of c.compression_levels) levelsByFormat[fmt].add(level)
+          }
+        }
+        const resolved: Record<string, string[]> = {}
+        for (const [fmt, levels] of Object.entries(levelsByFormat)) {
+          resolved[fmt] = sortCompressionLevels([...levels])
+        }
+        setCompressionLevelsByFormat(resolved)
+        setCompressibleFormats(compressible)
+      })
+      .catch(() => {})
+    fetch('/api/default-compression-levels')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((data: { defaults: { media_format: string; compression_level: string }[] }) => {
+        const map: Record<string, string> = {}
+        for (const d of data.defaults) map[d.media_format] = d.compression_level
+        setDefaultCompressionLevels(map)
+      })
+      .catch(() => {})
   }, [])
+
+  const compressionLevelsForFile = useCallback((file: FileInfo): string[] => {
+    const direct = compressionLevelsByFormat[file.media_type]
+    if (direct) return direct
+    const aliased = formatAliases[file.media_type]
+    return (aliased && compressionLevelsByFormat[aliased]) || []
+  }, [compressionLevelsByFormat, formatAliases])
+
+  const isCompressible = useCallback((file: FileInfo): boolean => {
+    if (compressibleFormats.has(file.media_type)) return true
+    const aliased = formatAliases[file.media_type]
+    return !!aliased && compressibleFormats.has(aliased)
+  }, [compressibleFormats, formatAliases])
+
+  const computeConvertSelection = useCallback((file: FileInfo) => {
+    const sortedFormats = file.compatible_formats ? Object.keys(file.compatible_formats).sort() : []
+    const inputExt = file.extension?.replace(/^\./, '') || file.media_type || ''
+    const normalizedExt = formatAliases[inputExt] || inputExt
+    const userDefault = defaultFormats[normalizedExt] || defaultFormats[inputExt]
+    const selectedFormat = (userDefault && sortedFormats.includes(userDefault)) ? userDefault : sortedFormats[0] || ''
+    const qualities = (selectedFormat && file.compatible_formats?.[selectedFormat]) || []
+    const dq = defaultQualities[selectedFormat]
+    const selectedQuality = qualities.length > 0
+      ? (dq && qualities.includes(dq) ? dq : (qualities.includes('medium') ? 'medium' : undefined))
+      : undefined
+    return { selectedFormat, selectedQuality }
+  }, [defaultFormats, formatAliases, defaultQualities])
+
+  const computeCompressSelection = useCallback((file: FileInfo) => {
+    const levels = compressionLevelsForFile(file)
+    if (levels.length === 0) return { selectedCompressionLevel: undefined as string | undefined }
+    const dq = defaultCompressionLevels[file.media_type]
+    const selectedCompressionLevel = (dq && levels.includes(dq))
+      ? dq
+      : (levels.includes('balanced') ? 'balanced' : sortCompressionLevels(levels)[0])
+    return { selectedCompressionLevel }
+  }, [compressionLevelsForFile, defaultCompressionLevels])
+
+  const makePendingFile = useCallback((file: FileInfo, forMode: ConversionMode): PendingFile => {
+    if (forMode === 'compress') {
+      const { selectedCompressionLevel } = computeCompressSelection(file)
+      return { file, mode: 'compress', selectedFormat: '', selectedCompressionLevel, status: 'pending' }
+    }
+    const { selectedFormat, selectedQuality } = computeConvertSelection(file)
+    return { file, mode: 'convert', selectedFormat, selectedQuality, status: 'pending' }
+  }, [computeCompressSelection, computeConvertSelection])
+
+  const handleModeChange = useCallback((nextMode: ConversionMode) => {
+    setMode(nextMode)
+    setError(null)
+    // Preserve uploaded files; remap only mode-specific controls for rows that
+    // have not yet been submitted. In-flight (queued/running) rows keep their
+    // original operation so their jobs continue tracking correctly.
+    setPendingFiles(prev => prev.map(pf => {
+      if (pf.status === 'queued' || pf.status === 'running') return pf
+      const remapped = makePendingFile(pf.file, nextMode)
+      return { ...remapped, status: 'pending', errorMessage: undefined }
+    }))
+  }, [makePendingFile])
 
   // Handle files passed from Files page
   useEffect(() => {
     if (location.state?.files) {
       const incomingFiles = location.state.files as FileInfo[]
-      const newPendingFiles: PendingFile[] = incomingFiles.map(file => {
-        const sortedFormats = file.compatible_formats
-          ? Object.keys(file.compatible_formats).sort()
-          : []
-        const inputExt = file.extension?.replace(/^\./, '') || file.media_type || ''
-        const normalizedExt = formatAliases[inputExt] || inputExt
-        const userDefault = defaultFormats[normalizedExt] || defaultFormats[inputExt]
-        const selectedFormat = (userDefault && sortedFormats.includes(userDefault))
-          ? userDefault
-          : sortedFormats[0] || ''
-        const qualities = (selectedFormat && file.compatible_formats?.[selectedFormat]) || []
-        const defaultQuality = defaultQualities[selectedFormat]
-        return {
-          file,
-          selectedFormat,
-          selectedQuality: qualities.length > 0
-            ? (defaultQuality && qualities.includes(defaultQuality) ? defaultQuality : (qualities.includes('medium') ? 'medium' : undefined))
-            : undefined,
-          status: 'pending',
-        }
-      })
+      const newPendingFiles: PendingFile[] = incomingFiles.map(file => makePendingFile(file, mode))
       setPendingFiles(prev => [...newPendingFiles, ...prev])
       // Clear the location state to prevent re-adding on refresh
       navigate(location.pathname, { replace: true })
     }
-  }, [location.state, location.pathname, navigate, defaultFormats, formatAliases, defaultQualities])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, location.pathname, navigate])
 
   const processFiles = async (files: File[]) => {
     if (files.length === 0) return
@@ -231,31 +363,10 @@ function Converter() {
           compatible_formats: data.metadata.compatible_formats,
         }
 
-        const sortedFormats = fileInfo.compatible_formats
-          ? Object.keys(fileInfo.compatible_formats).sort()
-          : []
-        const inputExt = fileInfo.extension?.replace(/^\./, '') || fileInfo.media_type || ''
-        const normalizedExt = formatAliases[inputExt] || inputExt
-        const userDefault = defaultFormats[normalizedExt] || defaultFormats[inputExt]
-        const defaultFormat = (userDefault && sortedFormats.includes(userDefault))
-          ? userDefault
-          : sortedFormats[0] || ''
-
-        const qualities = (defaultFormat && fileInfo.compatible_formats?.[defaultFormat]) || []
-        const defaultQualityForFormat = defaultQualities[defaultFormat]
-        const pending: PendingFile = {
-          file: fileInfo,
-          selectedFormat: defaultFormat,
-          selectedQuality: qualities.length > 0
-            ? (defaultQualityForFormat && qualities.includes(defaultQualityForFormat) ? defaultQualityForFormat : (qualities.includes('medium') ? 'medium' : undefined))
-            : undefined,
-          status: 'pending',
-        }
+        const pending: PendingFile = makePendingFile(fileInfo, mode)
 
         // Add to pending list immediately as each upload completes
         setPendingFiles((prev) => [...prev, pending])
-
-        return pending
       } finally {
         setUploadCount((prev) => Math.max(prev - 1, 0))
       }
@@ -323,28 +434,7 @@ function Converter() {
 
       setUploadCount(uploadedFiles.length)
 
-      const pendings: PendingFile[] = uploadedFiles.map((fileInfo) => {
-        const sortedFormats = fileInfo.compatible_formats
-          ? Object.keys(fileInfo.compatible_formats).sort()
-          : []
-        const inputExt = fileInfo.extension?.replace(/^\./, '') || fileInfo.media_type || ''
-        const normalizedExt = formatAliases[inputExt] || inputExt
-        const userDefault = defaultFormats[normalizedExt] || defaultFormats[inputExt]
-        const defaultFormat = (userDefault && sortedFormats.includes(userDefault))
-          ? userDefault
-          : sortedFormats[0] || ''
-
-        const qualities = (defaultFormat && fileInfo.compatible_formats?.[defaultFormat]) || []
-        const defaultQualityForFormat = defaultQualities[defaultFormat]
-        return {
-          file: fileInfo,
-          selectedFormat: defaultFormat,
-          selectedQuality: qualities.length > 0
-            ? (defaultQualityForFormat && qualities.includes(defaultQualityForFormat) ? defaultQualityForFormat : (qualities.includes('medium') ? 'medium' : undefined))
-            : undefined,
-          status: 'pending',
-        }
-      })
+      const pendings: PendingFile[] = uploadedFiles.map((fileInfo) => makePendingFile(fileInfo, mode))
 
       setPendingFiles((prev) => [...prev, ...pendings])
       setUrlInput('')
@@ -401,6 +491,14 @@ function Converter() {
     )
   }
 
+  const handleCompressionLevelChange = (fileId: string, level: string) => {
+    setPendingFiles((prev) =>
+      prev.map((pf) =>
+        pf.file.id === fileId ? { ...pf, selectedCompressionLevel: level } : pf
+      )
+    )
+  }
+
   const handleDelete = async (fileId: string, isPending: boolean) => {
     setDeletingId(fileId)
     try {
@@ -425,56 +523,61 @@ function Converter() {
     setSubmittingJobs(true)
     setError(null)
 
-    const filesToConvert = [...pendingFiles].filter(({ selectedFormat, status }) => !!selectedFormat && isReadyPendingFile(status))
-    const fileIdsToConvert = new Set(filesToConvert.map(({ file }) => file.id))
+    const filesToProcess = pendingFiles.filter((pf) => {
+      if (!isReadyPendingFile(pf.status)) return false
+      return pf.mode === 'compress' ? isCompressible(pf.file) : !!pf.selectedFormat
+    })
+    const fileIdsToProcess = new Set(filesToProcess.map(({ file }) => file.id))
 
-    if (fileIdsToConvert.size === 0) {
+    if (fileIdsToProcess.size === 0) {
       setSubmittingJobs(false)
       return
     }
 
     setPendingFiles((prev) =>
       prev.map((pf) =>
-        fileIdsToConvert.has(pf.file.id)
+        fileIdsToProcess.has(pf.file.id)
           ? { ...pf, status: 'pending', errorMessage: undefined }
           : pf
       )
     )
 
-    const promises = filesToConvert.map(async ({ file, selectedFormat, selectedQuality }) => {
+    const promises = filesToProcess.map(async (pf) => {
+      const { file } = pf
       try {
-        const job = await createJob({
-          id: file.id,
-          output_format: selectedFormat,
-          quality: selectedQuality ?? null,
-        })
-        submittedJobsRef.current.set(job.id, job)
+        const job: ConversionJob | CompressionJob = pf.mode === 'compress'
+          ? await createCompressionJob({ id: file.id, compression_level: pf.selectedCompressionLevel ?? null })
+          : await createJob({ id: file.id, output_format: pf.selectedFormat, quality: pf.selectedQuality ?? null })
+        submittedJobKindsRef.current.set(job.id, pf.mode)
         knownStatusRef.current.set(job.id, job.status)
 
         // Keep submitted files visible in the pending list while the worker
         // processes them, but distinguish them from files still waiting for
         // the user to queue.
         setPendingFiles((prev) =>
-          prev.map((pf) =>
-            pf.file.id === file.id
-              ? { ...pf, status: job.status === 'running' ? 'running' : 'queued', errorMessage: undefined }
-              : pf
+          prev.map((row) =>
+            row.file.id === file.id
+              ? { ...row, status: job.status === 'running' ? 'running' : 'queued', errorMessage: undefined }
+              : row
           )
         )
 
         // If the worker already took it to a terminal state (very fast), act now
         // so we don't have to wait a full poll interval.
         if (isTerminalJobStatus(job.status)) {
-          await handleJobTransitionRef.current(job)
+          await handleJobTransitionRef.current(job, pf.mode)
         }
         return job
       } catch (err) {
-        const message = err instanceof Error ? err.message : `Conversion failed for ${file.original_filename}`
+        const fallback = pf.mode === 'compress'
+          ? `Compression failed for ${file.original_filename}`
+          : `Conversion failed for ${file.original_filename}`
+        const message = err instanceof Error ? err.message : fallback
         setPendingFiles((prev) =>
-          prev.map((pf) =>
-            pf.file.id === file.id
-              ? { ...pf, status: 'failed', errorMessage: message }
-              : pf
+          prev.map((row) =>
+            row.file.id === file.id
+              ? { ...row, status: 'failed', errorMessage: message }
+              : row
           )
         )
         throw err
@@ -485,7 +588,7 @@ function Converter() {
 
     const errors = results
       .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-      .map((r) => (r.reason instanceof Error ? r.reason.message : 'Conversion failed'))
+      .map((r) => (r.reason instanceof Error ? r.reason.message : 'Job submission failed'))
 
     if (errors.length > 0) {
       setError(errors.join('; '))
@@ -554,48 +657,85 @@ function Converter() {
 
   // Apply a per-job status transition: completed -> move to completed list,
   // failed/cancelled -> mark the row as failed with a useful message.
-  const handleJobTransition = useCallback(async (job: ConversionJob) => {
+  const handleJobTransition = useCallback(async (job: ConversionJob | CompressionJob, kind: JobKind) => {
     const sourceId = job.source_file_id
     if (job.status === 'completed' && job.output_file_id) {
       const pf = pendingFilesRef.current.find(p => p.file.id === sourceId)
       const sourceFile = pf?.file
       if (!sourceFile) return
 
-      // Best-effort enrich from the canonical conversion list so size/extension
-      // match what the History page would show. Fall back to the job payload.
       let conversion: ConversionInfo
-      try {
-        const data = await apiJson<{ conversions: Array<ConversionInfo & { id: string }> }>(
-          '/api/conversions/complete',
-        )
-        const match = data.conversions.find(c => c.id === job.output_file_id)
-        if (match) {
-          conversion = {
-            id: match.id,
-            original_filename: match.original_filename,
-            media_type: match.media_type,
-            extension: match.extension,
-            size_bytes: match.size_bytes,
-            created_at: match.created_at,
-            quality: match.quality,
+      if (kind === 'compress') {
+        const compJob = job as CompressionJob
+        // Compression keeps the source format; enrich size/extension from the
+        // canonical compressions list, falling back to the source file.
+        try {
+          const data = await apiJson<{ compressions: Array<ConversionInfo & { id: string; compression_level?: string }> }>(
+            '/api/compressions/complete',
+          )
+          const match = data.compressions.find(c => c.id === compJob.output_file_id)
+          if (match) {
+            conversion = {
+              id: match.id,
+              original_filename: match.original_filename,
+              media_type: match.media_type,
+              extension: match.extension,
+              size_bytes: match.size_bytes,
+              created_at: match.created_at,
+              compression_level: match.compression_level || compJob.compression_level || undefined,
+            }
+          } else {
+            throw new Error('not found')
           }
-        } else {
-          throw new Error('not found')
+        } catch {
+          conversion = {
+            id: compJob.output_file_id!,
+            original_filename: sourceFile.original_filename,
+            media_type: sourceFile.media_type,
+            extension: sourceFile.extension,
+            size_bytes: 0,
+            created_at: compJob.completed_at || new Date().toISOString(),
+            compression_level: compJob.compression_level || undefined,
+          }
         }
-      } catch {
-        const ext = job.output_format.startsWith('.') ? job.output_format : `.${job.output_format}`
-        conversion = {
-          id: job.output_file_id,
-          original_filename: sourceFile.original_filename,
-          media_type: job.output_format,
-          extension: ext,
-          size_bytes: 0,
-          created_at: job.completed_at || new Date().toISOString(),
-          quality: job.quality || undefined,
+        setCompletedConversions(prev => [{ file: sourceFile, conversion, mode: 'compress' }, ...prev])
+      } else {
+        const convJob = job as ConversionJob
+        // Best-effort enrich from the canonical conversion list so size/extension
+        // match what the History page would show. Fall back to the job payload.
+        try {
+          const data = await apiJson<{ conversions: Array<ConversionInfo & { id: string }> }>(
+            '/api/conversions/complete',
+          )
+          const match = data.conversions.find(c => c.id === convJob.output_file_id)
+          if (match) {
+            conversion = {
+              id: match.id,
+              original_filename: match.original_filename,
+              media_type: match.media_type,
+              extension: match.extension,
+              size_bytes: match.size_bytes,
+              created_at: match.created_at,
+              quality: match.quality,
+            }
+          } else {
+            throw new Error('not found')
+          }
+        } catch {
+          const ext = convJob.output_format.startsWith('.') ? convJob.output_format : `.${convJob.output_format}`
+          conversion = {
+            id: convJob.output_file_id!,
+            original_filename: sourceFile.original_filename,
+            media_type: convJob.output_format,
+            extension: ext,
+            size_bytes: 0,
+            created_at: convJob.completed_at || new Date().toISOString(),
+            quality: convJob.quality || undefined,
+          }
         }
+        setCompletedConversions(prev => [{ file: sourceFile, conversion, mode: 'convert' }, ...prev])
       }
 
-      setCompletedConversions(prev => [{ file: sourceFile, conversion }, ...prev])
       setPendingFiles(prev => prev.filter(p => p.file.id !== sourceId))
 
       if (autoDownloadRef.current) {
@@ -634,28 +774,34 @@ function Converter() {
 
   useEffect(() => { handleJobTransitionRef.current = handleJobTransition }, [handleJobTransition])
 
-  // Poll /api/jobs once. Returns true when at least one tracked job is still
-  // non-terminal, so callers can decide whether to keep the spinner up.
+  // Poll the job endpoints once. Returns true when at least one tracked job is
+  // still non-terminal, so callers can decide whether to keep the spinner up.
   const pollJobs = useCallback(async (): Promise<boolean> => {
-    const ids = Array.from(submittedJobsRef.current.keys())
+    const ids = Array.from(submittedJobKindsRef.current.keys())
     if (ids.length === 0) {
       setActiveJobCount(0)
       return false
     }
     try {
-      const fresh = await listJobs()
-      const byId = new Map(fresh.map(j => [j.id, j]))
+      const kinds = new Set(submittedJobKindsRef.current.values())
+      const [convJobs, compJobs] = await Promise.all([
+        kinds.has('convert') ? listJobs() : Promise.resolve([] as ConversionJob[]),
+        kinds.has('compress') ? listCompressionJobs() : Promise.resolve([] as CompressionJob[]),
+      ])
+      const byId = new Map<string, { job: ConversionJob | CompressionJob; kind: JobKind }>()
+      for (const j of convJobs) byId.set(j.id, { job: j, kind: 'convert' })
+      for (const j of compJobs) byId.set(j.id, { job: j, kind: 'compress' })
+
       let activeRemaining = 0
       for (const id of ids) {
-        const updated = byId.get(id)
-        if (!updated) continue
-        submittedJobsRef.current.set(id, updated)
+        const entry = byId.get(id)
+        if (!entry) continue
         const prevStatus = knownStatusRef.current.get(id)
-        if (prevStatus !== updated.status) {
-          knownStatusRef.current.set(id, updated.status)
-          await handleJobTransitionRef.current(updated)
+        if (prevStatus !== entry.job.status) {
+          knownStatusRef.current.set(id, entry.job.status)
+          await handleJobTransitionRef.current(entry.job, entry.kind)
         }
-        if (!isTerminalJobStatus(updated.status)) activeRemaining++
+        if (!isTerminalJobStatus(entry.job.status)) activeRemaining++
       }
       setActiveJobCount(activeRemaining)
       return activeRemaining > 0
@@ -688,26 +834,34 @@ function Converter() {
     clearIgnoredUploads()
   }, [clearIgnoredUploads])
 
-  // Pending files are always convertible; unsupported uploads are rejected by the API.
+  // Files that can actually be acted on for their own mode. Conversion rows
+  // need at least one compatible output format; compression rows need a
+  // registered compressor for their media type.
   const convertableFiles = useMemo(() =>
-    pendingFiles.filter(pf => pf.file.compatible_formats && Object.keys(pf.file.compatible_formats).length > 0),
-    [pendingFiles]
+    pendingFiles.filter(pf => pf.mode === 'compress'
+      ? isCompressible(pf.file)
+      : !!(pf.file.compatible_formats && Object.keys(pf.file.compatible_formats).length > 0)
+    ),
+    [pendingFiles, isCompressible]
   )
 
-  // Intersection of output formats shared by ALL convertable files
+  const convertRows = useMemo(() => convertableFiles.filter(pf => pf.mode === 'convert'), [convertableFiles])
+  const compressRows = useMemo(() => convertableFiles.filter(pf => pf.mode === 'compress'), [convertableFiles])
+
+  // Intersection of output formats shared by ALL convertable (conversion) files
   const commonFormats = useMemo(() => {
-    if (convertableFiles.length === 0) return []
-    const sets = convertableFiles.map(pf =>
+    if (convertRows.length === 0) return []
+    const sets = convertRows.map(pf =>
       new Set(pf.file.compatible_formats ? Object.keys(pf.file.compatible_formats) : [])
     )
     const first = sets[0]
     return [...first].filter(f => sets.every(s => s.has(f))).sort()
-  }, [convertableFiles])
+  }, [convertRows])
 
-  // Intersection of qualities across convertable files that have quality options for their selected format
+  // Intersection of qualities across conversion files that have quality options for their selected format
   const commonQualities = useMemo(() => {
     const qualityOrder: Record<string, number> = { low: 0, medium: 1, high: 2 }
-    const qualitySets = convertableFiles
+    const qualitySets = convertRows
       .map(pf => {
         if (!pf.selectedFormat) return null
         const q = pf.file.compatible_formats?.[pf.selectedFormat]
@@ -719,11 +873,25 @@ function Converter() {
     return [...first]
       .filter(q => qualitySets.every(s => s.has(q)))
       .sort((a, b) => (qualityOrder[a] ?? 99) - (qualityOrder[b] ?? 99))
-  }, [convertableFiles])
+  }, [convertRows])
+
+  // Intersection of compression levels shared across ALL compression files
+  const commonCompressionLevels = useMemo(() => {
+    const levelSets = compressRows
+      .map(pf => {
+        const levels = compressionLevelsForFile(pf.file)
+        return levels.length > 0 ? new Set(levels) : null
+      })
+      .filter((s): s is Set<string> => s !== null)
+    if (levelSets.length === 0) return []
+    const first = levelSets[0]
+    return sortCompressionLevels([...first].filter(l => levelSets.every(s => s.has(l))))
+  }, [compressRows, compressionLevelsForFile])
 
   const handleBulkFormatChange = (format: string) => {
     setPendingFiles(prev =>
       prev.map(pf => {
+        if (pf.mode !== 'convert') return pf
         const formats = pf.file.compatible_formats ? Object.keys(pf.file.compatible_formats) : []
         if (!formats.includes(format)) return pf
         // If format isn't changing, preserve existing quality selection
@@ -741,10 +909,21 @@ function Converter() {
   const handleBulkQualityChange = (quality: string) => {
     setPendingFiles(prev =>
       prev.map(pf => {
-        if (!pf.selectedFormat) return pf
+        if (pf.mode !== 'convert' || !pf.selectedFormat) return pf
         const qualities = pf.file.compatible_formats?.[pf.selectedFormat] || []
         if (qualities.length === 0 || !qualities.includes(quality)) return pf
         return { ...pf, selectedQuality: quality }
+      })
+    )
+  }
+
+  const handleBulkCompressionLevelChange = (level: string) => {
+    setPendingFiles(prev =>
+      prev.map(pf => {
+        if (pf.mode !== 'compress') return pf
+        const levels = compressionLevelsForFile(pf.file)
+        if (levels.length === 0 || !levels.includes(level)) return pf
+        return { ...pf, selectedCompressionLevel: level }
       })
     )
   }
@@ -823,7 +1002,11 @@ function Converter() {
           <h3 className="text-md text-center text-text-muted mb-6">
             {t('app.tagline')}
           </h3>
-          
+
+          <div className="flex justify-center mb-6">
+            <ModeToggle mode={mode} onChange={handleModeChange} disabled={uploading} />
+          </div>
+
           <div className="space-y-4">
             <label
               onDrop={handleDrop}
@@ -883,7 +1066,10 @@ function Converter() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-surface-dark to-surface-light p-4 sm:p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-primary mb-6">{t('app.name')}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <h1 className="text-3xl font-bold text-primary">{t('app.name')}</h1>
+          <ModeToggle mode={mode} onChange={handleModeChange} disabled={uploading} />
+        </div>
 
         {/* File input */}
         <div className="mb-6">
@@ -979,9 +1165,13 @@ function Converter() {
                 >
                   <FaSyncAlt className={`text-xs sm:text-sm ${submittingJobs ? 'animate-spin' : ''}`} />
                   <span className="hidden sm:inline">
-                    {submittingJobs
-                      ? t('converter.converting', { count: readyFilesToConvert.length })
-                      : t('converter.convertFile', { count: readyFilesToConvert.length })}
+                    {mode === 'compress'
+                      ? (submittingJobs
+                          ? t('converter.compressing', { count: readyFilesToConvert.length })
+                          : t('converter.compressFile', { count: readyFilesToConvert.length }))
+                      : (submittingJobs
+                          ? t('converter.converting', { count: readyFilesToConvert.length })
+                          : t('converter.convertFile', { count: readyFilesToConvert.length }))}
                   </span>
                   <HotkeyHint label={hotkeyLabels.convert} className="text-text/80 hidden sm:inline" />
                 </button>
@@ -1000,12 +1190,16 @@ function Converter() {
                 rows={convertableFiles.map(pf => ({
                   id: pf.file.id,
                   file: pf.file,
+                  jobType: pf.mode === 'compress' ? 'compression' : 'conversion',
                   selectedFormat: pf.selectedFormat,
+                  selectedCompressionLevel: pf.selectedCompressionLevel,
+                  compressionLevels: pf.mode === 'compress' ? compressionLevelsForFile(pf.file) : undefined,
                   status: pf.status === 'failed' ? 'failed' : 'pending',
                   statusMessage: pf.errorMessage,
                   jobStatus: isSubmittedPendingFile(pf.status) ? pf.status : undefined,
-                  onFormatChange: isReadyPendingFile(pf.status) ? (format: string) => handleFormatChange(pf.file.id, format) : undefined,
-                  onQualityChange: isReadyPendingFile(pf.status) ? (quality: string) => handleQualityChange(pf.file.id, quality) : undefined,
+                  onFormatChange: pf.mode === 'convert' && isReadyPendingFile(pf.status) ? (format: string) => handleFormatChange(pf.file.id, format) : undefined,
+                  onQualityChange: pf.mode === 'convert' && isReadyPendingFile(pf.status) ? (quality: string) => handleQualityChange(pf.file.id, quality) : undefined,
+                  onCompressionLevelChange: pf.mode === 'compress' && isReadyPendingFile(pf.status) ? (level: string) => handleCompressionLevelChange(pf.file.id, level) : undefined,
                   selectedQuality: pf.selectedQuality,
                   onDelete: isReadyPendingFile(pf.status) ? () => handleDelete(pf.file.id, true) : undefined,
                   onPreview: isPreviewable(pf.file.media_type) ? () => setPreviewFile({ id: pf.file.id, filename: pf.file.original_filename, mediaType: pf.file.media_type }) : undefined,
@@ -1016,10 +1210,13 @@ function Converter() {
                 showStatus={true}
                 alwaysShowQuality={true}
                 converting={submittingJobs}
-                bulkFormats={convertableFiles.length > 1 ? commonFormats : undefined}
-                bulkQualities={convertableFiles.length > 1 ? commonQualities : undefined}
+                typeColumnLabel={mode === 'compress' ? t('table.compressionLevel') : undefined}
+                bulkFormats={mode === 'convert' && convertableFiles.length > 1 ? commonFormats : undefined}
+                bulkQualities={mode === 'convert' && convertableFiles.length > 1 ? commonQualities : undefined}
+                bulkCompressionLevels={mode === 'compress' && convertableFiles.length > 1 ? commonCompressionLevels : undefined}
                 onBulkFormatChange={handleBulkFormatChange}
                 onBulkQualityChange={handleBulkQualityChange}
+                onBulkCompressionLevelChange={handleBulkCompressionLevelChange}
               />
           </div>
         )}
@@ -1061,6 +1258,7 @@ function Converter() {
                 id: cc.conversion.id,
                 file: cc.file,
                 conversion: cc.conversion,
+                jobType: cc.mode === 'compress' ? 'compression' : 'conversion',
                 onDownload: () => handleDownload(cc.conversion),
                 onDelete: () => handleDelete(cc.file.id, false),
                 onPreview: isPreviewable(cc.conversion.media_type) ? () => { const name = cc.file.original_filename || 'download'; const base = stripExtension(name); setPreviewFile({ id: cc.conversion.id, filename: base + (cc.conversion.extension || ''), mediaType: cc.conversion.media_type }) } : undefined,

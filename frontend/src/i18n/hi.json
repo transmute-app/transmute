@@ -103,7 +103,16 @@
     "jobsInQueue": "{{count}} job चल रहा है",
     "jobsInQueue_other": "{{count}} jobs चल रहे हैं",
     "jobsInProgressHint": "आपके रूपांतरण पृष्ठभूमि में हो रहे हैं। आप काम जारी रख सकते हैं।",
-    "viewQueue": "Jobs देखें"
+    "viewQueue": "Jobs देखें",
+    "modeToggleLabel": "ऑपरेशन मोड",
+    "mode": {
+      "convert": "रूपांतरित करें",
+      "compress": "संपीड़ित करें"
+    },
+    "compressFile": "{{count}} फ़ाइल संपीड़ित करें",
+    "compressFile_other": "{{count}} फ़ाइलें संपीड़ित करें",
+    "compressing": "{{count}} फ़ाइल संपीड़ित हो रही है...",
+    "compressing_other": "{{count}} फ़ाइलें संपीड़ित हो रही हैं..."
   },
   "files": {
     "title": "फ़ाइलें",
@@ -132,7 +141,10 @@
     "fetchFailed": "रूपांतरण प्राप्त करने में विफल",
     "deleteFailed": "हटाना विफल",
     "cancelFailed": "Job रद्द करने में विफल",
-    "retryFailed": "Job पुनः प्रयास में विफल"
+    "retryFailed": "Job पुनः प्रयास में विफल",
+    "noCompressions": "अभी तक कोई संपीड़ित फ़ाइल नहीं।",
+    "tabConvert": "रूपांतरण",
+    "tabCompress": "संपीड़न"
   },
   "settings": {
     "title": "सेटिंग्स",
@@ -219,7 +231,14 @@
     "outputFormatPlaceholder": "आउटपुट फ़ॉर्मेट...",
     "qualityPlaceholder": "गुणवत्ता...",
     "decrease": "घटाएँ",
-    "increase": "बढ़ाएँ"
+    "increase": "बढ़ाएँ",
+    "defaultCompressionLevels": "डिफ़ॉल्ट संपीड़न स्तर",
+    "defaultCompressionLevelsDescription": "संपीड़न का समर्थन करने वाले मीडिया प्रारूपों के लिए डिफ़ॉल्ट संपीड़न स्तर सेट करें। इन्हें प्रति फ़ाइल बदला जा सकता है।",
+    "allCompressionLevelsConfigured": "संपीड़न स्तर वाले सभी उपलब्ध प्रारूपों में डिफ़ॉल्ट कॉन्फ़िगर किए गए हैं।",
+    "mediaFormat": "मीडिया प्रारूप",
+    "defaultCompressionLevel": "डिफ़ॉल्ट संपीड़न स्तर",
+    "mediaFormatPlaceholder": "मीडिया प्रारूप...",
+    "compressionLevelPlaceholder": "संपीड़न स्तर..."
   },
   "confirm": {
     "cancel": "रद्द करें",
@@ -264,16 +283,16 @@
   "stats": {
     "title": "आँकड़े",
     "loadFailed": "आँकड़े लोड करने में विफल",
-    "snapshotNotice": "ये आँकड़े इस सिस्टम की फ़ाइलों, रूपांतरणों और संग्रहण का वर्तमान स्नैपशॉट हैं। ये वैश्विक कुल नहीं हैं।",
+    "snapshotNotice": "ये आँकड़े इस सिस्टम पर फ़ाइलों, आउटपुट फ़ाइलों और संग्रहण का वर्तमान स्नैपशॉट हैं। ये वैश्विक योग नहीं हैं।",
     "currentUploadedFiles": "वर्तमान अपलोड की गई फ़ाइलें",
-    "currentConvertedFiles": "वर्तमान रूपांतरित फ़ाइलें",
+    "currentOutputFiles": "वर्तमान आउटपुट फ़ाइलें",
     "storageInUse": "उपयोग में संग्रहण",
     "storageByUser": "उपयोगकर्ता अनुसार संग्रहण",
     "noData": "अभी कोई डेटा नहीं।",
     "activityByUser": "उपयोगकर्ता अनुसार गतिविधि",
     "user": "उपयोगकर्ता",
     "uploads": "अपलोड",
-    "conversions": "रूपांतरण",
+    "outputFiles": "आउटपुट फ़ाइलें",
     "storage": "संग्रहण",
     "loadingStats": "आँकड़े लोड हो रहे हैं...",
     "noDataAvailable": "कोई डेटा उपलब्ध नहीं"
@@ -322,6 +341,14 @@
       "completed": "पूर्ण",
       "failed": "विफल",
       "cancelled": "रद्द"
+    },
+    "setCompressionLevelAll": "सभी फ़ाइलों के लिए संपीड़न स्तर सेट करें",
+    "compressionLevel": "संपीड़न स्तर",
+    "compressionLevelPlaceholder": "संपीड़न स्तर",
+    "compressionLevelDescriptions": {
+      "light": "हल्का संपीड़न, तेज़, सबसे बड़ा आउटपुट",
+      "balanced": "संतुलित संपीड़न गति और आउटपुट आकार",
+      "max": "अधिकतम संपीड़न, धीमा, सबसे छोटा आउटपुट"
     }
   },
   "preview": {

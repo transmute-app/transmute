@@ -6,13 +6,13 @@ interface UserStats {
   user_uuid: string
   username: string
   files_uploaded: number
-  conversions: number
+  output_files: number
   storage_bytes: number
 }
 
 interface StatsData {
   total_files_uploaded: number
-  total_conversions: number
+  total_output_files: number
   total_storage_bytes: number
   users: UserStats[]
 }
@@ -75,8 +75,8 @@ function Stats() {
             <p className="mt-2 text-2xl font-bold text-text">{stats.total_files_uploaded.toLocaleString()}</p>
           </div>
           <div className="rounded-xl border border-surface-light bg-surface-light/70 p-5">
-            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">{t('stats.currentConvertedFiles')}</p>
-            <p className="mt-2 text-2xl font-bold text-text">{stats.total_conversions.toLocaleString()}</p>
+            <p className="text-xs uppercase tracking-[0.15em] text-text-muted">{t('stats.currentOutputFiles')}</p>
+            <p className="mt-2 text-2xl font-bold text-text">{stats.total_output_files.toLocaleString()}</p>
           </div>
           <div className="rounded-xl border border-surface-light bg-surface-light/70 p-5">
             <p className="text-xs uppercase tracking-[0.15em] text-text-muted">{t('stats.storageInUse')}</p>
@@ -123,7 +123,7 @@ function Stats() {
                 <tr className="border-b border-surface-dark text-text-muted uppercase text-xs tracking-wider">
                   <th className="py-3 pr-4">{t('stats.user')}</th>
                   <th className="py-3 px-4 text-right">{t('stats.uploads')}</th>
-                  <th className="py-3 px-4 text-right">{t('stats.conversions')}</th>
+                  <th className="py-3 px-4 text-right">{t('stats.outputFiles')}</th>
                   <th className="py-3 pl-4 text-right">{t('stats.storage')}</th>
                 </tr>
               </thead>
@@ -132,7 +132,7 @@ function Stats() {
                   <tr key={user.user_uuid} className="border-b border-surface-dark/50 last:border-0">
                     <td className="py-3 pr-4 font-medium text-text">{user.username}</td>
                     <td className="py-3 px-4 text-right text-text-muted">{user.files_uploaded.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-right text-text-muted">{user.conversions.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-right text-text-muted">{user.output_files.toLocaleString()}</td>
                     <td className="py-3 pl-4 text-right text-text-muted">{formatBytes(user.storage_bytes)}</td>
                   </tr>
                 ))}

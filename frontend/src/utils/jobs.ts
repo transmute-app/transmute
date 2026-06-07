@@ -98,3 +98,82 @@ export async function downloadJobOutput(job: ConversionJob): Promise<Blob> {
   }
   return response.blob()
 }
+
+// ============================================================================
+// Compression jobs
+//
+// Compression keeps the file's format and only reduces its size, so a
+// compression job carries a `compression_level` preset instead of an
+// `output_format`/`quality` pair. The status lifecycle is identical to
+// conversion jobs.
+// ============================================================================
+
+export interface CompressionJob {
+  id: string
+  user_id: string
+  source_file_id: string
+  compression_level: string | null
+  status: ConversionJobStatus
+  progress: number | null
+  error_message: string | null
+  output_file_id: string | null
+  compressor_name: string | null
+  source_filename: string | null
+  source_media_type: string | null
+  source_extension: string | null
+  source_size_bytes: number | null
+  created_at: string | null
+  started_at: string | null
+  completed_at: string | null
+  updated_at: string | null
+}
+
+export interface CompressionJobListResponse {
+  jobs: CompressionJob[]
+}
+
+export interface CompressionJobCreatePayload {
+  id: string
+  compression_level?: string | null
+}
+
+export async function listCompressionJobs(statusFilter?: ConversionJobStatus): Promise<CompressionJob[]> {
+  const url = statusFilter
+    ? `/api/compression-jobs?status_filter=${encodeURIComponent(statusFilter)}`
+    : '/api/compression-jobs'
+  const data = await apiJson<CompressionJobListResponse>(url)
+  return data.jobs
+}
+
+export async function getCompressionJob(jobId: string): Promise<CompressionJob> {
+  return apiJson<CompressionJob>(`/api/compression-jobs/${encodeURIComponent(jobId)}`)
+}
+
+export async function createCompressionJob(payload: CompressionJobCreatePayload): Promise<CompressionJob> {
+  return apiJson<CompressionJob>('/api/compression-jobs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function cancelCompressionJob(jobId: string): Promise<CompressionJob> {
+  return apiJson<CompressionJob>(`/api/compression-jobs/${encodeURIComponent(jobId)}/cancel`, {
+    method: 'POST',
+  })
+}
+
+export async function retryCompressionJob(jobId: string): Promise<CompressionJob> {
+  return apiJson<CompressionJob>(`/api/compression-jobs/${encodeURIComponent(jobId)}/retry`, {
+    method: 'POST',
+  })
+}
+
+export async function deleteCompressionJob(jobId: string): Promise<void> {
+  const response = await authFetch(`/api/compression-jobs/${encodeURIComponent(jobId)}`, {
+    method: 'DELETE',
+  })
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText || 'Delete failed')
+  }
+}

@@ -103,7 +103,16 @@
     "jobsInQueue": "{{count}} zadanie w trakcie",
     "jobsInQueue_other": "{{count}} zadań w trakcie",
     "jobsInProgressHint": "Twoje konwersje są przetwarzane w tle. Możesz dalej pracować.",
-    "viewQueue": "Zobacz zadania"
+    "viewQueue": "Zobacz zadania",
+    "modeToggleLabel": "Tryb operacji",
+    "mode": {
+      "convert": "Konwertuj",
+      "compress": "Kompresuj"
+    },
+    "compressFile": "Kompresuj {{count}} plik",
+    "compressFile_other": "Kompresuj {{count}} plików",
+    "compressing": "Kompresowanie {{count}} pliku...",
+    "compressing_other": "Kompresowanie {{count}} plików..."
   },
   "files": {
     "title": "Pliki",
@@ -132,7 +141,10 @@
     "fetchFailed": "Niepowodzenie pobierania konwersji",
     "deleteFailed": "Niepowodzenie usuwania",
     "cancelFailed": "Nie udało się anulować zadania",
-    "retryFailed": "Nie udało się ponowić zadania"
+    "retryFailed": "Nie udało się ponowić zadania",
+    "noCompressions": "Brak skompresowanych plików.",
+    "tabConvert": "Konwersje",
+    "tabCompress": "Kompresje"
   },
   "settings": {
     "title": "Ustawienia",
@@ -219,7 +231,14 @@
     "outputFormatPlaceholder": "Format wyjściowy...",
     "qualityPlaceholder": "Jakość...",
     "decrease": "Zmniejsz",
-    "increase": "Zwiększ"
+    "increase": "Zwiększ",
+    "defaultCompressionLevels": "Domyślne poziomy kompresji",
+    "defaultCompressionLevelsDescription": "Ustaw domyślne poziomy kompresji dla formatów multimedialnych obsługujących kompresję. Można je nadpisać dla każdego pliku.",
+    "allCompressionLevelsConfigured": "Wszystkie dostępne formaty z poziomami kompresji mają skonfigurowane wartości domyślne.",
+    "mediaFormat": "Format multimedialny",
+    "defaultCompressionLevel": "Domyślny poziom kompresji",
+    "mediaFormatPlaceholder": "Format multimedialny...",
+    "compressionLevelPlaceholder": "Poziom kompresji..."
   },
   "confirm": {
     "cancel": "Anuluj",
@@ -264,16 +283,16 @@
   "stats": {
     "title": "Statystyki",
     "loadFailed": "Niepowodzenie ładowania konwersji",
-    "snapshotNotice": "Te statystyki to obecna migawka plików, konwersji i przestrzeni w tym systemie. Nie są one globalnymi sumami.",
+    "snapshotNotice": "Te statystyki to bieżąca migawka plików, plików wyjściowych i pamięci w tym systemie. Nie są to sumy globalne.",
     "currentUploadedFiles": "Obecnie przesłane pliki",
-    "currentConvertedFiles": "Obecnie skonwertowane pliki",
+    "currentOutputFiles": "Bieżące pliki wyjściowe",
     "storageInUse": "Przestrzeń w użyciu",
     "storageByUser": "Przestrzeń wg użytkownika",
     "noData": "Brak danych.",
     "activityByUser": "Aktywność wg użytkownika",
     "user": "Użytkownik",
     "uploads": "Przesyłania",
-    "conversions": "Konwersje",
+    "outputFiles": "Pliki wyjściowe",
     "storage": "Przestrzeń",
     "loadingStats": "Ładowanie statystyk...",
     "noDataAvailable": "Brak dostępnych danych."
@@ -322,6 +341,14 @@
       "completed": "Zakończone",
       "failed": "Nieudane",
       "cancelled": "Anulowane"
+    },
+    "setCompressionLevelAll": "Ustaw poziom kompresji dla wszystkich plików",
+    "compressionLevel": "Poziom kompresji",
+    "compressionLevelPlaceholder": "Poziom kompresji",
+    "compressionLevelDescriptions": {
+      "light": "Lekka kompresja, szybka, największy plik wyjściowy",
+      "balanced": "Zrównoważona prędkość kompresji i rozmiar wyjścia",
+      "max": "Maksymalna kompresja, wolna, najmniejszy plik wyjściowy"
     }
   },
   "preview": {

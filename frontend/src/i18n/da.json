@@ -103,7 +103,16 @@
     "jobsInQueue": "{{count}} kørende jobs",
     "jobsInQueue_other": "{{count}} kørende jobs",
     "jobsInProgressHint": "Dine konverteringer behandles i baggrunden. Du kan fortsætte med at arbejde.",
-    "viewQueue": "Vis jobs"
+    "viewQueue": "Vis jobs",
+    "modeToggleLabel": "Handlingstilstand",
+    "mode": {
+      "convert": "Konverter",
+      "compress": "Komprimer"
+    },
+    "compressFile": "Komprimer {{count}} fil",
+    "compressFile_other": "Komprimer {{count}} filer",
+    "compressing": "Komprimerer {{count}} fil...",
+    "compressing_other": "Komprimerer {{count}} filer..."
   },
   "files": {
     "title": "Filer",
@@ -132,7 +141,10 @@
     "fetchFailed": "Mislykkedes at hente konverteringer",
     "deleteFailed": "Sletning mislykkedes",
     "cancelFailed": "Mislykkedes at annullere job",
-    "retryFailed": "Mislykkedes at forsøge job igen"
+    "retryFailed": "Mislykkedes at forsøge job igen",
+    "noCompressions": "Ingen komprimerede filer endnu.",
+    "tabConvert": "Konverteringer",
+    "tabCompress": "Komprimeringer"
   },
   "settings": {
     "title": "Indstillinger",
@@ -219,7 +231,14 @@
     "outputFormatPlaceholder": "Output format...",
     "qualityPlaceholder": "Kvalitet...",
     "decrease": "Formindsk",
-    "increase": "Forøg"
+    "increase": "Forøg",
+    "defaultCompressionLevels": "Standard komprimeringsniveauer",
+    "defaultCompressionLevelsDescription": "Angiv standard komprimeringsniveauer for medieformater, der understøtter komprimering. De kan stadig tilsidesættes pr. fil.",
+    "allCompressionLevelsConfigured": "Alle tilgængelige formater med komprimeringsniveauer har standarder konfigureret.",
+    "mediaFormat": "Medieformat",
+    "defaultCompressionLevel": "Standard komprimeringsniveau",
+    "mediaFormatPlaceholder": "Medieformat...",
+    "compressionLevelPlaceholder": "Komprimeringsniveau..."
   },
   "confirm": {
     "cancel": "Annuller",
@@ -264,16 +283,16 @@
   "stats": {
     "title": "Statistik",
     "loadFailed": "Mislykkedes at hente statistik",
-    "snapshotNotice": "Disse statistikker er et øjebliksbillede af filer, konverteringer og lager på dette system. De er ikke globale totaler.",
+    "snapshotNotice": "Disse statistikker er et øjebliksbillede af filer, outputfiler og lagerplads på dette system. De er ikke globale totaler.",
     "currentUploadedFiles": "Nuværende uploadede filer",
-    "currentConvertedFiles": "Nuværende konverterede filer",
+    "currentOutputFiles": "Aktuelle outputfiler",
     "storageInUse": "Lager i brug",
     "storageByUser": "Lager pr bruger",
     "noData": "Ingen data endnu.",
     "activityByUser": "Aktivitet pr bruger",
     "user": "Bruger",
     "uploads": "Uploads",
-    "conversions": "Konverteringer",
+    "outputFiles": "Outputfiler",
     "storage": "Lager",
     "loadingStats": "Henter statistik...",
     "noDataAvailable": "Ingen data tilgængelig"
@@ -322,6 +341,14 @@
       "completed": "Afsluttet",
       "failed": "Mislykkedes",
       "cancelled": "Annulleret"
+    },
+    "setCompressionLevelAll": "Angiv komprimeringsniveau for alle filer",
+    "compressionLevel": "Komprimeringsniveau",
+    "compressionLevelPlaceholder": "Komprimeringsniveau",
+    "compressionLevelDescriptions": {
+      "light": "Let komprimering, hurtig, største output",
+      "balanced": "Balanceret komprimeringshastighed og outputstørrelse",
+      "max": "Maksimal komprimering, langsom, mindste output"
     }
   },
   "preview": {

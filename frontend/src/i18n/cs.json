@@ -103,7 +103,16 @@
     "jobsInQueue": "{{count}} úloha probíhá",
     "jobsInQueue_other": "{{count}} úloh probíhá",
     "jobsInProgressHint": "Konverze probíhají na pozadí. Můžete pokračovat v práci.",
-    "viewQueue": "Zobrazit úlohy"
+    "viewQueue": "Zobrazit úlohy",
+    "modeToggleLabel": "Režim operace",
+    "mode": {
+      "convert": "Převést",
+      "compress": "Komprimovat"
+    },
+    "compressFile": "Komprimovat {{count}} soubor",
+    "compressFile_other": "Komprimovat {{count}} souborů",
+    "compressing": "Komprimuji {{count}} soubor...",
+    "compressing_other": "Komprimuji {{count}} souborů..."
   },
   "files": {
     "title": "Soubory",
@@ -132,7 +141,10 @@
     "fetchFailed": "Získání konverzí se nezdařilo",
     "deleteFailed": "Smazání se nezdařilo",
     "cancelFailed": "Zrušení úlohy se nezdařilo",
-    "retryFailed": "Opakování úlohy se nezdařilo"
+    "retryFailed": "Opakování úlohy se nezdařilo",
+    "noCompressions": "Zatím žádné komprimované soubory.",
+    "tabConvert": "Převody",
+    "tabCompress": "Komprese"
   },
   "settings": {
     "title": "Nastavení",
@@ -219,7 +231,14 @@
     "outputFormatPlaceholder": "Výstupní formát...",
     "qualityPlaceholder": "Kvalita...",
     "decrease": "Snížit",
-    "increase": "Zvýšit"
+    "increase": "Zvýšit",
+    "defaultCompressionLevels": "Výchozí úrovně komprese",
+    "defaultCompressionLevelsDescription": "Nastavte výchozí úrovně komprese pro formáty médií, které kompresi podporují. Lze je stále změnit u jednotlivých souborů.",
+    "allCompressionLevelsConfigured": "Všechny dostupné formáty s úrovněmi komprese mají nastavené výchozí hodnoty.",
+    "mediaFormat": "Formát média",
+    "defaultCompressionLevel": "Výchozí úroveň komprese",
+    "mediaFormatPlaceholder": "Formát média...",
+    "compressionLevelPlaceholder": "Úroveň komprese..."
   },
   "confirm": {
     "cancel": "Zrušit",
@@ -264,16 +283,16 @@
   "stats": {
     "title": "Statistiky",
     "loadFailed": "Načtení statistik se nezdařilo",
-    "snapshotNotice": "Tyto statistiky jsou aktuálním přehledem souborů, konverzí a úložiště v tomto systému. Nejde o celkové součty.",
+    "snapshotNotice": "Tyto statistiky jsou aktuálním přehledem souborů, výstupních souborů a úložiště v tomto systému. Nejedná se o globální součty.",
     "currentUploadedFiles": "Aktuálně nahrané soubory",
-    "currentConvertedFiles": "Aktuálně konvertované soubory",
+    "currentOutputFiles": "Aktuální výstupní soubory",
     "storageInUse": "Využité úložiště",
     "storageByUser": "Úložiště podle uživatele",
     "noData": "Zatím žádná data.",
     "activityByUser": "Aktivita podle uživatele",
     "user": "Uživatel",
     "uploads": "Nahrávky",
-    "conversions": "Konverze",
+    "outputFiles": "Výstupní soubory",
     "storage": "Úložiště",
     "loadingStats": "Načítám statistiky...",
     "noDataAvailable": "Žádná data k dispozici"
@@ -322,6 +341,14 @@
       "completed": "Dokončeno",
       "failed": "Nezdařilo se",
       "cancelled": "Zrušeno"
+    },
+    "setCompressionLevelAll": "Nastavit úroveň komprese pro všechny soubory",
+    "compressionLevel": "Úroveň komprese",
+    "compressionLevelPlaceholder": "Úroveň komprese",
+    "compressionLevelDescriptions": {
+      "light": "Lehká komprese, rychlá, největší výstup",
+      "balanced": "Vyvážená rychlost komprese a velikost výstupu",
+      "max": "Maximální komprese, pomalá, nejmenší výstup"
     }
   },
   "preview": {

@@ -23,22 +23,29 @@ export interface ConversionInfo {
   size_bytes: number
   created_at: string
   quality?: string
+  compression_level?: string
 }
 
 export type JobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
+
+export type JobType = 'conversion' | 'compression'
 
 export interface FileTableRow {
   id: string
   file: FileInfo
   conversion?: ConversionInfo
+  jobType?: JobType
   selectedFormat?: string
   selectedQuality?: string
+  selectedCompressionLevel?: string
+  compressionLevels?: string[]
   status?: 'pending' | 'failed'
   statusMessage?: string
   jobStatus?: JobStatus
   selectable?: boolean
   onFormatChange?: (format: string) => void
   onQualityChange?: (quality: string) => void
+  onCompressionLevelChange?: (level: string) => void
   onDelete?: () => void
   onDownload?: () => void
   onPreview?: () => void
@@ -64,12 +71,23 @@ interface FileTableProps {
   className?: string
   bulkFormats?: string[]
   bulkQualities?: string[]
+  bulkCompressionLevels?: string[]
   onBulkFormatChange?: (format: string) => void
   onBulkQualityChange?: (quality: string) => void
+  onBulkCompressionLevelChange?: (level: string) => void
+  /** Overrides the header label of the type/format column (e.g. for compress mode). */
+  typeColumnLabel?: string
 }
 
 type SortColumn = 'filename' | 'type' | 'size' | 'date'
 type SortDirection = 'asc' | 'desc'
+
+/** Logical ordering for compression-level presets (weakest → strongest). */
+const COMPRESSION_LEVEL_ORDER: Record<string, number> = { light: 0, balanced: 1, max: 2 }
+
+function sortCompressionLevels(levels: string[]): string[] {
+  return [...levels].sort((a, b) => (COMPRESSION_LEVEL_ORDER[a] ?? 99) - (COMPRESSION_LEVEL_ORDER[b] ?? 99))
+}
 
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -96,8 +114,11 @@ function FileTable({
   className,
   bulkFormats,
   bulkQualities,
+  bulkCompressionLevels,
   onBulkFormatChange,
   onBulkQualityChange,
+  onBulkCompressionLevelChange,
+  typeColumnLabel,
 }: FileTableProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>('date')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
@@ -119,8 +140,12 @@ function FileTable({
         cmp = (a.file.original_filename || '').localeCompare(b.file.original_filename || '')
         break
       case 'type': {
-        const typeA = a.selectedFormat || a.conversion?.media_type || a.file.media_type || ''
-        const typeB = b.selectedFormat || b.conversion?.media_type || b.file.media_type || ''
+        const typeA = a.jobType === 'compression'
+          ? (a.selectedCompressionLevel || a.conversion?.compression_level || '')
+          : (a.selectedFormat || a.conversion?.media_type || a.file.media_type || '')
+        const typeB = b.jobType === 'compression'
+          ? (b.selectedCompressionLevel || b.conversion?.compression_level || '')
+          : (b.selectedFormat || b.conversion?.media_type || b.file.media_type || '')
         cmp = typeA.localeCompare(typeB)
         break
       }
@@ -155,8 +180,8 @@ function FileTable({
 
   const hasActions = rows.some(r => r.onDownload || r.onDelete || r.onPreview || r.onCancel || r.onRetry)
   const hasQuality = isPending
-    ? rows.some(r => r.selectedFormat && r.file.compatible_formats?.[r.selectedFormat]?.length)
-    : rows.some(r => r.conversion?.quality)
+    ? rows.some(r => r.jobType !== 'compression' && r.selectedFormat && r.file.compatible_formats?.[r.selectedFormat]?.length)
+    : rows.some(r => r.jobType !== 'compression' && r.conversion?.quality)
   const hasAnyStatus = rows.some(r => r.jobStatus)
   const showStatusColumn = showStatus && hasAnyStatus
 
@@ -167,6 +192,17 @@ function FileTable({
       const key = `table.qualityDescriptions.${quality}`
       const description = t(key)
       if (description !== key) map[quality] = description
+    }
+    return Object.keys(map).length > 0 ? map : undefined
+  }
+
+  const buildCompressionLevelDescriptions = (levels: string[] | undefined) => {
+    if (!levels || levels.length === 0) return undefined
+    const map: Record<string, string> = {}
+    for (const level of levels) {
+      const key = `table.compressionLevelDescriptions.${level}`
+      const description = t(key)
+      if (description !== key) map[level] = description
     }
     return Object.keys(map).length > 0 ? map : undefined
   }
@@ -211,9 +247,20 @@ function FileTable({
                   onClick={() => handleSort('type')}
                   className="flex items-center gap-1 hover:text-text transition uppercase"
                 >
-                  {t('table.format')} {renderSortIcon('type')}
+                  {typeColumnLabel || t('table.format')} {renderSortIcon('type')}
                 </button>
-                {bulkFormats && bulkFormats.length > 0 && onBulkFormatChange && (
+                {bulkCompressionLevels && bulkCompressionLevels.length > 0 && onBulkCompressionLevelChange ? (
+                  <FormatDropdown
+                    value=""
+                    formats={sortCompressionLevels(bulkCompressionLevels)}
+                    onChange={onBulkCompressionLevelChange}
+                    placeholder={t('table.all')}
+                    title={t('table.setCompressionLevelAll')}
+                    disabled={converting}
+                    presorted
+                    descriptions={buildCompressionLevelDescriptions(bulkCompressionLevels)}
+                  />
+                ) : bulkFormats && bulkFormats.length > 0 && onBulkFormatChange ? (
                   <FormatDropdown
                     value=""
                     formats={bulkFormats}
@@ -222,7 +269,7 @@ function FileTable({
                     title={t('table.setFormatAll')}
                     disabled={converting}
                   />
-                )}
+                ) : null}
               </div>
             </th>
             {hasQuality && (
@@ -334,7 +381,30 @@ function FileTable({
                 </div>
               </td>
               <td className="px-2 sm:px-4 py-3 whitespace-nowrap">
-                  {(row.conversion || row.selectedFormat) ? (
+                  {row.jobType === 'compression' ? (
+                    isPending && row.compressionLevels && row.compressionLevels.length > 0 && row.onCompressionLevelChange ? (
+                      <FormatDropdown
+                        value={row.selectedCompressionLevel || ''}
+                        formats={sortCompressionLevels(row.compressionLevels)}
+                        onChange={(level) => row.onCompressionLevelChange!(level)}
+                        placeholder={t('table.compressionLevelPlaceholder')}
+                        title={`${t('table.compressionLevel')}: ${row.selectedCompressionLevel || 'default'}`}
+                        presorted
+                        descriptions={buildCompressionLevelDescriptions(row.compressionLevels)}
+                      />
+                    ) : (row.conversion?.compression_level || row.selectedCompressionLevel) ? (
+                      <span
+                        className="text-xs font-mono uppercase bg-primary/20 px-2 py-0.5 rounded text-primary"
+                        title={`${t('table.compressionLevel')}: ${row.conversion?.compression_level || row.selectedCompressionLevel}`}
+                      >
+                        {row.conversion?.compression_level || row.selectedCompressionLevel}
+                      </span>
+                    ) : (
+                      <span className="text-xs font-mono uppercase bg-surface-dark px-2 py-0.5 rounded text-text-muted">
+                        {row.file.media_type}
+                      </span>
+                    )
+                  ) : (row.conversion || row.selectedFormat) ? (
                     isPending && row.file.compatible_formats && Object.keys(row.file.compatible_formats).length > 0 && row.onFormatChange ? (
                       <FormatDropdown
                         value={row.selectedFormat || ''}
@@ -359,6 +429,9 @@ function FileTable({
               {hasQuality && (
                 <td className={`${alwaysShowQuality ? '' : 'hidden xl:table-cell '}px-4 py-3 whitespace-nowrap`}>
                   {(() => {
+                    if (row.jobType === 'compression') {
+                      return <span className="text-xs text-text-muted">—</span>
+                    }
                     if (isPending) {
                       const qualities = row.selectedFormat ? row.file.compatible_formats?.[row.selectedFormat] : undefined
                       const qualityOrder: Record<string, number> = { low: 0, medium: 1, high: 2 }

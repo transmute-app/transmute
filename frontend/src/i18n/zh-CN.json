@@ -103,7 +103,16 @@
     "jobsInQueue": "有 {{count}} 个任务正在运行",
     "jobsInQueue_other": "有 {{count}} 个任务正在运行",
     "jobsInProgressHint": "你的转换任务正在后台处理中。你可以继续操作。",
-    "viewQueue": "查看任务"
+    "viewQueue": "查看任务",
+    "modeToggleLabel": "操作模式",
+    "mode": {
+      "convert": "转换",
+      "compress": "压缩"
+    },
+    "compressFile": "压缩 {{count}} 个文件",
+    "compressFile_other": "压缩 {{count}} 个文件",
+    "compressing": "正在压缩 {{count}} 个文件...",
+    "compressing_other": "正在压缩 {{count}} 个文件..."
   },
   "files": {
     "title": "文件",
@@ -132,7 +141,10 @@
     "fetchFailed": "获取转换记录失败",
     "deleteFailed": "删除失败",
     "cancelFailed": "取消任务失败",
-    "retryFailed": "重试任务失败"
+    "retryFailed": "重试任务失败",
+    "noCompressions": "尚无压缩文件。",
+    "tabConvert": "转换",
+    "tabCompress": "压缩"
   },
   "settings": {
     "title": "设置",
@@ -219,7 +231,14 @@
     "outputFormatPlaceholder": "输出格式...",
     "qualityPlaceholder": "质量...",
     "decrease": "降低",
-    "increase": "提高"
+    "increase": "提高",
+    "defaultCompressionLevels": "默认压缩级别",
+    "defaultCompressionLevelsDescription": "为支持压缩的媒体格式设置默认压缩级别。仍可按文件覆盖。",
+    "allCompressionLevelsConfigured": "所有支持压缩级别的可用格式都已配置默认值。",
+    "mediaFormat": "媒体格式",
+    "defaultCompressionLevel": "默认压缩级别",
+    "mediaFormatPlaceholder": "媒体格式...",
+    "compressionLevelPlaceholder": "压缩级别..."
   },
   "confirm": {
     "cancel": "取消",
@@ -264,16 +283,16 @@
   "stats": {
     "title": "统计",
     "loadFailed": "加载统计失败",
-    "snapshotNotice": "这些统计反映的是当前系统中文件、转换和存储的快照，并非全局总数。",
+    "snapshotNotice": "这些统计数据是本系统上文件、输出文件和存储的当前快照，并非全局总计。",
     "currentUploadedFiles": "当前已上传文件",
-    "currentConvertedFiles": "当前已转换文件",
+    "currentOutputFiles": "当前输出文件",
     "storageInUse": "已用存储",
     "storageByUser": "按用户统计的存储",
     "noData": "暂无数据。",
     "activityByUser": "按用户统计的活动",
     "user": "用户",
     "uploads": "上传",
-    "conversions": "转换",
+    "outputFiles": "输出文件",
     "storage": "存储",
     "loadingStats": "正在加载统计...",
     "noDataAvailable": "暂无可用数据"
@@ -322,6 +341,14 @@
       "completed": "已完成",
       "failed": "失败",
       "cancelled": "已取消"
+    },
+    "setCompressionLevelAll": "为所有文件设置压缩级别",
+    "compressionLevel": "压缩级别",
+    "compressionLevelPlaceholder": "压缩级别",
+    "compressionLevelDescriptions": {
+      "light": "轻度压缩，快速，输出最大",
+      "balanced": "压缩速度与输出大小平衡",
+      "max": "最大压缩，慢速，输出最小"
     }
   },
   "preview": {

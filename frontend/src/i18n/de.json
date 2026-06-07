@@ -103,7 +103,16 @@
     "jobsInQueue": "{{count}} Auftrag wird verarbeitet",
     "jobsInQueue_other": "{{count}} Aufträge werden verarbeitet",
     "jobsInProgressHint": "Ihre Konvertierungen werden im Hintergrund verarbeitet. Sie können weiterarbeiten.",
-    "viewQueue": "Jobs anzeigen"
+    "viewQueue": "Jobs anzeigen",
+    "modeToggleLabel": "Vorgangsmodus",
+    "mode": {
+      "convert": "Konvertieren",
+      "compress": "Komprimieren"
+    },
+    "compressFile": "{{count}} Datei komprimieren",
+    "compressFile_other": "{{count}} Dateien komprimieren",
+    "compressing": "{{count}} Datei wird komprimiert...",
+    "compressing_other": "{{count}} Dateien werden komprimiert..."
   },
   "files": {
     "title": "Dateien",
@@ -132,7 +141,10 @@
     "fetchFailed": "Konvertierungen konnten nicht abgerufen werden",
     "deleteFailed": "Löschen fehlgeschlagen",
     "cancelFailed": "Auftrag konnte nicht abgebrochen werden",
-    "retryFailed": "Wiederholung des Auftrags fehlgeschlagen"
+    "retryFailed": "Wiederholung des Auftrags fehlgeschlagen",
+    "noCompressions": "Noch keine komprimierten Dateien.",
+    "tabConvert": "Konvertierungen",
+    "tabCompress": "Komprimierungen"
   },
   "settings": {
     "title": "Einstellungen",
@@ -219,7 +231,14 @@
     "outputFormatPlaceholder": "Ausgabeformat auswählen...",
     "qualityPlaceholder": "Qualität auswählen...",
     "decrease": "Verringern",
-    "increase": "Erhöhen"
+    "increase": "Erhöhen",
+    "defaultCompressionLevels": "Standard-Komprimierungsstufen",
+    "defaultCompressionLevelsDescription": "Legen Sie Standard-Komprimierungsstufen für Medienformate fest, die Komprimierung unterstützen. Diese können pro Datei überschrieben werden.",
+    "allCompressionLevelsConfigured": "Für alle verfügbaren Formate mit Komprimierungsstufen sind Standards konfiguriert.",
+    "mediaFormat": "Medienformat",
+    "defaultCompressionLevel": "Standard-Komprimierungsstufe",
+    "mediaFormatPlaceholder": "Medienformat...",
+    "compressionLevelPlaceholder": "Komprimierungsstufe..."
   },
   "confirm": {
     "cancel": "Abbrechen",
@@ -264,16 +283,16 @@
   "stats": {
     "title": "Statistiken",
     "loadFailed": "Statistiken konnten nicht geladen werden",
-    "snapshotNotice": "Diese Werte sind nur eine aktuelle Momentaufnahme der Dateien, Konvertierungen und Speichernutzung auf diesem System. Es sind keine globalen Gesamtzahlen.",
+    "snapshotNotice": "Diese Statistiken sind eine aktuelle Momentaufnahme von Dateien, Ausgabedateien und Speicher auf diesem System. Es handelt sich nicht um globale Summen.",
     "currentUploadedFiles": "Aktuell hochgeladene Dateien",
-    "currentConvertedFiles": "Aktuell konvertierte Dateien",
+    "currentOutputFiles": "Aktuelle Ausgabedateien",
     "storageInUse": "Genutzter Speicher",
     "storageByUser": "Speicherverbrauch nach Benutzer",
     "noData": "Noch keine Daten.",
     "activityByUser": "Aktivität pro Benutzer",
     "user": "Benutzer",
     "uploads": "Uploads",
-    "conversions": "Konvertierungen",
+    "outputFiles": "Ausgabedateien",
     "storage": "Speicher",
     "loadingStats": "Statistiken werden geladen...",
     "noDataAvailable": "Keine Daten verfügbar"
@@ -322,6 +341,14 @@
       "completed": "Abgeschlossen",
       "failed": "Fehlgeschlagen",
       "cancelled": "Abgebrochen"
+    },
+    "setCompressionLevelAll": "Komprimierungsstufe für alle Dateien festlegen",
+    "compressionLevel": "Komprimierungsstufe",
+    "compressionLevelPlaceholder": "Komprimierungsstufe",
+    "compressionLevelDescriptions": {
+      "light": "Leichte Komprimierung, schnell, größte Ausgabe",
+      "balanced": "Ausgewogene Komprimierungsgeschwindigkeit und Ausgabegröße",
+      "max": "Maximale Komprimierung, langsam, kleinste Ausgabe"
     }
   },
   "preview": {

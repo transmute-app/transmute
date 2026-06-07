@@ -51,12 +51,24 @@ interface DefaultQualityMapping {
   quality: string
 }
 
+interface DefaultCompressionLevelMapping {
+  media_format: string
+  compression_level: string
+}
+
 interface ConverterInfo {
   name: string
   supported_input_formats: string[]
   supported_output_formats: string[]
   formats_with_qualities: string[]
   qualities: string[]
+}
+
+interface CompressorInfo {
+  name: string
+  supported_formats: string[]
+  formats_with_compression_levels: string[]
+  compression_levels: string[]
 }
 
 /**
@@ -165,6 +177,12 @@ function Settings() {
   const [newQualityFormat, setNewQualityFormat] = useState('')
   const [newQuality, setNewQuality] = useState('')
 
+  // Default compression level mappings
+  const [defaultCompressionLevels, setDefaultCompressionLevels] = useState<DefaultCompressionLevelMapping[]>([])
+  const [compressionFormatsMap, setCompressionFormatsMap] = useState<Record<string, string[]>>({})
+  const [newCompressionFormat, setNewCompressionFormat] = useState('')
+  const [newCompressionLevel, setNewCompressionLevel] = useState('')
+
   // Build conversion map from converters API (input_format -> sorted output_formats)
   // and quality formats map (output_format -> sorted quality_options)
   const loadConversionMap = useCallback(() => {
@@ -218,6 +236,37 @@ function Settings() {
       .catch(() => {})
   }, [])
 
+  // Build compression formats map from compressors API (media_format -> sorted levels)
+  const loadCompressionMap = useCallback(() => {
+    fetch('/api/compressors')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((data: { compressors: CompressorInfo[] }) => {
+        const map: Record<string, Set<string>> = {}
+        for (const c of data.compressors) {
+          for (const fmt of (c.formats_with_compression_levels || [])) {
+            if (!map[fmt]) map[fmt] = new Set()
+            for (const lvl of (c.compression_levels || [])) {
+              map[fmt].add(lvl)
+            }
+          }
+        }
+        const levelOrder: Record<string, number> = { light: 0, balanced: 1, max: 2 }
+        const sorted: Record<string, string[]> = {}
+        for (const [k, v] of Object.entries(map)) {
+          sorted[k] = [...v].sort((a, b) => (levelOrder[a] ?? 99) - (levelOrder[b] ?? 99))
+        }
+        setCompressionFormatsMap(sorted)
+      })
+      .catch(() => {})
+  }, [])
+
+  const loadDefaultCompressionLevels = useCallback(() => {
+    fetch('/api/default-compression-levels')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((data: { defaults: DefaultCompressionLevelMapping[] }) => setDefaultCompressionLevels(data.defaults))
+      .catch(() => {})
+  }, [])
+
   // Load settings once on mount
   useEffect(() => {
     fetch('/api/settings')
@@ -235,7 +284,9 @@ function Settings() {
     loadConversionMap()
     loadDefaultFormats()
     loadDefaultQualities()
-  }, [setTheme, loadConversionMap, loadDefaultFormats, loadDefaultQualities])
+    loadCompressionMap()
+    loadDefaultCompressionLevels()
+  }, [setTheme, loadConversionMap, loadDefaultFormats, loadDefaultQualities, loadCompressionMap, loadDefaultCompressionLevels])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -372,6 +423,47 @@ function Settings() {
     }
   }
 
+  const handleAddDefaultCompressionLevel = async () => {
+    if (!newCompressionFormat || !newCompressionLevel) return
+    try {
+      const response = await fetch('/api/default-compression-levels', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ media_format: newCompressionFormat, compression_level: newCompressionLevel }),
+      })
+      if (!response.ok) throw new Error()
+      loadDefaultCompressionLevels()
+      setNewCompressionFormat('')
+      setNewCompressionLevel('')
+    } catch {
+      setError(t('settings.saveFailed'))
+    }
+  }
+
+  const handleUpdateDefaultCompressionLevel = async (media_format: string, compression_level: string) => {
+    try {
+      const response = await fetch('/api/default-compression-levels', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ media_format, compression_level }),
+      })
+      if (!response.ok) throw new Error()
+      loadDefaultCompressionLevels()
+    } catch {
+      setError(t('settings.saveFailed'))
+    }
+  }
+
+  const handleDeleteDefaultCompressionLevel = async (media_format: string) => {
+    try {
+      const response = await fetch(`/api/default-compression-levels/${encodeURIComponent(media_format)}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error()
+      loadDefaultCompressionLevels()
+    } catch {
+      setError(t('settings.saveFailed'))
+    }
+  }
+
   // ===== Custom theme handlers =====
 
   const resetThemeForm = useCallback(() => {
@@ -465,6 +557,14 @@ function Settings() {
 
   // When the new quality format changes, auto-select the first available quality
   const newQualityOptions = newQualityFormat ? (qualityFormatsMap[newQualityFormat] || []) : []
+
+  // Available media formats with compression levels that don't already have a default set
+  const availableCompressionFormats = Object.keys(compressionFormatsMap)
+    .filter(f => !defaultCompressionLevels.some(d => d.media_format === f))
+    .sort()
+
+  // When the new compression format changes, the available levels follow
+  const newCompressionLevelOptions = newCompressionFormat ? (compressionFormatsMap[newCompressionFormat] || []) : []
 
   const handleClearConversions = () => {
     setConfirmDialog({
@@ -1044,6 +1144,91 @@ function Settings() {
             ) : defaultQualities.length > 0 ? (
               <p className="text-text-muted text-sm">{t('settings.allQualitiesConfigured')}</p>
             ) : Object.keys(qualityFormatsMap).length === 0 ? (
+              <p className="text-text-muted text-sm">{t('settings.loadingFormats')}</p>
+            ) : null}
+          </section>
+
+          {/* Default Compression Levels */}
+          <section className="bg-surface-light rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-text mb-1">{t('settings.defaultCompressionLevels')}</h2>
+            <p className="text-text-muted text-sm mb-4">{t('settings.defaultCompressionLevelsDescription')}</p>
+
+            {defaultCompressionLevels.length > 0 && (
+              <div className="mb-4 overflow-hidden rounded-lg border border-surface-dark">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-surface-dark">
+                      <th className="text-left text-text-muted font-medium px-4 py-2.5">{t('settings.mediaFormat')}</th>
+                      <th className="text-left text-text-muted font-medium px-4 py-2.5">{t('settings.defaultCompressionLevel')}</th>
+                      <th className="w-10" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {defaultCompressionLevels.map(d => (
+                      <tr key={d.media_format} className="border-t border-surface-dark">
+                        <td className="px-4 py-2.5 text-text font-mono">{d.media_format}</td>
+                        <td className="px-4 py-2.5">
+                          <FormatDropdown
+                            value={d.compression_level}
+                            formats={compressionFormatsMap[d.media_format] || [d.compression_level]}
+                            onChange={(level) => handleUpdateDefaultCompressionLevel(d.media_format, level)}
+                            title={`${d.media_format}: ${d.compression_level}`}
+                            triggerClassName="w-full max-w-[12rem] border border-surface-light bg-surface-dark px-3 py-1.5 text-text"
+                            presorted
+                          />
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
+                          <button
+                            onClick={() => handleDeleteDefaultCompressionLevel(d.media_format)}
+                            className="text-text-muted hover:text-primary transition-colors duration-150 p-1"
+                            title={t('settings.removeDefault')}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {availableCompressionFormats.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <FormatDropdown
+                  value={newCompressionFormat}
+                  formats={availableCompressionFormats}
+                  onChange={(format) => { setNewCompressionFormat(format); setNewCompressionLevel('') }}
+                  placeholder={t('settings.mediaFormatPlaceholder')}
+                  title={newCompressionFormat || 'Select media format'}
+                  triggerClassName="min-w-[10rem] border border-surface-light bg-surface-dark px-3 py-2 text-text"
+                />
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+                <FormatDropdown
+                  value={newCompressionLevel}
+                  formats={newCompressionLevelOptions}
+                  onChange={setNewCompressionLevel}
+                  placeholder={t('settings.compressionLevelPlaceholder')}
+                  title={newCompressionLevel || 'Select compression level'}
+                  disabled={!newCompressionFormat}
+                  triggerClassName="min-w-[10rem] border border-surface-light bg-surface-dark px-3 py-2 text-text"
+                  presorted
+                />
+                <button
+                  onClick={handleAddDefaultCompressionLevel}
+                  disabled={!newCompressionFormat || !newCompressionLevel}
+                  className="bg-primary/20 hover:bg-primary/40 text-primary-light font-semibold py-2 px-4 rounded-lg transition duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t('settings.add')}
+                </button>
+              </div>
+            ) : defaultCompressionLevels.length > 0 ? (
+              <p className="text-text-muted text-sm">{t('settings.allCompressionLevelsConfigured')}</p>
+            ) : Object.keys(compressionFormatsMap).length === 0 ? (
               <p className="text-text-muted text-sm">{t('settings.loadingFormats')}</p>
             ) : null}
           </section>
