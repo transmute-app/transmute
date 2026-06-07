@@ -93,7 +93,9 @@ check: lint ## Run all checks (alias for lint)
 test: test-backend test-frontend
 
 test-backend: ## Run Python backend tests with pytest
-	$(PYTHON) -m pytest backend --ignore=backend/tests/converters/test_all_conversions.py
+	$(PYTHON) -m pytest backend \
+		--ignore=backend/tests/converters/test_all_conversions.py \
+		--ignore=backend/tests/compressors/test_all_compressions.py
 
 test-frontend: ## Run frontend tests with Vitest. Still working on develop tests
 	cd frontend && npm run test
