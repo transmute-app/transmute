@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from .routes import health, files, conversions, converters, jobs, docs, settings, default_formats, default_qualities, users, api_keys, oidc, guest, stats
+from .routes import health, files, conversions, converters, jobs, docs, settings, default_formats, default_qualities, users, api_keys, oidc, guest, stats, compressions, compression_jobs, default_compression_levels
 
 router = APIRouter()
 
@@ -9,6 +9,9 @@ router.include_router(files.router)
 router.include_router(conversions.router)
 router.include_router(converters.router)
 router.include_router(jobs.router)
+router.include_router(compressions.router)
+router.include_router(compression_jobs.router)
+router.include_router(default_compression_levels.router)
 router.include_router(settings.router)
 router.include_router(default_formats.router)
 router.include_router(default_qualities.router)

@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
 
 from core.auth import decode_access_token, verify_password
-from db import FileDB, ConversionDB, ConversionRelationsDB, ConversionJobDB, SettingsDB, DefaultFormatsDB, DefaultQualitiesDB, UserDB, ApiKeyDB, UserIdentityDB
+from db import FileDB, ConversionDB, ConversionRelationsDB, ConversionJobDB, CompressionDB, CompressionRelationsDB, CompressionJobDB, SettingsDB, DefaultFormatsDB, DefaultQualitiesDB, DefaultCompressionLevelsDB, UserDB, ApiKeyDB, UserIdentityDB
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/token")
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/users/token", auto_error=False)
@@ -206,3 +206,43 @@ def _default_qualities_db() -> DefaultQualitiesDB:
 def get_default_qualities_db() -> DefaultQualitiesDB:
     """Dependency that provides a shared DefaultQualitiesDB instance."""
     return _default_qualities_db()
+
+
+@lru_cache(maxsize=1)
+def _compression_db() -> CompressionDB:
+    return CompressionDB()
+
+
+@lru_cache(maxsize=1)
+def _compression_relations_db() -> CompressionRelationsDB:
+    return CompressionRelationsDB()
+
+
+@lru_cache(maxsize=1)
+def _compression_job_db() -> CompressionJobDB:
+    return CompressionJobDB()
+
+
+@lru_cache(maxsize=1)
+def _default_compression_levels_db() -> DefaultCompressionLevelsDB:
+    return DefaultCompressionLevelsDB()
+
+
+def get_compression_db() -> CompressionDB:
+    """Dependency that provides a shared CompressionDB instance."""
+    return _compression_db()
+
+
+def get_compression_relations_db() -> CompressionRelationsDB:
+    """Dependency that provides a shared CompressionRelationsDB instance."""
+    return _compression_relations_db()
+
+
+def get_compression_job_db() -> CompressionJobDB:
+    """Dependency that provides a shared CompressionJobDB instance."""
+    return _compression_job_db()
+
+
+def get_default_compression_levels_db() -> DefaultCompressionLevelsDB:
+    """Dependency that provides a shared DefaultCompressionLevelsDB instance."""
+    return _default_compression_levels_db()

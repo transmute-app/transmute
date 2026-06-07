@@ -215,6 +215,68 @@ class DefaultQualityListResponse(BaseModel):
     defaults: list[DefaultQualityMapping] = Field(..., description="List of default quality mappings")
 
 
+class CompressionRequest(BaseModel):
+    id: str = Field(..., description="ID of file to compress", json_schema_extra={"example": "123e4567-e89b-12d3-a456-426614174000"})
+    compression_level: Optional[str] = Field(None, description="Optional compression-level preset (e.g. light, balanced, max)", json_schema_extra={"example": "balanced"})
+
+
+CompressionJobStatus = Literal["queued", "running", "completed", "failed", "cancelled"]
+
+
+class CompressionJobCreateRequest(BaseModel):
+    id: str = Field(..., description="ID of the source file to compress", json_schema_extra={"example": "123e4567-e89b-12d3-a456-426614174000"})
+    compression_level: Optional[str] = Field(None, description="Optional compression-level preset (e.g. light, balanced, max)", json_schema_extra={"example": "balanced"})
+
+
+class CompressionJobResponse(BaseModel):
+    id: str = Field(..., description="Job UUID")
+    user_id: str = Field(..., description="Owning user UUID")
+    source_file_id: str = Field(..., description="Source file ID being compressed")
+    compression_level: Optional[str] = Field(None, description="Compression-level preset used, if any")
+    status: CompressionJobStatus = Field(..., description="Current job status")
+    progress: Optional[int] = Field(None, description="0-100 progress hint when available")
+    error_message: Optional[str] = Field(None, description="Error message when status is failed")
+    output_file_id: Optional[str] = Field(None, description="ID of the resulting compressed file when completed")
+    compressor_name: Optional[str] = Field(None, description="Compressor implementation that handled (or will handle) the job")
+    source_filename: Optional[str] = Field(None, description="Denormalized source filename at submit time")
+    source_media_type: Optional[str] = Field(None, description="Denormalized source media type at submit time")
+    source_extension: Optional[str] = Field(None, description="Denormalized source extension at submit time")
+    source_size_bytes: Optional[int] = Field(None, description="Denormalized source size at submit time")
+    created_at: Optional[str] = Field(None, description="Creation timestamp")
+    started_at: Optional[str] = Field(None, description="Time the worker began processing")
+    completed_at: Optional[str] = Field(None, description="Time the job reached a terminal status")
+    updated_at: Optional[str] = Field(None, description="Last update timestamp")
+
+
+class CompressionJobListResponse(BaseModel):
+    jobs: list[CompressionJobResponse] = Field(..., description="List of compression jobs for the current user")
+
+
+class CompressionItem(BaseModel):
+    id: str = Field(..., json_schema_extra={"example": "123e4567-e89b-12d3-a456-426614174000"})
+    original_filename: str = Field(..., json_schema_extra={"example": "example.jpg"})
+    media_type: str = Field(..., json_schema_extra={"example": "jpg"})
+    extension: str = Field(..., json_schema_extra={"example": ".jpg"})
+    size_bytes: int = Field(..., json_schema_extra={"example": 102400})
+    sha256_checksum: str = Field(..., json_schema_extra={"example": "abc123def456..."})
+    compression_level: Optional[str] = Field(None, description="Compression-level preset used for this compression", json_schema_extra={"example": "balanced"})
+    original_file: Optional[FileMetadata] = Field(None, description="Original file metadata")
+
+
+class CompressionListResponse(BaseModel):
+    compressions: list[CompressionItem] = Field(..., description="List of completed compressions")
+
+
+class DefaultCompressionLevelMapping(BaseModel):
+    media_format: str = Field(..., description="Media file format", json_schema_extra={"example": "jpeg"})
+    compression_level: str = Field(..., description="Default compression-level preset", json_schema_extra={"example": "max"})
+
+
+class DefaultCompressionLevelListResponse(BaseModel):
+    defaults: list[DefaultCompressionLevelMapping] = Field(..., description="List of default compression-level mappings")
+
+
+
 class UserResponse(BaseModel):
     uuid: str = Field(..., description="Stable user UUID", json_schema_extra={"example": "123e4567-e89b-12d3-a456-426614174000"})
     username: str = Field(..., description="Unique account username", json_schema_extra={"example": "alice"})
