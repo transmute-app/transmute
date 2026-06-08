@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 
 import en from './en.json'
+import az from './az.json'
 import de from './de.json'
 import es from './es.json'
 import pl from './pl.json'
@@ -20,10 +21,11 @@ i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    supportedLngs: ['en', 'de', 'es', 'pl', 'it', 'da', 'fr', 'hi', 'cs', 'tr', 'zh-CN'],
+    supportedLngs: ['en', 'az', 'de', 'es', 'pl', 'it', 'da', 'fr', 'hi', 'cs', 'tr', 'zh-CN'],
     nonExplicitSupportedLngs: true,
     resources: {
       en: { translation: en },
+      az: { translation: az },
       de: { translation: de },
       es: { translation: es },
       pl: { translation: pl },
