@@ -4,7 +4,7 @@ import sqlite3
 import mimetypes
 import hashlib
 import magic
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as DefusedET
 
 from typing import TYPE_CHECKING
 from fastapi import HTTPException
@@ -166,8 +166,8 @@ def _detect_pdf_subtype_from_xmp(xmp: str) -> str:
         return "pdf"
 
     try:
-        root = ET.fromstring(xmp)
-    except ET.ParseError:
+        root = DefusedET.fromstring(xmp)
+    except DefusedET.ParseError:
         return "pdf"
 
     def has_text(*local_names: str) -> bool:
