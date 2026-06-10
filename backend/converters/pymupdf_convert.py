@@ -1,4 +1,5 @@
 import os
+import shutil
 import fitz  # PyMuPDF
 import pymupdf4llm
 import markdown
@@ -72,6 +73,29 @@ _RASTER_QUALITY_DPI: dict = {
 }
 _DEFAULT_RASTER_DPI = 150
 
+_IMAGE_TO_PDF_INPUT_FORMATS: set = {
+    'png',
+    'jpeg',
+    'webp',
+    'tiff',
+    'bmp',
+    'gif',
+    'ppm',
+    'pgm',
+    'pbm',
+    'tga',
+    'jp2',
+    'avif',
+    'jxl',
+    'ico',
+    'dib',
+    'pcx',
+    'sgi',
+    'pnm',
+    'heif',
+    'heic',
+}
+
 
 class PyMuPDFConverter(ConverterInterface):
     """
@@ -87,11 +111,12 @@ class PyMuPDFConverter(ConverterInterface):
         'pdf/e',
         'pdf/ua',
         'pdf/vt',
-    }
+    } | _IMAGE_TO_PDF_INPUT_FORMATS
     supported_output_formats: set = {
         'txt',
         'md',
         'html',
+        'pdf',
     } | _RASTER_OUTPUT_FORMATS
     # Quality controls render DPI for raster outputs and encoder quality for
     # lossy formats, so every raster output advertises a quality option.
@@ -124,6 +149,9 @@ class PyMuPDFConverter(ConverterInterface):
         if output_fmt not in self.supported_output_formats:
             return False
 
+        if input_fmt in _IMAGE_TO_PDF_INPUT_FORMATS:
+            return output_fmt == 'pdf'
+
         return True
 
     @classmethod
@@ -140,6 +168,8 @@ class PyMuPDFConverter(ConverterInterface):
         fmt = format_type.lower()
         if fmt not in cls.supported_input_formats:
             return set()
+        if fmt in _IMAGE_TO_PDF_INPUT_FORMATS:
+            return {'pdf'}
         return cls.supported_output_formats - {fmt}
 
     def _extract_text(self, doc: fitz.Document) -> str:
@@ -218,6 +248,12 @@ class PyMuPDFConverter(ConverterInterface):
         if not os.path.isfile(self.input_file):
             raise FileNotFoundError(f"Input file not found: {self.input_file}")
 
+        if self.input_type in _IMAGE_TO_PDF_INPUT_FORMATS:
+            return self._convert_image_to_pdf(overwrite)
+
+        if self.output_type == 'pdf':
+            return self._convert_pdf_to_pdf(overwrite)
+
         if self.output_type in _RASTER_OUTPUT_FORMATS:
             return self._convert_to_raster(overwrite, quality)
 
@@ -258,6 +294,86 @@ class PyMuPDFConverter(ConverterInterface):
             raise
         except Exception as e:
             raise RuntimeError(f"PDF extraction failed: {str(e)}")
+
+    def _convert_image_to_pdf(self, overwrite: bool) -> list[str]:
+        """Wrap a raster image in a single-page PDF via PyMuPDF."""
+        input_filename = Path(self.input_file).stem
+        output_file = os.path.join(self.output_dir, f"{input_filename}.pdf")
+
+        if not overwrite and os.path.exists(output_file):
+            return [output_file]
+
+        try:
+            image = Image.open(self.input_file)
+            image.load()
+            image = self._prepare_image_for_pdf(image)
+
+            dpi_x, dpi_y = self._get_image_dpi(image)
+            width_pt = max(1.0, image.width * 72.0 / dpi_x)
+            height_pt = max(1.0, image.height * 72.0 / dpi_y)
+
+            image_buffer = BytesIO()
+            image.save(image_buffer, format='PNG')
+
+            doc = fitz.open()
+            try:
+                page = doc.new_page(width=width_pt, height=height_pt)
+                page.insert_image(page.rect, stream=image_buffer.getvalue())
+                doc.save(output_file)
+            finally:
+                doc.close()
+        except Exception as exc:
+            raise RuntimeError(f"Image to PDF conversion failed: {exc}") from exc
+
+        if not os.path.exists(output_file):
+            raise RuntimeError(f"Output file was not created: {output_file}")
+
+        return [output_file]
+
+    def _convert_pdf_to_pdf(self, overwrite: bool) -> list[str]:
+        """Rewrite a PDF-family input as a standard PDF output file."""
+        input_filename = Path(self.input_file).stem
+        output_file = os.path.join(self.output_dir, f"{input_filename}.pdf")
+
+        if not overwrite and os.path.exists(output_file):
+            return [output_file]
+
+        if os.path.abspath(self.input_file) == os.path.abspath(output_file):
+            return [output_file]
+
+        try:
+            with fitz.open(self.input_file) as doc:
+                doc.save(output_file)
+        except Exception:
+            shutil.copy2(self.input_file, output_file)
+
+        if not os.path.exists(output_file):
+            raise RuntimeError(f"Output file was not created: {output_file}")
+
+        return [output_file]
+
+    @staticmethod
+    def _prepare_image_for_pdf(image: Image.Image) -> Image.Image:
+        """Normalize Pillow image state for deterministic PDF embedding."""
+        image = image.copy()
+        if image.mode == 'P':
+            image = image.convert('RGBA')
+        return image
+
+    @staticmethod
+    def _get_image_dpi(image: Image.Image) -> tuple[float, float]:
+        """Return a sane DPI tuple for page sizing."""
+        dpi = image.info.get('dpi')
+        if isinstance(dpi, tuple) and len(dpi) == 2:
+            dpi_x, dpi_y = dpi
+        elif isinstance(dpi, (int, float)):
+            dpi_x = dpi_y = dpi
+        else:
+            dpi_x = dpi_y = 72
+
+        dpi_x = float(dpi_x) if dpi_x else 72.0
+        dpi_y = float(dpi_y) if dpi_y else 72.0
+        return max(dpi_x, 1.0), max(dpi_y, 1.0)
 
     # ------------------------------------------------------------------
     # Raster rendering (PDF -> image)

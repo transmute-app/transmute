@@ -6,6 +6,8 @@ from fastapi import HTTPException
 from core.helper_functions import ( 
     validate_sql_identifier, 
     detect_media_type, 
+    detect_pdf_type,
+    _detect_pdf_subtype_from_xmp,
     sanitize_extension,
     validate_hexadecimal_filename,
     validate_safe_path,
@@ -75,6 +77,51 @@ def test_detect_media_type_normalizes_kepub_compound_extension(tmp_path):
     file = tmp_path / "book.kepub.epub"
     file.write_text("kepub fixture")
     assert detect_media_type(file) == "kepub"
+
+
+def test_detect_pdf_type_distinguishes_pdf_and_pdfa(pytestconfig):
+    samples_dir = pytestconfig.rootpath.parent / "assets" / "samples"
+    assert detect_pdf_type(samples_dir / "pdf.pdf") == "pdf"
+    assert detect_pdf_type(samples_dir / "pdfa.pdf") == "pdf/a"
+
+
+def test_detect_pdf_type_ignores_incidental_pdfa_namespace_markers():
+    xmp = """
+    <x:xmpmeta xmlns:x="adobe:ns:meta/">
+      <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+        <rdf:Description xmlns:pdfaid="http://www.aiim.org/pdfa/ns/id/" rdf:about="">
+          <pdfaid:part></pdfaid:part>
+          <pdfaid:conformance> </pdfaid:conformance>
+        </rdf:Description>
+      </rdf:RDF>
+    </x:xmpmeta>
+    """
+    assert _detect_pdf_subtype_from_xmp(xmp) == "pdf"
+
+
+def test_list_files_refreshes_stale_pdf_media_type(pytestconfig, safe_path_test_settings, tmp_db):
+    samples_dir = pytestconfig.rootpath.parent / "assets" / "samples"
+    sample = samples_dir / "pdf.pdf"
+    stored = safe_path_test_settings.upload_dir / "abcdef123456.pdf"
+    stored.write_bytes(sample.read_bytes())
+
+    tmp_db.insert_file_metadata({
+        "id": "abcdef123456",
+        "storage_path": str(stored),
+        "original_filename": "pdf.pdf",
+        "media_type": "pdf/a",
+        "extension": ".pdf",
+        "size_bytes": stored.stat().st_size,
+        "sha256_checksum": "dummy_checksum",
+        "user_id": "dummy_user_3",
+    })
+
+    listed = tmp_db.list_files(user_id="dummy_user_3")
+    assert listed[0]["media_type"] == "pdf"
+
+    refreshed = tmp_db.get_file_metadata("abcdef123456")
+    assert refreshed is not None
+    assert refreshed["media_type"] == "pdf"
 
 @pytest.mark.parametrize("extension", [
     { "raw": ".mp4", "cleaned": "mp4" },

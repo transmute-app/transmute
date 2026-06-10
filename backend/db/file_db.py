@@ -1,6 +1,7 @@
 import sqlite3
 import threading
 from typing import Optional
+from pathlib import Path
 from core import get_settings, validate_sql_identifier, migrate_table_columns, assign_orphaned_rows_to_admin
 
 '''
@@ -121,6 +122,39 @@ class FileDB:
                 metadata['user_id'],
             ))  # nosec B608
 
+    def _refresh_pdf_media_type(self, metadata: dict) -> dict:
+        """Re-detect persisted PDF media types so stale subtype rows self-heal."""
+        extension = (metadata.get('extension') or '').lower()
+        media_type = (metadata.get('media_type') or '').lower()
+        if extension != '.pdf' and not media_type.startswith('pdf'):
+            return metadata
+
+        storage_path = metadata.get('storage_path')
+        if not storage_path:
+            return metadata
+
+        path = Path(storage_path)
+        if not path.exists():
+            return metadata
+
+        try:
+            from core.helper_functions import detect_media_type
+
+            detected_media_type = detect_media_type(path)
+        except Exception:
+            return metadata
+
+        if detected_media_type == media_type:
+            return metadata
+
+        with self.conn:
+            self.conn.execute(
+                f"UPDATE {self.TABLE_NAME} SET media_type = ? WHERE id = ?",  # nosec B608
+                (detected_media_type, metadata['id']),
+            )
+        metadata['media_type'] = detected_media_type
+        return metadata
+
     def get_file_metadata(self, file_id: str) -> Optional[dict]:
         """Retrieve metadata for a specific file by its ID.
 
@@ -137,7 +171,7 @@ class FileDB:
         row = cursor.fetchone()
         if row is None:
             return None
-        return dict(row)
+        return self._refresh_pdf_media_type(dict(row))
 
     def list_files(self, user_id: str | None = None) -> list[dict]:
         """Retrieve metadata for files, optionally filtered by user."""
@@ -148,7 +182,7 @@ class FileDB:
         else:
             cursor.execute(f"SELECT * FROM {self.TABLE_NAME}")  # nosec B608
         rows = cursor.fetchall()
-        return [dict(row) for row in rows]
+        return [self._refresh_pdf_media_type(dict(row)) for row in rows]
 
     def delete_file_metadata(self, file_id: str) -> None:
         """Delete the metadata record for a specific file.

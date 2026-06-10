@@ -4,6 +4,7 @@ import sqlite3
 import mimetypes
 import hashlib
 import magic
+import xml.etree.ElementTree as ET
 
 from typing import TYPE_CHECKING
 from fastapi import HTTPException
@@ -154,25 +155,54 @@ def detect_pdf_type(file_path: Path) -> str:
         if not doc.is_pdf:
             raise ValueError(f"File is not a PDF: {file_path}")
 
-        xmp = doc.get_xml_metadata() or ""
-
-        # Each PDF subtype declares itself in XMP with a distinct namespace prefix.
-        # More-specific subtypes (PDF/VT) must be checked before general ones
-        # (PDF/X) because PDF/VT files also contain PDF/X markers.
-        _XMP_SUBTYPE_MARKERS = [
-            ("pdfvtid:GTS_PDFVTVersion", "pdf/vt"),
-            ("pdfaid:part", "pdf/a"),
-            ("pdfuaid:part", "pdf/ua"),
-            ("ISO_PDFEVersion", "pdf/e"),
-            ("pdfxid:GTS_PDFXVersion", "pdf/x"),
-        ]
-        for marker, subtype in _XMP_SUBTYPE_MARKERS:
-            if marker in xmp:
-                return subtype
+        return _detect_pdf_subtype_from_xmp(doc.get_xml_metadata() or "")
     finally:
         doc.close()
 
-    return "pdf"
+
+def _detect_pdf_subtype_from_xmp(xmp: str) -> str:
+    """Classify a PDF subtype from parsed XMP metadata values."""
+    if not xmp.strip():
+        return "pdf"
+
+    try:
+        root = ET.fromstring(xmp)
+    except ET.ParseError:
+        return "pdf"
+
+    def has_text(*local_names: str) -> bool:
+        wanted = set(local_names)
+        for element in root.iter():
+            tag = element.tag
+            if not isinstance(tag, str):
+                continue
+            local_name = tag.rsplit('}', 1)[-1].rsplit(':', 1)[-1]
+            if local_name in wanted and (element.text or '').strip():
+                return True
+        return False
+
+    # More-specific subtypes must be checked before more general ones.
+    if has_text('GTS_PDFVTVersion'):
+        return 'pdf/vt'
+    if has_text('part') and has_text('conformance'):
+        return 'pdf/a'
+    if has_text('part'):
+        # PDF/UA uses pdfuaid:part, while PDF/A additionally requires a
+        # conformance marker.
+        for element in root.iter():
+            tag = element.tag
+            if not isinstance(tag, str):
+                continue
+            if tag.rsplit('}', 1)[-1].rsplit(':', 1)[-1] != 'part':
+                continue
+            namespace = tag[1:].split('}', 1)[0] if tag.startswith('{') else ''
+            if namespace.endswith('/pdfua/ns/id/') and (element.text or '').strip():
+                return 'pdf/ua'
+    if has_text('ISO_PDFEVersion'):
+        return 'pdf/e'
+    if has_text('GTS_PDFXVersion'):
+        return 'pdf/x'
+    return 'pdf'
 
 
 def detect_p7m_content_type(file_path: Path) -> str | None:
@@ -231,13 +261,15 @@ def detect_media_type(file_path: Path) -> str:
     # Use extensions as the media_type
     filename = file_path.name
     extension = get_file_extension(filename)
+    if extension == 'pdf':
+        # PDF subtypes share the .pdf extension, so inspect the document
+        # before consulting the extension-to-media-type table.
+        return detect_pdf_type(file_path)
+
     for media_type, mapped_extension in media_type_extensions.items():
         if extension == mapped_extension:
             return media_type
-    if extension == 'pdf':
-        # For PDFs, use libmagic to detect specific PDF types (e.g. PDF/A)
-        media_type = detect_pdf_type(file_path)
-    elif extension == 'p7m':
+    if extension == 'p7m':
         inner_type = detect_p7m_content_type(file_path)
         media_type = f"p7m/{inner_type}" if inner_type else "p7m"
     elif not extension:

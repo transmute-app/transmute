@@ -85,6 +85,9 @@ class CalibreConverter(ConverterInterface):
         # Check if formats are supported
         if input_fmt not in self.supported_input_formats or output_fmt not in self.supported_output_formats:
             return False
+
+        if input_fmt.startswith('pdf') and output_fmt == 'pdf':
+            return False
         
         return True
 
@@ -101,6 +104,9 @@ class CalibreConverter(ConverterInterface):
         normalized_format = format_type.lower()
         if normalized_format not in cls.supported_input_formats:
             return set()
+
+        if normalized_format.startswith('pdf'):
+            return cls.supported_output_formats - {'pdf', normalized_format}
 
         return cls.supported_output_formats - {normalized_format}
 
