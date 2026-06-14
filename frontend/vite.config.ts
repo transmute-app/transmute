@@ -12,8 +12,10 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       output: {
-        manualChunks: {
-          'syntax-highlighter': ['react-syntax-highlighter'],
+        manualChunks(id) {
+          if (id.includes('react-syntax-highlighter')) {
+            return 'syntax-highlighter'
+          }
         },
       },
     },
