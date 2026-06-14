@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import tempfile
@@ -6,6 +7,9 @@ from typing import Optional
 
 from core import get_settings
 from .compressor_interface import CompressorInterface
+
+
+logger = logging.getLogger(__name__)
 
 
 # JPEG encoder quality (0-100, higher = better quality / larger file) used when
@@ -184,7 +188,10 @@ class PyMuPDFCompressor(CompressorInterface):
 
                 if existing_size is None or len(new_stream) < existing_size:
                     doc[page_index].replace_image(xref, stream=new_stream)
-            except Exception:
-                # Any single problematic image is skipped rather than failing
-                # the whole compression job.
+            except Exception as exc:
+                logger.warning(
+                    "Skipping embedded PDF image xref %s during compression: %s",
+                    xref,
+                    exc,
+                )
                 continue
