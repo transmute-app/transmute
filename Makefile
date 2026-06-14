@@ -98,6 +98,11 @@ test-backend: ## Run Python backend tests with pytest
 test-frontend: ## Run frontend tests with Vitest. Still working on develop tests
 	cd frontend && npm run test
 
+# Skips pdf->cbz since the pdfs in samples/ will fail with PDF contains no extractable images: No valid images found in PDF file
+# Can re-enable once we have a better test PDF
+test-conversions: ## Run all conversion tests (currently skipped in CI)
+	$(PYTHON) -m pytest backend/tests/converters/test_all_conversions.py -k "not pdf->cbz"
+
 # ----------------------------------------------------------------------------
 # Docker
 # ----------------------------------------------------------------------------
