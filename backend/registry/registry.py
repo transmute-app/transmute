@@ -19,6 +19,29 @@ WEB_ALIAS_BASE_FORMATS: dict[str, str] = {
     WEBAUDIO_FORMAT: WEBAUDIO_BASE_FORMAT,
 }
 
+_PYMUPDF_IMAGE_TO_PDF_INPUTS = {
+    'png',
+    'jpeg',
+    'webp',
+    'tiff',
+    'bmp',
+    'gif',
+    'ppm',
+    'pgm',
+    'pbm',
+    'tga',
+    'jp2',
+    'avif',
+    'jxl',
+    'ico',
+    'dib',
+    'pcx',
+    'sgi',
+    'pnm',
+    'heif',
+    'heic',
+}
+
 
 class ConverterRegistry:
     """
@@ -164,7 +187,15 @@ class ConverterRegistry:
         # Find converters that support both formats
         compatible = input_converters & output_converters
         if compatible:
-            return compatible.pop()
+            directionally_compatible = {
+                converter
+                for converter in compatible
+                if normalized_output in converter.get_formats_compatible_with(input_format)
+            }
+            candidates = directionally_compatible or compatible
+            preferred = self._get_preferred_converter(candidates, normalized_input, normalized_output)
+            if preferred is not None:
+                return preferred
 
         # Fallback: check if any input converter dynamically supports this
         # output (e.g. PKCS7Converter for compound types like "p7m/pdf").
@@ -173,6 +204,25 @@ class ConverterRegistry:
                 return converter
 
         return None
+
+    @staticmethod
+    def _get_preferred_converter(
+        compatible: set[Type[ConverterInterface]],
+        normalized_input: str,
+        normalized_output: str,
+    ) -> Type[ConverterInterface] | None:
+        """Choose a deterministic converter when multiple classes match."""
+        if normalized_output == 'pdf' and normalized_input.startswith('pdf'):
+            for converter in compatible:
+                if converter.__name__ == 'PyMuPDFConverter':
+                    return converter
+
+        if normalized_output == 'pdf' and normalized_input in _PYMUPDF_IMAGE_TO_PDF_INPUTS:
+            for converter in compatible:
+                if converter.__name__ == 'PyMuPDFConverter':
+                    return converter
+
+        return sorted(compatible, key=lambda converter: converter.__name__)[0]
     
     def list_converters(self) -> dict[str, list[str]] :
         """

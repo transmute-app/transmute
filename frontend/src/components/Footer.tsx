@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { FaGithub, FaExternalLinkAlt, FaBook } from 'react-icons/fa'
 import { useTranslation } from 'react-i18next'
-import { publicFetch as fetch } from '../utils/api'
+import { api, publicFetch as fetch } from '../utils/api'
 
 const RELEASE_VERSION_PATTERN = /^v\d+\.\d+\.\d+$/
 const COMMIT_SHA_PATTERN = /^[0-9a-f]{7}$/i
@@ -137,7 +137,7 @@ function Footer() {
               </>
             )}
             <span className="text-text-muted/30">|</span>
-            <a href="/api/docs" className="hover:text-text transition-colors" aria-label={t('footer.apiDocs')} title={t('footer.apiDocs')}>
+            <a href={api.url('/api/docs')} className="hover:text-text transition-colors" aria-label={t('footer.apiDocs')} title={t('footer.apiDocs')}>
               <FaBook size={14} />
             </a>
             <span className="text-text-muted/30">|</span>

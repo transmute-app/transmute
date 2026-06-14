@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './AuthContext'
 import { ThemeProvider, useTheme } from './ThemeContext'
 import Header from './components/Header'
 import Footer from './components/Footer'
+import { api } from './utils/api'
 
 const Account = lazy(() => import('./pages/Account'))
 const Auth = lazy(() => import('./pages/Auth'))
@@ -139,7 +140,7 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <Router>
+        <Router basename={api.basePath || undefined}>
           <RouteTitle />
           <AppShell />
         </Router>

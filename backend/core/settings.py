@@ -1,6 +1,7 @@
 import json
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import urlparse
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -96,6 +97,9 @@ class Settings(BaseSettings):
     port: int = 3313
     api_server_url: str | None = None
 
+    # Reverse-proxy sub-path, derived from app_url's path (see model_post_init).
+    root_path: str = ""
+
     @field_validator("oidc_issuer_url", "oidc_internal_url", "app_url", "oidc_username_claim", mode="before")
     @classmethod
     def _normalize_url_env(cls, value: str) -> str:
@@ -169,6 +173,9 @@ class Settings(BaseSettings):
         self.tmp_dir = self.data_dir / "tmp"
 
         self.api_server_url = self.app_url if self.app_url else f"http://{self.host}:{self.port}"
+
+        # app_url=https://host/transmute -> "/transmute"; bare host -> "".
+        self.root_path = urlparse(self.app_url).path.rstrip("/") if self.app_url else ""
 
         # Ensure directories exist
         for path in [

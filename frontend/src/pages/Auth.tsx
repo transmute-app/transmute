@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { FaKey, FaUserPlus, FaArrowUpRightFromSquare } from 'react-icons/fa6'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../AuthContext'
-import { apiJson } from '../utils/api'
+import { api, apiJson } from '../utils/api'
 import PasswordField from '../components/PasswordField'
 
 interface OidcConfig {
@@ -45,7 +45,7 @@ function Auth() {
 
   useEffect(() => {
     if (oidcConfig?.auto_launch && oidcConfig.enabled && !requiresSetup && !suppressAutoLaunch) {
-      window.location.href = '/api/oidc/login'
+      window.location.href = api.url('/api/oidc/login')
     }
   }, [oidcConfig, requiresSetup, suppressAutoLaunch])
 
@@ -118,7 +118,7 @@ function Auth() {
               )}
 
               <a
-                href="/api/oidc/login"
+                href={api.url('/api/oidc/login')}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 font-semibold text-white transition hover:bg-primary-dark"
               >
                 <FaArrowUpRightFromSquare size={14} />
@@ -250,7 +250,7 @@ function Auth() {
                   <div className={`mt-4 flex gap-3 ${oidcConfig?.enabled && oidcConfig?.allow_unauthenticated ? 'flex-row' : 'flex-col'}`}>
                     {oidcConfig?.enabled && (
                       <a
-                        href="/api/oidc/login"
+                        href={api.url('/api/oidc/login')}
                         className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-light/70 px-5 py-3.5 font-semibold text-text transition hover:border-primary/40 hover:bg-surface-light"
                       >
                         <FaArrowUpRightFromSquare size={14} />

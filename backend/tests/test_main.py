@@ -43,3 +43,26 @@ def test_run_api_server_logs_warning_on_host_override(monkeypatch, caplog):
         app_main.run_api_server(object(), settings)
 
     assert "Both host and hosts are configured" in caplog.text
+
+
+INDEX_HTML = (
+    '<head>\n'
+    '    <base href="/" />\n'
+    '    <script>window.__BASE_PATH__ = "";</script>\n'
+    '    <link rel="manifest" href="site.webmanifest" />\n'
+    '</head>\n'
+)
+
+
+def test_render_index_html_noop_at_root():
+    out = app_main.render_index_html(INDEX_HTML, "")
+    assert '<base href="/" />' in out
+    assert 'window.__BASE_PATH__ = ""' in out
+
+
+def test_render_index_html_injects_subpath():
+    out = app_main.render_index_html(INDEX_HTML, "/transmute")
+    assert '<base href="/transmute/" />' in out
+    assert 'window.__BASE_PATH__ = "/transmute"' in out
+    # Relative asset references are left untouched (resolved via <base> tag).
+    assert 'href="site.webmanifest"' in out

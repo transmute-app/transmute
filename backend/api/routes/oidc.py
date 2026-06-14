@@ -146,7 +146,9 @@ async def oidc_login(request: Request):
         # If no explicit app_url is set, we must assume the provider can reach us at the same URL we use to reach it.
         redirect_uri = str(request.url_for("oidc_callback"))
     else:
-        redirect_uri = settings.app_url.rstrip("/") + request.url_for("oidc_callback").path
+        # url_for already includes the sub-path (root_path), so combine it with
+        # app_url's origin only to avoid doubling the prefix under a sub-path.
+        redirect_uri = _origin(settings.app_url) + request.url_for("oidc_callback").path
     # Store a CSRF nonce in the session
     nonce = secrets.token_urlsafe(32)
     request.session["oidc_nonce"] = nonce
@@ -232,7 +234,9 @@ async def oidc_callback(
     _purge_expired_codes()
     _pending_codes[code] = (access_token, expires_in, time.monotonic() + _CODE_TTL_SECONDS)
 
-    return RedirectResponse(url=f"/?oidc_code={code}")
+    # Prefix the redirect with the sub-path so the browser lands on the app.
+    root_path = request.scope.get("root_path", "")
+    return RedirectResponse(url=f"{root_path}/?oidc_code={code}")
 
 
 class _OidcExchangeRequest(BaseModel):

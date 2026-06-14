@@ -1,0 +1,58 @@
+# Local sandbox to try the OIDC login flow with Transmute served under a
+# sub-path (/transmute). NOT for production.
+#
+#   docker compose -f docker-compose-oidc-test.yml up
+#
+# Then open http://localhost:3313/transmute/ and sign in with:
+#   username: testuser   password: password
+#
+# Keycloak admin console: http://localhost:8080/  (admin / admin)
+#
+# The browser reaches Keycloak at localhost:8080 while Transmute reaches it at
+# keycloak:8080 inside the Docker network; OIDC_INTERNAL_URL handles that split.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+      - KC_HTTP_ENABLED=true
+      # Pin the issuer so tokens always say localhost:8080 regardless of which
+      # host requested them (browser uses localhost, backend uses keycloak).
+      # Without this, Keycloak derives the issuer from the request host and the
+      # token's `iss` claim fails validation against the discovery document.
+      - KC_HOSTNAME=http://localhost:8080
+      - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
+      - KC_HOSTNAME_STRICT=false
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/keycloak/transmute-realm.json:/opt/keycloak/data/import/transmute-realm.json:ro
+
+  transmute:
+    container_name: transmute-dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    depends_on:
+      - keycloak
+    environment:
+      # Served under /transmute (the sub-path is derived from APP_URL).
+      - APP_URL=http://localhost:3313/transmute
+      # OIDC: browser-facing issuer vs backend-to-Keycloak internal URL.
+      - OIDC_ISSUER_URL=http://localhost:8080/realms/transmute
+      - OIDC_INTERNAL_URL=http://keycloak:8080/realms/transmute
+      - OIDC_CLIENT_ID=transmute
+      - OIDC_CLIENT_SECRET=transmute-secret
+      - OIDC_DISPLAY_NAME=Keycloak
+      - OIDC_USERNAME_CLAIM=preferred_username
+      - OIDC_AUTO_CREATE_USERS=true
+      - OIDC_AUTO_LAUNCH=false
+    ports:
+      - "3313:3313"
+    volumes:
+      - transmute_oidc_data:/app/data
+
+volumes:
+  transmute_oidc_data:
