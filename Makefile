@@ -105,6 +105,9 @@ test-frontend: ## Run frontend tests with Vitest. Still working on develop tests
 test-conversions: ## Run all conversion tests (currently skipped in CI)
 	$(PYTHON) -m pytest backend/tests/converters/test_all_conversions.py -k "not pdf->cbz"
 
+test-compressions: ## Run all compression tests (currently skipped in CI)
+	$(PYTHON) -m pytest backend/tests/compressors/test_all_compressions.py
+
 # ----------------------------------------------------------------------------
 # Docker
 # ----------------------------------------------------------------------------
