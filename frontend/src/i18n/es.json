@@ -91,10 +91,19 @@
     "uploading_other": "Subiendo {{count}} archivos...",
     "pending": "Pendiente ({{count}})",
     "completed": "Completado ({{count}})",
+    "modeToggleLabel": "Modo de operación",
+    "mode": {
+      "convert": "Convertir",
+      "compress": "Comprimir"
+    },
     "convertFile": "Convertir {{count}} Archivo",
     "convertFile_other": "Convertir {{count}} Archivos",
     "converting": "Convirtiendo {{count}} archivo...",
     "converting_other": "Convirtiendo {{count}} archivos...",
+    "compressFile": "Comprimir {{count}} archivo",
+    "compressFile_other": "Comprimir {{count}} archivos",
+    "compressing": "Comprimiendo {{count}} archivo...",
+    "compressing_other": "Comprimiendo {{count}} archivos...",
     "clear": "Limpiar",
     "downloadAll": "Descargar todos los {{count}} archivos",
     "downloading": "Descargando...",
@@ -105,16 +114,7 @@
     "jobsInQueue": "{{count}} trabajo en ejecución",
     "jobsInQueue_other": "{{count}} trabajos en ejecución",
     "jobsInProgressHint": "Tus conversiones se están procesando en segundo plano. Puedes seguir trabajando.",
-    "viewQueue": "Ver trabajos",
-    "modeToggleLabel": "Modo de operación",
-    "mode": {
-      "convert": "Convertir",
-      "compress": "Comprimir"
-    },
-    "compressFile": "Comprimir {{count}} archivo",
-    "compressFile_other": "Comprimir {{count}} archivos",
-    "compressing": "Comprimiendo {{count}} archivo...",
-    "compressing_other": "Comprimiendo {{count}} archivos..."
+    "viewQueue": "Ver trabajos"
   },
   "files": {
     "title": "Archivos",
@@ -133,6 +133,9 @@
     "title": "Trabajos",
     "loading": "Cargando conversiones...",
     "noConversions": "Aún no hay archivos convertidos.",
+    "noCompressions": "Aún no hay archivos comprimidos.",
+    "tabConvert": "Conversiones",
+    "tabCompress": "Compresiones",
     "downloadSelected": "Descargar {{count}} Archivo",
     "downloadSelected_other": "Descargar {{count}} Archivos",
     "deleteSelected": "Eliminar {{count}} Archivo",
@@ -143,10 +146,7 @@
     "fetchFailed": "Error al obtener las conversiones",
     "deleteFailed": "Error al borrar",
     "cancelFailed": "No se pudo cancelar el trabajo",
-    "retryFailed": "No se pudo reintentar el trabajo",
-    "noCompressions": "Aún no hay archivos comprimidos.",
-    "tabConvert": "Conversiones",
-    "tabCompress": "Compresiones"
+    "retryFailed": "No se pudo reintentar el trabajo"
   },
   "settings": {
     "title": "Ajustes",
@@ -223,6 +223,13 @@
     "defaultQualities": "Calidades Predeterminadas",
     "defaultQualitiesDescription": "Define niveles de calidad predeterminados para los archivos convertidos que permiten opciones de calidad. Estos pueden cambiarse individualmente por archivo.",
     "allQualitiesConfigured": "Todos los formatos con opciones de calidad tienen configuraciones predeterminadas.",
+    "defaultCompressionLevels": "Niveles de compresión predeterminados",
+    "defaultCompressionLevelsDescription": "Establezca niveles de compresión predeterminados para los formatos de medios que admiten compresión. Aún se pueden anular por archivo.",
+    "allCompressionLevelsConfigured": "Todos los formatos disponibles con niveles de compresión tienen valores predeterminados configurados.",
+    "mediaFormat": "Formato de medio",
+    "defaultCompressionLevel": "Nivel de compresión predeterminado",
+    "mediaFormatPlaceholder": "Formato de medio...",
+    "compressionLevelPlaceholder": "Nivel de compresión...",
     "inputFormat": "Formato de Entrada",
     "defaultOutput": "Salida predeterminada",
     "outputFormat": "Formato de Salida",
@@ -233,14 +240,7 @@
     "outputFormatPlaceholder": "Formato de salida...",
     "qualityPlaceholder": "Calidad...",
     "decrease": "Disminuir",
-    "increase": "Incrementar",
-    "defaultCompressionLevels": "Niveles de compresión predeterminados",
-    "defaultCompressionLevelsDescription": "Establezca niveles de compresión predeterminados para los formatos de medios que admiten compresión. Aún se pueden anular por archivo.",
-    "allCompressionLevelsConfigured": "Todos los formatos disponibles con niveles de compresión tienen valores predeterminados configurados.",
-    "mediaFormat": "Formato de medio",
-    "defaultCompressionLevel": "Nivel de compresión predeterminado",
-    "mediaFormatPlaceholder": "Formato de medio...",
-    "compressionLevelPlaceholder": "Nivel de compresión..."
+    "increase": "Incrementar"
   },
   "confirm": {
     "cancel": "Cancelar",
@@ -327,11 +327,19 @@
     "delete": "Borrar",
     "setFormatAll": "Establecer formato para todos los archivos",
     "setQualityAll": "Establecer calidad para todos los archivos",
+    "setCompressionLevelAll": "Establecer nivel de compresión para todos los archivos",
+    "compressionLevel": "Nivel de compresión",
+    "compressionLevelPlaceholder": "Nivel de compresión",
     "all": "Todos",
     "qualityDescriptions": {
       "low": "Menor tamaño de archivo, velocidad de conversión rápida, baja calidad",
       "medium": "Tamaño de archivo medio, velocidad de conversión media, calidad decente",
       "high": "Tamaño de archivo grande, velocidad de conversión lenta, alta calidad"
+    },
+    "compressionLevelDescriptions": {
+      "light": "Compresión ligera, rápida, salida más grande",
+      "balanced": "Velocidad de compresión y tamaño de salida equilibrados",
+      "max": "Compresión máxima, lenta, salida más pequeña"
     },
     "noMatches": "No coincidencias",
     "status": "Estado",
@@ -343,14 +351,6 @@
       "completed": "Completado",
       "failed": "Fallido",
       "cancelled": "Cancelado"
-    },
-    "setCompressionLevelAll": "Establecer nivel de compresión para todos los archivos",
-    "compressionLevel": "Nivel de compresión",
-    "compressionLevelPlaceholder": "Nivel de compresión",
-    "compressionLevelDescriptions": {
-      "light": "Compresión ligera, rápida, salida más grande",
-      "balanced": "Velocidad de compresión y tamaño de salida equilibrados",
-      "max": "Compresión máxima, lenta, salida más pequeña"
     }
   },
   "preview": {
