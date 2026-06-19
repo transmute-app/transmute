@@ -3,7 +3,7 @@
   "@id": "https://github.com/transmute-app/transmute/blob/main/docs/other/vex.json",
   "author": "transmute-app",
   "timestamp": "2026-06-19T00:00:00Z",
-  "version": 9,
+  "version": 10,
   "statements": [
     {
       "vulnerability": { 
@@ -423,7 +423,7 @@
           "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
           "subcomponents": [
             {
-              "@id": "pkg:deb/debian/xvfb@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
             }
           ]
         }
@@ -441,7 +441,7 @@
           "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
           "subcomponents": [
             {
-              "@id": "pkg:deb/debian/xvfb@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
             }
           ]
         }
@@ -459,7 +459,7 @@
           "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
           "subcomponents": [
             {
-              "@id": "pkg:deb/debian/xvfb@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
             }
           ]
         }
@@ -477,7 +477,7 @@
           "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
           "subcomponents": [
             {
-              "@id": "pkg:deb/debian/xvfb@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
             }
           ]
         }
@@ -495,7 +495,7 @@
           "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
           "subcomponents": [
             {
-              "@id": "pkg:deb/debian/xvfb@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
             }
           ]
         }
@@ -513,7 +513,7 @@
           "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
           "subcomponents": [
             {
-              "@id": "pkg:deb/debian/xvfb@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
             }
           ]
         }
@@ -531,7 +531,7 @@
           "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
           "subcomponents": [
             {
-              "@id": "pkg:deb/debian/xvfb@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
             }
           ]
         }
@@ -549,7 +549,7 @@
           "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
           "subcomponents": [
             {
-              "@id": "pkg:deb/debian/xvfb@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
             }
           ]
         }
@@ -567,7 +567,7 @@
           "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
           "subcomponents": [
             {
-              "@id": "pkg:deb/debian/xvfb@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
             }
           ]
         }
@@ -585,7 +585,7 @@
           "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
           "subcomponents": [
             {
-              "@id": "pkg:deb/debian/libexpat1@2.7.1-2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+              "@id": "pkg:deb/debian/expat@2.7.1-2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
             }
           ]
         }
