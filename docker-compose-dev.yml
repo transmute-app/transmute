@@ -5,7 +5,6 @@ services:
     container_name: transmute-dev
     build:
       context: .
-      network: host
       dockerfile: docker/Dockerfile
     restart: unless-stopped
     ports:
