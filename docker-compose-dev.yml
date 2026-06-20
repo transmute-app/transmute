@@ -8,10 +8,10 @@ services:
       dockerfile: docker/Dockerfile
     restart: unless-stopped
     ports:
-        - 3313:3313
+      - 3313:3313
     volumes:
       # - ./data/:/app/data       # Uncomment this line to make the data volume available on the host for debugging.
-      - transmute_data:/app/data  # Comment this line if you uncomment the line above to make the data volume available on the host for debugging.
+      - transmute_data:/app/data # Comment this line if you uncomment the line above to make the data volume available on the host for debugging.
     healthcheck:
       test:
         - "CMD"
@@ -28,3 +28,4 @@ services:
 
 volumes:
   transmute_data:
+
