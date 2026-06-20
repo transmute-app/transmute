@@ -15,13 +15,15 @@ import cs from './cs.json'
 import tr from './tr.json'
 import zhCN from './zh-CN.json'
 
+export const SUPPORTED_LANGUAGES = ['en', 'az', 'de', 'es', 'pl', 'it', 'da', 'fr', 'hi', 'cs', 'tr', 'zh-CN'] as const
+
 const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    supportedLngs: ['en', 'az', 'de', 'es', 'pl', 'it', 'da', 'fr', 'hi', 'cs', 'tr', 'zh-CN'],
+    supportedLngs: [...SUPPORTED_LANGUAGES],
     nonExplicitSupportedLngs: true,
     resources: {
       en: { translation: en },

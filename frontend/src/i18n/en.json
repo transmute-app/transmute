@@ -151,6 +151,8 @@
   "settings": {
     "title": "Settings",
     "appearance": "Appearance",
+    "language": "Language",
+    "languageDescription": "Choose the application language",
     "theme": "Theme",
     "themeDescription": "Choose the application color theme",
     "customThemes": "Custom Themes",
