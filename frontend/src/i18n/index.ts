@@ -7,6 +7,7 @@ import az from './az.json'
 import de from './de.json'
 import es from './es.json'
 import pl from './pl.json'
+import pt from './pt.json'
 import it from './it.json'
 import da from './da.json'
 import fr from './fr.json'
@@ -15,7 +16,7 @@ import cs from './cs.json'
 import tr from './tr.json'
 import zhCN from './zh-CN.json'
 
-export const SUPPORTED_LANGUAGES = ['en', 'az', 'de', 'es', 'pl', 'it', 'da', 'fr', 'hi', 'cs', 'tr', 'zh-CN'] as const
+export const SUPPORTED_LANGUAGES = ['en', 'az', 'de', 'es', 'pl', 'pt', 'it', 'da', 'fr', 'hi', 'cs', 'tr', 'zh-CN'] as const
 export const LANGUAGE_STORAGE_KEY = 'transmute-language'
 const USER_LANGUAGE_PREFERENCE_KEY = 'transmute-language-user-selected'
 
@@ -58,6 +59,7 @@ i18n
       de: { translation: de },
       es: { translation: es },
       pl: { translation: pl },
+      pt: { translation: pt },
       it: { translation: it },
       da: { translation: da },
       fr: { translation: fr },

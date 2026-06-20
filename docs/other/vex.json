@@ -2,8 +2,8 @@
   "@context": "https://openvex.dev/ns/v0.2.0",
   "@id": "https://github.com/transmute-app/transmute/blob/main/docs/other/vex.json",
   "author": "transmute-app",
-  "timestamp": "2026-06-05T00:00:00Z",
-  "version": 8,
+  "timestamp": "2026-06-19T00:00:00Z",
+  "version": 10,
   "statements": [
     {
       "vulnerability": { 
@@ -395,6 +395,204 @@
       "status": "not_affected",
       "justification": "vulnerable_code_not_in_execute_path",
       "impact_statement": "Transmute does not use GNU tar to extract untrusted tar archives. Its tar extraction path is implemented in Python via backend/converters/archive_convert.py and uses tarfile.extractall(path=dest, filter='data'), which rejects symlinks and hardlinks that escape the extraction directory. The vulnerable GNU tar multi-archive traversal path is not in the execute path of Transmute and cannot be reached by an attacker through the application."
+    },
+    {
+      "vulnerability": {
+        "@id": "CVE-2026-12087"
+      },
+      "products": [
+        {
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            {
+              "@id": "pkg:deb/debian/perl@5.40.1-6?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Transmute does not use Perl Socket or call Socket.xs pack_ip_mreq_source() on attacker-controlled input. Its network download path is implemented in Python in backend/downloaders/http_downloader.py using httpx, and the application does not pass attacker-controlled multicast socket arguments into Perl. The vulnerable Perl Socket pack_ip_mreq_source() out-of-bounds-read path is not in the execute path of Transmute and cannot be reached by an attacker through the application."
+    },
+    {
+      "vulnerability": {
+        "@id": "CVE-2026-50264"
+      },
+      "products": [
+        {
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            {
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Transmute starts Xvfb only as a private local display server for the Draw.io CLI in docker/entrypoint.sh and does not expose an X11 or Xwayland service to remote users. The vulnerable X.Org DRIGetBuffers/DRIGetBuffersWithFormat out-of-bounds-write path requires a hostile X client connection, which is not reachable through Transmute's HTTP conversion API."
+    },
+    {
+      "vulnerability": {
+        "@id": "CVE-2026-50261"
+      },
+      "products": [
+        {
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            {
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Transmute starts Xvfb only as a private local display server for the Draw.io CLI in docker/entrypoint.sh and does not expose an X11 or Xwayland service to remote users. The vulnerable X.Org SyncChangeCounter() use-after-free path requires a hostile X client connection, which is not reachable through Transmute's HTTP conversion API."
+    },
+    {
+      "vulnerability": {
+        "@id": "CVE-2026-50260"
+      },
+      "products": [
+        {
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            {
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Transmute starts Xvfb only as a private local display server for the Draw.io CLI in docker/entrypoint.sh and does not expose an X11 or Xwayland service to remote users. The vulnerable X.Org FreeCounter() use-after-free path requires a hostile X client connection, which is not reachable through Transmute's HTTP conversion API."
+    },
+    {
+      "vulnerability": {
+        "@id": "CVE-2026-50259"
+      },
+      "products": [
+        {
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            {
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Transmute starts Xvfb only as a private local display server for the Draw.io CLI in docker/entrypoint.sh and does not expose an X11 or Xwayland service to remote users. The vulnerable X.Org _XkbSetMapChecks()/CheckKeyTypes() stack-overflow path requires a hostile X client connection, which is not reachable through Transmute's HTTP conversion API."
+    },
+    {
+      "vulnerability": {
+        "@id": "CVE-2026-50258"
+      },
+      "products": [
+        {
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            {
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Transmute starts Xvfb only as a private local display server for the Draw.io CLI in docker/entrypoint.sh and does not expose an X11 or Xwayland service to remote users. The vulnerable X.Org CheckKeyTypes() non-canonical shift-level stack-overflow path requires a hostile X client connection, which is not reachable through Transmute's HTTP conversion API."
+    },
+    {
+      "vulnerability": {
+        "@id": "CVE-2026-50257"
+      },
+      "products": [
+        {
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            {
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Transmute starts Xvfb only as a private local display server for the Draw.io CLI in docker/entrypoint.sh and does not expose an X11 or Xwayland service to remote users. The vulnerable X.Org miSyncDestroyFence() use-after-free path requires a hostile X client connection, which is not reachable through Transmute's HTTP conversion API."
+    },
+    {
+      "vulnerability": {
+        "@id": "CVE-2026-50256"
+      },
+      "products": [
+        {
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            {
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Transmute starts Xvfb only as a private local display server for the Draw.io CLI in docker/entrypoint.sh and does not expose an X11 or Xwayland service to remote users. The vulnerable X.Org font-alias stack-overflow path during alias resolution requires a hostile X client connection, which is not reachable through Transmute's HTTP conversion API."
+    },
+    {
+      "vulnerability": {
+        "@id": "CVE-2026-50263"
+      },
+      "products": [
+        {
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            {
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Transmute starts Xvfb only as a private local display server for the Draw.io CLI in docker/entrypoint.sh and does not expose an X11 or Xwayland service to remote users. The vulnerable X.Org CreateSaverWindow() use-after-free path requires a hostile X client connection, which is not reachable through Transmute's HTTP conversion API."
+    },
+    {
+      "vulnerability": {
+        "@id": "CVE-2026-50262"
+      },
+      "products": [
+        {
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            {
+              "@id": "pkg:deb/debian/xorg-server@2%3A21.1.16-1.3%2Bdeb13u2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Transmute starts Xvfb only as a private local display server for the Draw.io CLI in docker/entrypoint.sh and does not expose an X11 or Xwayland service to remote users. The vulnerable X.Org __glXDisp_ChangeDrawableAttributes() out-of-bounds-read path requires a hostile X client connection, which is not reachable through Transmute's HTTP conversion API."
+    },
+    {
+      "vulnerability": {
+        "@id": "CVE-2026-50219"
+      },
+      "products": [
+        {
+          "@id": "pkg:docker/transmute-app/transmute?repository_url=ghcr.io",
+          "subcomponents": [
+            {
+              "@id": "pkg:deb/debian/expat@2.7.1-2?os_distro=trixie\u0026os_name=debian\u0026os_version=13"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "This libexpat issue requires application code to re-enter the parser from within Expat handlers by calling APIs such as XML_GetBuffer, XML_Parse, XML_ParseBuffer, XML_ParserFree, or XML_ParserReset during a policy-violation callback. Transmute parses XML through defusedxml.ElementTree in backend/converters/pypandoc_convert.py and backend/core/helper_functions.py and does not register custom Expat handlers or perform handler-driven reentrant parsing on attacker-controlled XML. The vulnerable libexpat handler-reentrancy use-after-free path is not in the execute path of Transmute and cannot be reached by an attacker through the application."
     }
   ]
 }
