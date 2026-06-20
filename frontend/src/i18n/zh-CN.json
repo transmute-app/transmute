@@ -151,6 +151,8 @@
   "settings": {
     "title": "设置",
     "appearance": "外观",
+    "language": "语言",
+    "languageDescription": "选择应用语言",
     "theme": "主题",
     "themeDescription": "选择应用配色主题",
     "customThemes": "自定义主题",

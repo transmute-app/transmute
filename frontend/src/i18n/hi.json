@@ -151,6 +151,8 @@
   "settings": {
     "title": "सेटिंग्स",
     "appearance": "दिखावट",
+    "language": "भाषा",
+    "languageDescription": "एप्लिकेशन की भाषा चुनें",
     "theme": "थीम",
     "themeDescription": "एप्लिकेशन का रंग थीम चुनें",
     "customThemes": "कस्टम थीम",

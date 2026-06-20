@@ -151,6 +151,8 @@
   "settings": {
     "title": "Nastavení",
     "appearance": "Vzhled",
+    "language": "Jazyk",
+    "languageDescription": "Vyberte jazyk aplikace",
     "theme": "Motiv",
     "themeDescription": "Vyberte barevný motiv aplikace",
     "customThemes": "Vlastní motivy",

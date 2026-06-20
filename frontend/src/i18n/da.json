@@ -151,6 +151,8 @@
   "settings": {
     "title": "Indstillinger",
     "appearance": "Udseende",
+    "language": "Sprog",
+    "languageDescription": "Vælg applikationens sprog",
     "theme": "Tema",
     "themeDescription": "Vælg applikationens farvetema",
     "customThemes": "Brugerdefinerede temaer",

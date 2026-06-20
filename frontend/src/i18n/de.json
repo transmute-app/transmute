@@ -151,6 +151,8 @@
   "settings": {
     "title": "Einstellungen",
     "appearance": "Darstellung",
+    "language": "Sprache",
+    "languageDescription": "Wählen Sie die Sprache der Anwendung",
     "theme": "Farbschema",
     "themeDescription": "Wählen Sie das Farbschema der Anwendung aus",
     "customThemes": "Benutzerdefinierte Farbschemata",
