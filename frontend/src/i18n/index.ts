@@ -7,6 +7,7 @@ import az from './az.json'
 import de from './de.json'
 import es from './es.json'
 import pl from './pl.json'
+import pt from './pt.json'
 import it from './it.json'
 import da from './da.json'
 import fr from './fr.json'
@@ -21,7 +22,7 @@ i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    supportedLngs: ['en', 'az', 'de', 'es', 'pl', 'it', 'da', 'fr', 'hi', 'cs', 'tr', 'zh-CN'],
+    supportedLngs: ['en', 'az', 'de', 'es', 'pl', 'pt', 'it', 'da', 'fr', 'hi', 'cs', 'tr', 'zh-CN'],
     nonExplicitSupportedLngs: true,
     resources: {
       en: { translation: en },
@@ -29,6 +30,7 @@ i18n
       de: { translation: de },
       es: { translation: es },
       pl: { translation: pl },
+      pt: { translation: pt },
       it: { translation: it },
       da: { translation: da },
       fr: { translation: fr },
