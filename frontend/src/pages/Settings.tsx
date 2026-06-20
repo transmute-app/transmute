@@ -124,6 +124,7 @@ const LANGUAGE_LABELS: Record<(typeof SUPPORTED_LANGUAGES)[number], string> = {
   de: 'Deutsch',
   es: 'Español',
   pl: 'Polski',
+  pt: 'Português',
   it: 'Italiano',
   da: 'Dansk',
   fr: 'Français',
