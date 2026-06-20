@@ -44,7 +44,7 @@ i18n
       escapeValue: false, // React already escapes
     },
     detection: {
-      order: isTest ? ['navigator'] : ['navigator', 'localStorage'],
+      order: isTest ? ['navigator'] : ['localStorage', 'navigator'],
       caches: isTest ? [] : ['localStorage'],
       lookupLocalStorage: 'transmute-language',
     },
