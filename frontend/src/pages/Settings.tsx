@@ -2,7 +2,12 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTheme, type ThemeName } from '../ThemeContext'
 import { useAuth } from '../AuthContext'
 import { useTranslation } from 'react-i18next'
-import { SUPPORTED_LANGUAGES } from '../i18n'
+import {
+  SUPPORTED_LANGUAGES,
+  clearStoredLanguagePreference,
+  getStoredLanguagePreference,
+  setStoredLanguagePreference,
+} from '../i18n'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import FormatDropdown from '../components/FormatDropdown'
 import { authFetch as fetch } from '../utils/api'
@@ -128,6 +133,9 @@ const LANGUAGE_LABELS: Record<(typeof SUPPORTED_LANGUAGES)[number], string> = {
   'zh-CN': '简体中文',
 }
 
+const BROWSER_DEFAULT_LANGUAGE = 'browser-default'
+const BROWSER_DEFAULT_LABEL = 'Browser Default'
+
 function normalizeLanguage(value: string) {
   if (SUPPORTED_LANGUAGES.includes(value as (typeof SUPPORTED_LANGUAGES)[number])) {
     return value as (typeof SUPPORTED_LANGUAGES)[number]
@@ -149,7 +157,10 @@ function Settings() {
   } = useTheme()
   const { isAdmin } = useAuth()
   const { t, i18n } = useTranslation()
-  const currentLanguage = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language)
+  const [selectedLanguagePreference, setSelectedLanguagePreference] = useState<string | null>(() => getStoredLanguagePreference())
+  const selectedLanguage = selectedLanguagePreference
+    ? normalizeLanguage(selectedLanguagePreference)
+    : BROWSER_DEFAULT_LANGUAGE
 
   // Merge built-ins with the runtime-registered custom themes. Memoised so
   // dropdown identity is stable across re-renders.
@@ -725,22 +736,43 @@ function Settings() {
                       onClick={() => setLanguageOpen(open => !open)}
                       className="flex items-center gap-2 bg-surface-dark text-text border border-surface-light rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition duration-200 min-w-[200px]"
                     >
-                      <span className="flex-1 text-left">{LANGUAGE_LABELS[currentLanguage]}</span>
+                      <span className="flex-1 text-left">
+                        {selectedLanguage === BROWSER_DEFAULT_LANGUAGE
+                          ? BROWSER_DEFAULT_LABEL
+                          : LANGUAGE_LABELS[selectedLanguage]}
+                      </span>
                       <svg className={`w-4 h-4 transition-transform duration-200 ${languageOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
                     {languageOpen && (
                       <div className="absolute right-0 mt-1 w-full bg-surface-dark border border-surface-light rounded-lg shadow-xl z-10 overflow-hidden max-h-80 overflow-y-auto">
+                        <button
+                          onClick={() => {
+                            clearStoredLanguagePreference()
+                            setSelectedLanguagePreference(null)
+                            void i18n.changeLanguage()
+                            setLanguageOpen(false)
+                          }}
+                          className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left transition duration-150 ${
+                            selectedLanguage === BROWSER_DEFAULT_LANGUAGE
+                              ? 'bg-primary/20 text-primary-light'
+                              : 'text-text hover:bg-surface-light'
+                          }`}
+                        >
+                          <span className="flex-1">{BROWSER_DEFAULT_LABEL}</span>
+                        </button>
                         {SUPPORTED_LANGUAGES.map(language => (
                           <button
                             key={language}
                             onClick={() => {
+                              setStoredLanguagePreference(language)
+                              setSelectedLanguagePreference(language)
                               void i18n.changeLanguage(language)
                               setLanguageOpen(false)
                             }}
                             className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left transition duration-150 ${
-                              currentLanguage === language
+                              selectedLanguage === language
                                 ? 'bg-primary/20 text-primary-light'
                                 : 'text-text hover:bg-surface-light'
                             }`}
