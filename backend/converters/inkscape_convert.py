@@ -18,6 +18,7 @@ class VectorConverter(ConverterInterface):
         'svgz',
         'wmf',
         'emf',
+        'pdf',
     }
     supported_output_formats: set = {
         'svg',
@@ -25,6 +26,9 @@ class VectorConverter(ConverterInterface):
         'svgz',
         'wmf',
         'emf',
+        'pdf',
+        'tex',
+        'odg',
     }
 
     # Inkscape only works on Linux in headless mode, and the CLI binary is at a 
