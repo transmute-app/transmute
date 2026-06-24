@@ -22,7 +22,6 @@ class TrimeshConverter(ConverterInterface):
         'ply',
         'off',
         'glb',
-        'gltf',
         '3mf',
     }
     supported_output_formats: set = {

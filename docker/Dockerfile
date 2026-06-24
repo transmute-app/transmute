@@ -32,6 +32,8 @@ WORKDIR /app
 ENV APP_VERSION=$BUILD_VERSION
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
+# Headless OpenGL: pyrender renders meshes offscreen via OSMesa (software Mesa).
+ENV PYOPENGL_PLATFORM=osmesa
 
 # Install python dependencies
 COPY requirements.txt .
@@ -48,6 +50,7 @@ RUN apt-get update && \
     libsm6 \
     libxext6 \
     libopengl0 \
+    libosmesa6 \
     libmagic1 \
     wget \
     xvfb \

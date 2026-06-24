@@ -65,13 +65,13 @@ def test_can_convert_matrix(safe_path_test_settings):
         )
 
     assert make("stl", "obj").can_convert() is True
-    assert make("gltf", "glb").can_convert() is True
+    assert make("glb", "obj").can_convert() is True
     assert make("stl", "stl").can_convert() is False
-    assert make("stl", "gltf").can_convert() is False
+    assert make("obj", "dxf").can_convert() is False
     assert make("dxf", "obj").can_convert() is False
 
 
 def test_get_formats_compatible_with():
     assert TrimeshConverter.get_formats_compatible_with("stl") == {"obj", "ply", "off", "glb"}
-    assert TrimeshConverter.get_formats_compatible_with("gltf") == {"stl", "obj", "ply", "off", "glb"}
+    assert TrimeshConverter.get_formats_compatible_with("glb") == {"stl", "obj", "ply", "off"}
     assert TrimeshConverter.get_formats_compatible_with("dxf") == set()

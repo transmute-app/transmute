@@ -20,6 +20,7 @@ from .rename_converter import RenameConverter
 from .tgs_convert import TGSConverter
 from .ezdxf_convert import EzdxfConverter
 from .trimesh_convert import TrimeshConverter
+from .mesh_render_convert import MeshRenderConverter
 
 __all__ = [
     "FFmpegConverter", 
@@ -43,5 +44,6 @@ __all__ = [
     "TGSConverter",
     "EzdxfConverter",
     "TrimeshConverter",
+    "MeshRenderConverter",
     "ConverterInterface",
     ]

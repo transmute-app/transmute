@@ -1,6 +1,7 @@
 Pillow==12.2.0
 PyJWT==2.13.0
 PyMuPDF==1.27.2
+PyOpenGL==3.1.0
 asn1crypto==1.5.1
 authlib==1.6.12
 bcrypt==5.0.0
@@ -32,6 +33,7 @@ pymupdf4llm==1.27.2.1
 pdf2docx==0.5.8
 pypandoc==1.16.2
 pyreadstat==1.3.3
+pyrender==0.1.45
 pysubs2==1.8.0
 pytest==9.0.3
 python-magic==0.4.27
