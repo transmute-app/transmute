@@ -76,12 +76,19 @@ def render(input_file: str, input_type: str, output_file: str, output_type: str,
     finally:
         renderer.delete()
 
-    image = Image.fromarray(color, 'RGBA')
+    # Let Pillow infer the mode from the array shape: the OSMesa backend may
+    # return RGB (H, W, 3) even with the RGBA flag, while other backends return
+    # RGBA (H, W, 4). Forcing a mode raises "buffer is not large enough" on RGB.
+    image = Image.fromarray(color)
 
     if output_type == 'jpeg':
-        background = Image.new('RGB', image.size, (255, 255, 255))
-        background.paste(image, mask=image.split()[3])
-        background.save(output_file, 'JPEG', quality=95)
+        if image.mode == 'RGBA':
+            background = Image.new('RGB', image.size, (255, 255, 255))
+            background.paste(image, mask=image.split()[3])
+            image = background
+        else:
+            image = image.convert('RGB')
+        image.save(output_file, 'JPEG', quality=95)
     elif output_type == 'webp':
         image.save(output_file, 'WEBP')
     else:

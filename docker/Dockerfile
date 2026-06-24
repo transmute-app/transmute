@@ -39,6 +39,10 @@ ENV PYOPENGL_PLATFORM=osmesa
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
+# pyrender hard-pins PyOpenGL==3.1.0, but its OSMesa backend imports
+# OSMesaCreateContextAttribs, which only exists in PyOpenGL>=3.1.6. Override the
+# pin (--no-deps so nothing else is touched, --force-reinstall to replace 3.1.0).
+RUN pip install --no-cache-dir --no-deps --force-reinstall "PyOpenGL==3.1.7"
 
 # Install additional system dependencies
 RUN apt-get update && \

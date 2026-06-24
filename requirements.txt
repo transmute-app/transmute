@@ -1,6 +1,8 @@
 Pillow==12.2.0
 PyJWT==2.13.0
 PyMuPDF==1.27.2
+# pyrender pins PyOpenGL==3.1.0; the Docker image force-reinstalls 3.1.7 for the
+# OSMesa OSMesaCreateContextAttribs symbol (see docker/Dockerfile).
 PyOpenGL==3.1.0
 asn1crypto==1.5.1
 authlib==1.6.12
