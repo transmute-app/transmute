@@ -1,5 +1,5 @@
 import os
-import subprocess
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -120,7 +120,7 @@ class MeshRenderConverter(ConverterInterface):
         # Render in a subprocess: native OpenGL context creation must not run on
         # a background worker thread (aborts on macOS), and a native crash is
         # contained in the child instead of killing the API server.
-        proc = subprocess.run(
+        proc = subprocess.run( # nosec B603
             [
                 sys.executable,
                 _RENDER_WORKER,
