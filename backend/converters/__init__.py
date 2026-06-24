@@ -18,6 +18,8 @@ from .cbz_convert import CBZConverter
 from .pkcs7_convert import PKCS7Converter
 from .rename_converter import RenameConverter
 from .tgs_convert import TGSConverter
+from .ezdxf_convert import EzdxfConverter
+from .trimesh_convert import TrimeshConverter
 
 __all__ = [
     "FFmpegConverter", 
@@ -39,5 +41,7 @@ __all__ = [
     "PKCS7Converter",
     "RenameConverter",
     "TGSConverter",
+    "EzdxfConverter",
+    "TrimeshConverter",
     "ConverterInterface",
     ]
