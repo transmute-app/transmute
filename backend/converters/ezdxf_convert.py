@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 from types import SimpleNamespace
@@ -6,6 +7,34 @@ from typing import Optional
 from core import validate_safe_path
 
 from .converter_interface import ConverterInterface
+
+# ezdxf logs routine DXF table/dictionary setup at INFO (e.g. "creating
+# ACAD_COLOR dictionary"); quiet it to WARNING so it does not flood app logs.
+logging.getLogger("ezdxf").setLevel(logging.WARNING)
+
+
+def _silence_mupdf_errors() -> None:
+    """Suppress benign MuPDF stderr noise emitted while PyMuPdfBackend renders.
+
+    ezdxf's PyMuPdf output trips harmless MuPDF parser messages such as
+    ``unknown keyword: 'lineJoin'``; these are not actionable, so the global
+    MuPDF error/warning display is turned off.
+    """
+    try:
+        import pymupdf
+    except ImportError:
+        try:
+            import fitz as pymupdf
+        except ImportError:
+            return
+
+    tools = getattr(pymupdf, "TOOLS", None)
+    if tools is None:
+        return
+    if hasattr(tools, "mupdf_display_errors"):
+        tools.mupdf_display_errors(False)
+    if hasattr(tools, "mupdf_display_warnings"):
+        tools.mupdf_display_warnings(False)
 
 
 class EzdxfConverter(ConverterInterface):
@@ -130,6 +159,7 @@ class EzdxfConverter(ConverterInterface):
             else:
                 backend = deps.PyMuPdfBackend()
                 deps.Frontend(deps.RenderContext(doc), backend).draw_layout(msp)
+                _silence_mupdf_errors()
                 if self.output_type == 'pdf':
                     data = backend.get_pdf_bytes(deps.layout.Page(0, 0))
                 else:
