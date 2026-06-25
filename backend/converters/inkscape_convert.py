@@ -21,6 +21,8 @@ class VectorConverter(ConverterInterface):
         'pdf',
         'ai',
         'cdr',
+        'cdt',
+        'vsdx',
     }
     supported_output_formats: set = {
         'svg',
