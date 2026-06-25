@@ -19,6 +19,10 @@ class VectorConverter(ConverterInterface):
         'wmf',
         'emf',
         'pdf',
+        'ai',
+        'cdr',
+        'cdt',
+        'vsdx',
     }
     supported_output_formats: set = {
         'svg',
