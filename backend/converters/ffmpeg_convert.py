@@ -365,13 +365,20 @@ class FFmpegConverter(ConverterInterface):
             if bitrate:
                 cmd.extend(['-b:a', bitrate])
 
+        # Video filters must be passed as a single -vf argument: FFmpeg only
+        # honours one simple filtergraph per output, so emitting -vf more than
+        # once would silently discard all but the last.  Collect filters here
+        # and append the combined chain below.
+        video_filters: list[str] = []
+
         # Animated image formats encode every frame as a full image.  Without
         # constraints a long or high-resolution video produces enormous output
         # and takes extremely long.  Cap the frame rate and resolution so the
         # conversion stays practical.
         _animated_image_formats = {'apng', 'gif', 'fli', 'flc'}
         if self.output_type in _animated_image_formats and self.input_type not in _animated_image_formats:
-            cmd.extend(['-vf', 'fps=10,scale=320:-1:flags=lanczos', '-plays', '0'])
+            video_filters.append('fps=10,scale=320:-1:flags=lanczos')
+            cmd.extend(['-plays', '0'])
 
         # FLI/FLC files can have non-standard framerates (e.g. 14 fps) that
         # strict codecs like mpeg1video reject.  Force 25 fps output which is
@@ -386,6 +393,16 @@ class FFmpegConverter(ConverterInterface):
         _alpha_safe_formats = {'apng', 'gif'}
         if self.output_type in (self.video_formats - _alpha_safe_formats):
             cmd.extend(['-pix_fmt', 'yuv420p'])
+            # yuv420p uses 4:2:0 chroma subsampling, which requires both
+            # dimensions to be even; encoders like libx264 abort with
+            # "height not divisible by 2" otherwise.  Odd-dimension sources are
+            # common (especially GIFs), so pad up to the next even size.  Padding
+            # rather than scaling keeps every source pixel and adds at most a
+            # one-pixel border.
+            video_filters.append('pad=ceil(iw/2)*2:ceil(ih/2)*2')
+
+        if video_filters:
+            cmd.extend(['-vf', ','.join(video_filters)])
 
         # 3GP/3G2 default to H.263 video (limited to specific small resolutions)
         # and amr_nb audio (requires libopencore-amrnb, not in standard FFmpeg builds).
