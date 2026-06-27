@@ -380,5 +380,11 @@
     "sourceCode": "Kaynak Kodu",
     "apiDocs": "API Dokümantasyonu",
     "website": "Transmute Web Sitesi"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}}"
   }
 }

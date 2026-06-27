@@ -380,5 +380,11 @@
     "sourceCode": "Kildekode",
     "apiDocs": "API-dokumentation",
     "website": "Transmute hjemmeside"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}}"
   }
 }

@@ -1,10 +1,11 @@
+import math
 import os
 import uuid
 import hashlib
 import mimetypes
 import logging
 
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks, Query
 from fastapi.responses import FileResponse
 from zipfile import ZipFile
 from pathlib import Path
@@ -12,7 +13,7 @@ from core import get_settings, detect_media_type, sanitize_extension, sanitize_f
 from db import FileDB, ConversionDB, CompressionDB
 from registry import registry as converter_registry
 from api.deps import get_current_active_user, get_file_db, get_conversion_db, get_compression_db
-from api.schemas import FileListResponse, FileUploadResponse, FileUrlUploadResponse, FileDeleteResponse, ErrorResponse, BatchDownloadRequest, UrlUploadRequest
+from api.schemas import FileListResponse, FileUploadResponse, FileUrlUploadResponse, FileDeleteResponse, ErrorResponse, BatchDownloadRequest, UrlUploadRequest, PaginatedFileListResponse
 from registry import downloader_registry
 from downloaders import DownloadError, YtDlpDownloader
 from converters.ffmpeg_convert import FFmpegConverter
@@ -108,23 +109,43 @@ async def save_file(file: UploadFile, db: FileDB, user_id: str) -> dict:
 
 @router.get(
     "",
-    summary="List all uploaded files",
+    summary="List uploaded files (paginated)",
     responses={
         200: {
-            "model": FileListResponse,
-            "description": "List of all uploaded files"
+            "model": PaginatedFileListResponse,
+            "description": "Paginated list of uploaded files",
         }
-    }
+    },
 )
 def list_files(
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
     file_db: FileDB = Depends(get_file_db),
     current_user: dict = Depends(get_current_active_user),
 ):
-    """List all uploaded files for the current user"""
-    files = file_db.list_files(user_id=current_user["uuid"])
+    """List uploaded files for the current user, newest-first, with pagination.
+
+    Use ``page`` and ``page_size`` to navigate through results.
+    ``page_size`` is capped at 100.
+    """
+    user_id = current_user["uuid"]
+    total_items = file_db.count_files(user_id=user_id)
+    total_pages = max(1, math.ceil(total_items / page_size))
+    offset = (page - 1) * page_size
+    files = file_db.list_files(user_id=user_id, limit=page_size, offset=offset)
     for file in files:
         file["compatible_formats"] = converter_registry.get_compatible_formats_and_qualities(file["media_type"])
-    return {"files": files}
+    return {
+        "data": files,
+        "pagination": {
+            "total_items": total_items,
+            "total_pages": total_pages,
+            "current_page": page,
+            "page_size": page_size,
+            "has_next": page < total_pages,
+            "has_prev": page > 1,
+        },
+    }
 
 
 @router.post(

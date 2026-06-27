@@ -380,5 +380,11 @@
     "sourceCode": "Codice Sorgente",
     "apiDocs": "Documentazione dell'API",
     "website": "Sito Web di Transmute"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}}"
   }
 }
