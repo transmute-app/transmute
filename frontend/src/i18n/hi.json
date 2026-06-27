@@ -380,5 +380,11 @@
     "sourceCode": "स्रोत कोड",
     "apiDocs": "API दस्तावेज़ीकरण",
     "website": "Transmute वेबसाइट"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}}"
   }
 }

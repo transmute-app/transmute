@@ -380,5 +380,11 @@
     "sourceCode": "源代码",
     "apiDocs": "API 文档",
     "website": "Transmute 网站"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}}"
   }
 }

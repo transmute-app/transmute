@@ -115,6 +115,30 @@ class ReadinessResponse(BaseModel):
     checks: ReadinessChecks = Field(..., description="Individual component checks")
 
 
+class PaginationMeta(BaseModel):
+    total_items: int = Field(..., description="Total number of items across all pages", json_schema_extra={"example": 125})
+    total_pages: int = Field(..., description="Total number of pages", json_schema_extra={"example": 13})
+    current_page: int = Field(..., description="Current page number (1-indexed)", json_schema_extra={"example": 1})
+    page_size: int = Field(..., description="Number of items per page", json_schema_extra={"example": 10})
+    has_next: bool = Field(..., description="Whether a next page exists", json_schema_extra={"example": True})
+    has_prev: bool = Field(..., description="Whether a previous page exists", json_schema_extra={"example": False})
+
+
+class PaginatedFileListResponse(BaseModel):
+    data: list[FileMetadata] = Field(..., description="Paginated list of uploaded files")
+    pagination: PaginationMeta = Field(..., description="Pagination metadata")
+
+
+class PaginatedConversionJobListResponse(BaseModel):
+    data: list[ConversionJobResponse] = Field(..., description="Paginated list of conversion jobs")
+    pagination: PaginationMeta = Field(..., description="Pagination metadata")
+
+
+class PaginatedCompressionJobListResponse(BaseModel):
+    data: list[CompressionJobResponse] = Field(..., description="Paginated list of compression jobs")
+    pagination: PaginationMeta = Field(..., description="Pagination metadata")
+
+
 class FileListResponse(BaseModel):
     files: list[FileMetadata] = Field(..., description="List of uploaded files")
 
