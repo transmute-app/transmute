@@ -129,6 +129,12 @@
     "fetchFailed": "Mislykkedes at hente filer",
     "deleteFailed": "Sletning mislykkedes"
   },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}}"
+  },
   "history": {
     "title": "Jobs",
     "loading": "Henter konverteringer...",
@@ -380,11 +386,5 @@
     "sourceCode": "Kildekode",
     "apiDocs": "API-dokumentation",
     "website": "Transmute hjemmeside"
-  },
-  "pagination": {
-    "previous": "Previous",
-    "next": "Next",
-    "pageOf": "Page {{current}} of {{total}}",
-    "showing": "Showing {{from}}–{{to}} of {{total}}"
   }
 }

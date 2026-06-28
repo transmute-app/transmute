@@ -129,6 +129,12 @@
     "fetchFailed": "Faylları əldə etmək mümkün olmadı",
     "deleteFailed": "Silmək mümkün olmadı"
   },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}}"
+  },
   "history": {
     "title": "Tapşırıqlar",
     "loading": "Çevirmələr yüklənir...",
@@ -380,11 +386,5 @@
     "sourceCode": "Mənbə kodu",
     "apiDocs": "API sənədləri",
     "website": "Transmute veb-saytı"
-  },
-  "pagination": {
-    "previous": "Previous",
-    "next": "Next",
-    "pageOf": "Page {{current}} of {{total}}",
-    "showing": "Showing {{from}}–{{to}} of {{total}}"
   }
 }

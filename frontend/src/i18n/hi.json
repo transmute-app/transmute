@@ -129,6 +129,12 @@
     "fetchFailed": "फ़ाइलें प्राप्त करने में विफल",
     "deleteFailed": "हटाना विफल"
   },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}}"
+  },
   "history": {
     "title": "Jobs",
     "loading": "रूपांतरण लोड हो रहे हैं...",
@@ -380,11 +386,5 @@
     "sourceCode": "स्रोत कोड",
     "apiDocs": "API दस्तावेज़ीकरण",
     "website": "Transmute वेबसाइट"
-  },
-  "pagination": {
-    "previous": "Previous",
-    "next": "Next",
-    "pageOf": "Page {{current}} of {{total}}",
-    "showing": "Showing {{from}}–{{to}} of {{total}}"
   }
 }

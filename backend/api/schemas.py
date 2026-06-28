@@ -134,11 +134,6 @@ class PaginatedConversionJobListResponse(BaseModel):
     pagination: PaginationMeta = Field(..., description="Pagination metadata")
 
 
-class PaginatedCompressionJobListResponse(BaseModel):
-    data: list[CompressionJobResponse] = Field(..., description="Paginated list of compression jobs")
-    pagination: PaginationMeta = Field(..., description="Pagination metadata")
-
-
 class FileListResponse(BaseModel):
     files: list[FileMetadata] = Field(..., description="List of uploaded files")
 
@@ -283,6 +278,11 @@ class CompressionJobResponse(BaseModel):
 
 class CompressionJobListResponse(BaseModel):
     jobs: list[CompressionJobResponse] = Field(..., description="List of compression jobs for the current user")
+
+
+class PaginatedCompressionJobListResponse(BaseModel):
+    data: list[CompressionJobResponse] = Field(..., description="Paginated list of compression jobs")
+    pagination: PaginationMeta = Field(..., description="Pagination metadata")
 
 
 class CompressionItem(BaseModel):

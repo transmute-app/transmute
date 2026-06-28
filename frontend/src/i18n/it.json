@@ -129,6 +129,12 @@
     "fetchFailed": "Impossibile recuperare i file",
     "deleteFailed": "Cancellazione fallita"
   },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}}"
+  },
   "history": {
     "title": "Cronologia",
     "loading": "Caricamento delle conversioni in corso...",
@@ -380,11 +386,5 @@
     "sourceCode": "Codice Sorgente",
     "apiDocs": "Documentazione dell'API",
     "website": "Sito Web di Transmute"
-  },
-  "pagination": {
-    "previous": "Previous",
-    "next": "Next",
-    "pageOf": "Page {{current}} of {{total}}",
-    "showing": "Showing {{from}}–{{to}} of {{total}}"
   }
 }
