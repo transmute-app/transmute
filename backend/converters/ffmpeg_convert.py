@@ -60,11 +60,12 @@ class FFmpegConverter(ConverterInterface):
         'mka',
         'oma',
         'aa3',
+        'm4b', #issue (#210)
     }
     formats_with_qualities = {
         'mp4', 'avi', 'mov', 'mkv', 'webm', 'ts', '3gp', 'ogv', 'f4v',
         'm4v', 'flv', 'mpeg', 'wmv', 'asf',
-        'mp3', 'aac', 'wma', 'm4a', 'opus', 'mp2', 'ac3', 'oga',
+        'mp3', 'aac', 'wma', 'm4a', 'opus', 'mp2', 'ac3', 'oga', 'm4b',
     }
     supported_input_formats: set = video_formats | audio_formats
     supported_output_formats: set = (video_formats | audio_formats) - _decode_only_formats
@@ -355,7 +356,7 @@ class FFmpegConverter(ConverterInterface):
                 cmd.extend(['-q:v', '9'])
 
         # Quality settings for lossy audio formats via bitrate
-        _quality_audio_formats = {'mp3', 'aac', 'wma', 'm4a', 'opus', 'mp2', 'ac3', 'oga'}
+        _quality_audio_formats = {'mp3', 'aac', 'wma', 'm4a', 'opus', 'mp2', 'ac3', 'oga', 'm4b'}
         if quality and self.output_type in _quality_audio_formats:
             if self.output_type == 'ac3':
                 bitrates = {'high': '448k', 'medium': '256k', 'low': '128k'}
