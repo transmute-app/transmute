@@ -129,6 +129,12 @@
     "fetchFailed": "La récupération des fichiers a échoué",
     "deleteFailed": "La suppression a échoué"
   },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}}"
+  },
   "history": {
     "title": "Tâches",
     "loading": "Chargement des conversions...",

@@ -4,7 +4,9 @@ These endpoints persist compression requests as durable jobs that a background
 worker processes asynchronously, in contrast with the synchronous
 ``POST /api/compressions`` endpoint which runs the compression inline.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+import math
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from api.deps import (
     get_compression_job_db,
@@ -16,6 +18,7 @@ from api.schemas import (
     CompressionJobListResponse,
     CompressionJobResponse,
     ErrorResponse,
+    PaginatedCompressionJobListResponse,
 )
 from core import validate_safe_path
 from db import CompressionJobDB, FileDB
@@ -50,26 +53,49 @@ def _serialize_job(job: dict) -> dict:
 
 @router.get(
     "",
-    summary="List compression jobs for the current user",
+    summary="List compression jobs for the current user (paginated)",
     responses={
         200: {
-            "model": CompressionJobListResponse,
-            "description": "List of compression jobs newest-first",
+            "model": PaginatedCompressionJobListResponse,
+            "description": "Paginated list of compression jobs newest-first",
         }
     },
 )
 def list_jobs(
     status_filter: str | None = None,
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
     job_db: CompressionJobDB = Depends(get_compression_job_db),
     current_user: dict = Depends(get_current_active_user),
 ):
-    """List the current user's compression jobs, newest-first.
+    """List the current user's compression jobs, newest-first, with pagination.
 
-    Optional ``status_filter`` query parameter narrows the result to one of:
+    Optional ``status_filter`` narrows results to one of:
     ``queued``, ``running``, ``completed``, ``failed``, ``cancelled``.
+    Use ``page`` and ``page_size`` to navigate through results.
+    ``page_size`` is capped at 100.
     """
-    rows = job_db.list_jobs(user_id=current_user["uuid"], status=status_filter)
-    return {"jobs": [_serialize_job(row) for row in rows]}
+    user_id = current_user["uuid"]
+    total_items = job_db.count_jobs(user_id=user_id, status=status_filter)
+    total_pages = max(1, math.ceil(total_items / page_size))
+    offset = (page - 1) * page_size
+    rows = job_db.list_jobs(
+        user_id=user_id,
+        status=status_filter,
+        limit=page_size,
+        offset=offset,
+    )
+    return {
+        "data": [_serialize_job(row) for row in rows],
+        "pagination": {
+            "total_items": total_items,
+            "total_pages": total_pages,
+            "current_page": page,
+            "page_size": page_size,
+            "has_next": page < total_pages,
+            "has_prev": page > 1,
+        },
+    }
 
 
 @router.post(

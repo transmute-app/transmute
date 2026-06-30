@@ -129,6 +129,12 @@
     "fetchFailed": "Error al obtener los archivos",
     "deleteFailed": "Error al borrar"
   },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}}"
+  },
   "history": {
     "title": "Trabajos",
     "loading": "Cargando conversiones...",
