@@ -29,6 +29,7 @@ class FFmpegConverter(ConverterInterface):
         'f4v',
         'fli',
         'flc',
+        'webp'
     }
     # Formats FFmpeg can decode but not encode
     _decode_only_formats: set = {
@@ -136,7 +137,7 @@ class FFmpegConverter(ConverterInterface):
         
         # Animated image formats contain no audio stream.
         # Extracting audio from them is not possible.
-        _animated_image_only_formats = {'apng', 'gif', 'fli', 'flc'}
+        _animated_image_only_formats = {'apng', 'gif', 'fli', 'flc', 'webp'}
         if self.input_type in _animated_image_only_formats and self.output_type in self.audio_formats:
             return False
         
@@ -280,7 +281,7 @@ class FFmpegConverter(ConverterInterface):
         if fmt in cls.audio_formats:
             # For audio formats, compatible formats are other audio formats
             return (cls.audio_formats - cls._decode_only_formats) - {fmt}
-        _animated_image_only_formats = {'apng', 'gif', 'fli', 'flc'}
+        _animated_image_only_formats = {'apng', 'gif', 'fli', 'flc', 'webp'}
         if fmt in _animated_image_only_formats:
             # Animated images have no audio stream — only video targets
             return (cls.video_formats - cls._decode_only_formats - {fmt})
@@ -376,10 +377,12 @@ class FFmpegConverter(ConverterInterface):
         # constraints a long or high-resolution video produces enormous output
         # and takes extremely long.  Cap the frame rate and resolution so the
         # conversion stays practical.
-        _animated_image_formats = {'apng', 'gif', 'fli', 'flc'}
-        if self.output_type in _animated_image_formats and self.input_type not in _animated_image_formats:
-            video_filters.append('fps=10,scale=320:-1:flags=lanczos')
-            cmd.extend(['-plays', '0'])
+        _animated_image_formats = {'apng', 'gif', 'fli', 'flc', 'webp'}
+        if self.output_type in _animated_image_formats:
+            if self.input_type not in _animated_image_formats:
+                #only cap fps/scale when converting from a real video source
+                video_filters.append('fps=10,scale=320:-1:flags=lanczos')
+            cmd.extend(['-plays', '0'])  # loop infinitely for GIF/APNG
 
         # FLI/FLC files can have non-standard framerates (e.g. 14 fps) that
         # strict codecs like mpeg1video reject.  Force 25 fps output which is
@@ -391,7 +394,7 @@ class FFmpegConverter(ConverterInterface):
         # Most video codecs/containers cannot handle RGBA input (e.g. from
         # APNG).  Force yuv420p so the alpha channel is stripped before encoding.
         # Animated image outputs that natively support transparency are excluded.
-        _alpha_safe_formats = {'apng', 'gif'}
+        _alpha_safe_formats = {'apng', 'gif', 'webp'}
         if self.output_type in (self.video_formats - _alpha_safe_formats):
             cmd.extend(['-pix_fmt', 'yuv420p'])
             # yuv420p uses 4:2:0 chroma subsampling, which requires both

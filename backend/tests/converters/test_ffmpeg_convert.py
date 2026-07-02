@@ -112,3 +112,194 @@ def test_video_to_audio_has_no_padding_filter(monkeypatch, safe_path_test_settin
     ffmpeg_cmd = calls[-1]
     assert '-vn' in ffmpeg_cmd
     assert _vf_value(ffmpeg_cmd) is None
+
+def assert_infinite_loop(cmd):
+    """Assert that the command loops infinitely via -plays 0."""
+    assert '-plays' in cmd
+    assert cmd[cmd.index('-plays') + 1] == '0'
+
+
+def test_gif_to_apng_loops_without_scale_filter(monkeypatch, safe_path_test_settings):
+    """GIF -> APNG must loop infinitely and must NOT apply the fps/scale cap.
+
+    The fps/scale cap is only for real video sources (e.g. mp4 -> apng).
+    Animated-to-animated conversions should preserve the original dimensions.
+    """
+    input_file = safe_path_test_settings.upload_dir / f"{'a' * 31}1.gif"
+    input_file.write_bytes(b"GIF89a fixture")
+
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        "converters.ffmpeg_convert.subprocess.run", _fake_run_capturing(calls)
+    )
+
+    converter = FFmpegConverter(
+        input_file=str(input_file),
+        output_dir=str(safe_path_test_settings.output_dir),
+        input_type="gif",
+        output_type="apng",
+    )
+    converter.convert()
+
+    ffmpeg_cmd = calls[-1]
+    assert_infinite_loop(ffmpeg_cmd)
+    assert _vf_value(ffmpeg_cmd) is None
+    assert '-pix_fmt' not in ffmpeg_cmd
+
+
+def test_apng_to_gif_loops_without_scale_filter(monkeypatch, safe_path_test_settings):
+    """APNG -> GIF must loop infinitely without the fps/scale cap."""
+    input_file = safe_path_test_settings.upload_dir / f"{'b' * 31}1.apng"
+    input_file.write_bytes(b"\x89PNG\r\n\x1a\n fixture")
+
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        "converters.ffmpeg_convert.subprocess.run", _fake_run_capturing(calls)
+    )
+
+    converter = FFmpegConverter(
+        input_file=str(input_file),
+        output_dir=str(safe_path_test_settings.output_dir),
+        input_type="apng",
+        output_type="gif",
+    )
+    converter.convert()
+
+    ffmpeg_cmd = calls[-1]
+    assert_infinite_loop(ffmpeg_cmd)
+    assert _vf_value(ffmpeg_cmd) is None
+    assert '-pix_fmt' not in ffmpeg_cmd
+
+
+def test_gif_to_webp_loops_without_scale_filter(monkeypatch, safe_path_test_settings):
+    """GIF -> WebP must loop and not apply the fps/scale cap."""
+    input_file = safe_path_test_settings.upload_dir / f"{'c' * 31}1.gif"
+    input_file.write_bytes(b"GIF89a fixture")
+
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        "converters.ffmpeg_convert.subprocess.run", _fake_run_capturing(calls)
+    )
+
+    converter = FFmpegConverter(
+        input_file=str(input_file),
+        output_dir=str(safe_path_test_settings.output_dir),
+        input_type="gif",
+        output_type="webp",
+    )
+    converter.convert()
+
+    ffmpeg_cmd = calls[-1]
+    assert_infinite_loop(ffmpeg_cmd)
+    assert _vf_value(ffmpeg_cmd) is None
+    assert '-pix_fmt' not in ffmpeg_cmd
+
+
+def test_webp_to_gif_loops_without_scale_filter(monkeypatch, safe_path_test_settings):
+    """WebP -> GIF must loop and not apply the fps/scale cap."""
+    input_file = safe_path_test_settings.upload_dir / f"{'a' * 31}2.webp"
+    input_file.write_bytes(b"RIFF fixture")
+
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        "converters.ffmpeg_convert.subprocess.run", _fake_run_capturing(calls)
+    )
+
+    converter = FFmpegConverter(
+        input_file=str(input_file),
+        output_dir=str(safe_path_test_settings.output_dir),
+        input_type="webp",
+        output_type="gif",
+    )
+    converter.convert()
+
+    ffmpeg_cmd = calls[-1]
+    assert_infinite_loop(ffmpeg_cmd)
+    assert _vf_value(ffmpeg_cmd) is None
+    assert '-pix_fmt' not in ffmpeg_cmd
+
+
+def test_webp_to_apng_loops_without_scale_filter(monkeypatch, safe_path_test_settings):
+    """WebP -> APNG must loop and not apply the fps/scale cap."""
+    input_file = safe_path_test_settings.upload_dir / f"{'b' * 31}2.webp"
+    input_file.write_bytes(b"RIFF fixture")
+
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        "converters.ffmpeg_convert.subprocess.run", _fake_run_capturing(calls)
+    )
+
+    converter = FFmpegConverter(
+        input_file=str(input_file),
+        output_dir=str(safe_path_test_settings.output_dir),
+        input_type="webp",
+        output_type="apng",
+    )
+    converter.convert()
+
+    ffmpeg_cmd = calls[-1]
+    assert_infinite_loop(ffmpeg_cmd)
+    assert _vf_value(ffmpeg_cmd) is None
+    assert '-pix_fmt' not in ffmpeg_cmd
+
+
+def test_apng_to_webp_loops_without_scale_filter(monkeypatch, safe_path_test_settings):
+    """APNG -> WebP must loop and not apply the fps/scale cap."""
+    input_file = safe_path_test_settings.upload_dir / f"{'c' * 31}2.apng"
+    input_file.write_bytes(b"\x89PNG\r\n\x1a\n fixture")
+
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        "converters.ffmpeg_convert.subprocess.run", _fake_run_capturing(calls)
+    )
+
+    converter = FFmpegConverter(
+        input_file=str(input_file),
+        output_dir=str(safe_path_test_settings.output_dir),
+        input_type="apng",
+        output_type="webp",
+    )
+    converter.convert()
+
+    ffmpeg_cmd = calls[-1]
+    assert_infinite_loop(ffmpeg_cmd)
+    assert _vf_value(ffmpeg_cmd) is None
+    assert '-pix_fmt' not in ffmpeg_cmd
+
+
+def test_mp4_to_webp_applies_scale_filter(monkeypatch, safe_path_test_settings):
+    """MP4 -> WebP (video to animated image) must apply the fps/scale cap."""
+    input_file = safe_path_test_settings.upload_dir / f"{'1' * 31}3.mp4"
+    input_file.write_bytes(b"\x00\x00\x00\x18ftypmp42")
+
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        "converters.ffmpeg_convert.subprocess.run", _fake_run_capturing(calls)
+    )
+
+    converter = FFmpegConverter(
+        input_file=str(input_file),
+        output_dir=str(safe_path_test_settings.output_dir),
+        input_type="mp4",
+        output_type="webp",
+    )
+    converter.convert()
+
+    ffmpeg_cmd = calls[-1]
+    assert_infinite_loop(ffmpeg_cmd)
+    assert _vf_value(ffmpeg_cmd) == 'fps=10,scale=320:-1:flags=lanczos'
+    assert '-pix_fmt' not in ffmpeg_cmd
+
+
+def test_webp_cannot_convert_to_audio(safe_path_test_settings):
+    """WebP is an animated image format — converting to audio must be rejected."""
+    input_file = safe_path_test_settings.upload_dir / f"{'b' * 31}3.webp"
+    input_file.write_bytes(b"RIFF fixture")
+
+    converter = FFmpegConverter(
+        input_file=str(input_file),
+        output_dir=str(safe_path_test_settings.output_dir),
+        input_type="webp",
+        output_type="mp3",
+    )
+    assert converter.can_convert() is False
