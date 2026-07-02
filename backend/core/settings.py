@@ -68,6 +68,12 @@ class Settings(BaseSettings):
     # (invalidate) digital signatures so the conversion can proceed.
     invalidate_pdf_digital_signatures: bool = False
 
+    # Path to a custom CSS file applied when converting documents to PDF
+    # via pypandoc (e.g. Markdown -> PDF).  When empty, a built-in default
+    # compact stylesheet is used.  Set to an absolute path on the server
+    # to override with your own styling.
+    pdf_custom_css_path: str = ""
+
     # ===== Authentication =====
     auth_secret_key: str = ""
     auth_algorithm: str = "HS256"
