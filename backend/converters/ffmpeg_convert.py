@@ -3,6 +3,8 @@ import sys
 import os
 import math
 import json
+import shutil
+import tempfile
 
 from pathlib import Path
 from typing import Optional
@@ -264,6 +266,43 @@ class FFmpegConverter(ConverterInterface):
         if media_based_timeout is None:
             return size_based_timeout
         return max(size_based_timeout, media_based_timeout)
+
+    def _stage_animated_webp_input(self) -> str | None:
+        """Repackage animated WebP input as APNG for FFmpeg.
+
+        Debian FFmpeg builds used in production can encode WebP but still fail
+        to decode animated WebP RIFF chunks (ANIM/ANMF). Pillow can decode the
+        frames, so stage them as APNG and let FFmpeg continue from there.
+        """
+        if self.input_type != 'webp':
+            return None
+
+        from PIL import Image, ImageSequence, UnidentifiedImageError
+
+        try:
+            with Image.open(self.input_file) as image:
+                if not getattr(image, 'is_animated', False) or getattr(image, 'n_frames', 1) <= 1:
+                    return None
+
+                frames = []
+                durations = []
+                for frame in ImageSequence.Iterator(image):
+                    frames.append(frame.convert('RGBA'))
+                    durations.append(max(1, int(frame.info.get('duration', 100))))
+        except UnidentifiedImageError:
+            return None
+
+        temp_dir = tempfile.mkdtemp(prefix='ffmpeg-webp-', dir=self.output_dir)
+        staged_input = Path(temp_dir) / f"{Path(self.input_file).stem}.apng"
+        frames[0].save(
+            staged_input,
+            format='PNG',
+            save_all=True,
+            append_images=frames[1:],
+            duration=durations,
+            loop=0,
+        )
+        return str(staged_input)
     
     @classmethod
     def get_formats_compatible_with(cls, format_type: str) -> set:
@@ -328,7 +367,9 @@ class FFmpegConverter(ConverterInterface):
             cmd.append('-n')
         
         validate_safe_path(self.input_file)
-        cmd.extend(['-i', self.input_file])
+        staged_input = self._stage_animated_webp_input()
+        ffmpeg_input = staged_input or self.input_file
+        cmd.extend(['-i', ffmpeg_input])
         
         # When the output is an audio-only format, strip any video stream.
         # This prevents FFmpeg from attempting to encode video with a codec that
@@ -445,3 +486,6 @@ class FFmpegConverter(ConverterInterface):
                 "FFmpeg not found. Please install FFmpeg: "
                 "https://ffmpeg.org/download.html"
             )
+        finally:
+            if staged_input is not None:
+                shutil.rmtree(Path(staged_input).parent, ignore_errors=True)

@@ -5,6 +5,8 @@ the FFmpeg binary is not required, and assertions are made against the command
 FFmpegConverter builds.
 """
 
+from PIL import Image
+
 from converters.ffmpeg_convert import FFmpegConverter
 
 
@@ -289,6 +291,43 @@ def test_mp4_to_webp_applies_scale_filter(monkeypatch, safe_path_test_settings):
     assert_infinite_loop(ffmpeg_cmd)
     assert _vf_value(ffmpeg_cmd) == 'fps=10,scale=320:-1:flags=lanczos'
     assert '-pix_fmt' not in ffmpeg_cmd
+
+
+def test_animated_webp_to_mp4_stages_input_as_apng(monkeypatch, safe_path_test_settings):
+    """Animated WebP input should be staged as APNG before FFmpeg reads it."""
+    input_file = safe_path_test_settings.upload_dir / f"{'2' * 31}4.webp"
+    frames = [
+        Image.new('RGBA', (16, 16), color)
+        for color in ((255, 0, 0, 255), (0, 255, 0, 255), (0, 0, 255, 255))
+    ]
+    frames[0].save(
+        input_file,
+        format='WEBP',
+        save_all=True,
+        append_images=frames[1:],
+        duration=80,
+        loop=0,
+    )
+
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        "converters.ffmpeg_convert.subprocess.run", _fake_run_capturing(calls)
+    )
+
+    converter = FFmpegConverter(
+        input_file=str(input_file),
+        output_dir=str(safe_path_test_settings.output_dir),
+        input_type="webp",
+        output_type="mp4",
+    )
+    converter.convert()
+
+    ffmpeg_cmd = calls[-1]
+    ffmpeg_input = ffmpeg_cmd[ffmpeg_cmd.index('-i') + 1]
+    assert ffmpeg_input.endswith('.apng')
+    assert ffmpeg_input != str(input_file)
+    assert _vf_value(ffmpeg_cmd) == 'pad=ceil(iw/2)*2:ceil(ih/2)*2'
+    assert '-pix_fmt' in ffmpeg_cmd
 
 
 def test_webp_cannot_convert_to_audio(safe_path_test_settings):
