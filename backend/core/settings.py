@@ -68,6 +68,12 @@ class Settings(BaseSettings):
     # (invalidate) digital signatures so the conversion can proceed.
     invalidate_pdf_digital_signatures: bool = False
 
+    # Derived path for optional custom PDF CSS (data_dir/pdf/custom.css).
+    # Docker users can mount a stylesheet there; when absent, a built-in
+    # compact default is used instead.
+    pdf_css_dir: Path | None = None
+    pdf_custom_css_path: Path | None = None
+
     # ===== Authentication =====
     auth_secret_key: str = ""
     auth_algorithm: str = "HS256"
@@ -177,6 +183,8 @@ class Settings(BaseSettings):
         self.upload_dir = self.data_dir / "uploads"
         self.output_dir = self.data_dir / "outputs"
         self.tmp_dir = self.data_dir / "tmp"
+        self.pdf_css_dir = self.data_dir / "pdf"
+        self.pdf_custom_css_path = self.pdf_css_dir / "custom.css"
 
         self.api_server_url = self.app_url if self.app_url else f"http://{self.host}:{self.port}"
 
@@ -190,6 +198,7 @@ class Settings(BaseSettings):
             self.upload_dir,
             self.output_dir,
             self.tmp_dir,
+            self.pdf_css_dir,
         ]:
             path.mkdir(parents=True, exist_ok=True)
 

@@ -175,6 +175,26 @@ class PyPandocConverter(ConverterInterface):
         """
         return self._pandoc_output_format_map.get(fmt.lower(), fmt.lower())
 
+    def _get_pdf_css_path(self) -> str | None:
+        """Resolve the CSS stylesheet path to use for PDF output.
+
+        Prefers a user-provided file at ``data/pdf/custom.css`` (easy to
+        bind-mount in Docker).  Falls back to the built-in compact default
+        when that file is absent.
+        """
+        settings = get_settings()
+        custom_path = getattr(settings, 'pdf_custom_css_path', None)
+        if custom_path is not None:
+            custom_file = Path(custom_path)
+            if custom_file.is_file():
+                return str(custom_file.resolve())
+
+        # Fall back to the built-in default compact stylesheet
+        default_css = Path(__file__).resolve().parent.parent / 'assets' / 'default-pdf.css'
+        if default_css.is_file():
+            return str(default_css)
+        return None
+
     def _build_extra_args(self, conversion_input_file: str) -> list[str]:
         extra_args: list[str] = []
         input_dir = str(Path(conversion_input_file).resolve().parent)
@@ -191,6 +211,11 @@ class PyPandocConverter(ConverterInterface):
             extra_args.append(f'--pdf-engine={self._pdf_engine}')
             if self._pdf_engine == 'weasyprint':
                 extra_args.append('--pdf-engine-opt=--quiet')
+
+            # Apply custom or default CSS for compact PDF styling
+            css_path = self._get_pdf_css_path()
+            if css_path:
+                extra_args.append(f'--css={css_path}')
 
         if self.output_type.lower() in ('html', 'revealjs', 'slidy', 's5', 'dzslides'):
             extra_args.append('--standalone')
