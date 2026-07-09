@@ -22,6 +22,8 @@ def test_derived_paths_created(tmp_path):
     assert s.upload_dir == tmp_path / "data" / "uploads"
     assert s.output_dir == tmp_path / "data" / "outputs"
     assert s.tmp_dir == tmp_path / "data" / "tmp"
+    assert s.pdf_css_dir == tmp_path / "data" / "pdf"
+    assert s.pdf_custom_css_path == tmp_path / "data" / "pdf" / "custom.css"
 
 
 def test_directories_are_created(tmp_path):
@@ -30,6 +32,7 @@ def test_directories_are_created(tmp_path):
     assert s.output_dir.exists()
     assert s.tmp_dir.exists()
     assert s.db_path.parent.exists()
+    assert s.pdf_css_dir.exists()
 
 
 def test_secret_key_auto_generated(tmp_path):

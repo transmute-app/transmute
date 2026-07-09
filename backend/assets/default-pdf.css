@@ -2,9 +2,8 @@
  *
  * This addresses the common complaint that the default pandoc/weasyprint
  * output has overly large fonts and margins, producing unnecessarily
- * multi-page PDFs.  Administrators can override this file entirely by
- * setting the PDF_CUSTOM_CSS_PATH environment variable to point at a
- * custom .css file on the server.
+ * multi-page PDFs.  Administrators can override this by placing (or
+ * bind-mounting) a file at data/pdf/custom.css.
  */
 
 @page {

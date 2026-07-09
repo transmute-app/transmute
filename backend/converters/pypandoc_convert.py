@@ -178,15 +178,16 @@ class PyPandocConverter(ConverterInterface):
     def _get_pdf_css_path(self) -> str | None:
         """Resolve the CSS stylesheet path to use for PDF output.
 
-        Returns the custom path from settings if set and valid,
-        otherwise falls back to the built-in default compact CSS.
+        Prefers a user-provided file at ``data/pdf/custom.css`` (easy to
+        bind-mount in Docker).  Falls back to the built-in compact default
+        when that file is absent.
         """
         settings = get_settings()
-        custom_path = settings.pdf_custom_css_path
-        if custom_path:
-            custom_path = os.path.abspath(custom_path)
-            if os.path.isfile(custom_path):
-                return custom_path
+        custom_path = getattr(settings, 'pdf_custom_css_path', None)
+        if custom_path is not None:
+            custom_file = Path(custom_path)
+            if custom_file.is_file():
+                return str(custom_file.resolve())
 
         # Fall back to the built-in default compact stylesheet
         default_css = Path(__file__).resolve().parent.parent / 'assets' / 'default-pdf.css'

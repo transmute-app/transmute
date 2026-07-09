@@ -18,7 +18,11 @@ from converters.pypandoc_convert import PyPandocConverter
 class _FakeSettings:
     """Minimal settings stub for testing."""
 
-    def __init__(self, pdf_custom_css_path: str = "", tmp_dir: Path | None = None):
+    def __init__(
+        self,
+        pdf_custom_css_path: Path | None = None,
+        tmp_dir: Path | None = None,
+    ):
         self.pdf_custom_css_path = pdf_custom_css_path
         self.tmp_dir = tmp_dir or Path(tempfile.mkdtemp())
 
@@ -34,9 +38,10 @@ def _make_converter(output_type: str = "pdf") -> PyPandocConverter:
 
 
 def test_pdf_css_defaults_to_builtin(tmp_path):
-    """When no custom CSS path is set, the built-in default should be used."""
+    """When no custom CSS file is present, the built-in default should be used."""
     converter = _make_converter()
-    fake = _FakeSettings(pdf_custom_css_path="", tmp_dir=tmp_path / "tmp")
+    missing = tmp_path / "pdf" / "custom.css"
+    fake = _FakeSettings(pdf_custom_css_path=missing, tmp_dir=tmp_path / "tmp")
     with patch("converters.pypandoc_convert.get_settings", return_value=fake):
         css_path = converter._get_pdf_css_path()
 
@@ -45,25 +50,26 @@ def test_pdf_css_defaults_to_builtin(tmp_path):
     assert os.path.isfile(css_path)
 
 
-def test_pdf_css_uses_custom_path(tmp_path):
-    """When a valid custom CSS path is set, it should be used."""
-    custom_css = tmp_path / "custom.css"
+def test_pdf_css_uses_data_dir_custom_file(tmp_path):
+    """When data/pdf/custom.css exists, it should be used."""
+    custom_css = tmp_path / "pdf" / "custom.css"
+    custom_css.parent.mkdir(parents=True)
     custom_css.write_text("body { font-size: 10pt; }")
 
     converter = _make_converter()
-    fake = _FakeSettings(pdf_custom_css_path=str(custom_css), tmp_dir=tmp_path / "tmp")
+    fake = _FakeSettings(pdf_custom_css_path=custom_css, tmp_dir=tmp_path / "tmp")
     with patch("converters.pypandoc_convert.get_settings", return_value=fake):
         css_path = converter._get_pdf_css_path()
 
     assert css_path is not None
-    assert os.path.abspath(str(custom_css)) == css_path
+    assert Path(css_path).resolve() == custom_css.resolve()
 
 
 def test_pdf_css_falls_back_when_custom_missing(tmp_path):
-    """When the custom CSS path doesn't exist, fall back to the default."""
+    """When the data-dir custom CSS file is absent, fall back to the default."""
     converter = _make_converter()
     fake = _FakeSettings(
-        pdf_custom_css_path=str(tmp_path / "nonexistent.css"),
+        pdf_custom_css_path=tmp_path / "pdf" / "custom.css",
         tmp_dir=tmp_path / "tmp",
     )
     with patch("converters.pypandoc_convert.get_settings", return_value=fake):
@@ -76,7 +82,10 @@ def test_pdf_css_falls_back_when_custom_missing(tmp_path):
 def test_build_extra_args_includes_css_for_pdf(tmp_path):
     """The --css flag should be present in extra_args for PDF output."""
     converter = _make_converter(output_type="pdf")
-    fake = _FakeSettings(pdf_custom_css_path="", tmp_dir=tmp_path / "tmp")
+    fake = _FakeSettings(
+        pdf_custom_css_path=tmp_path / "pdf" / "custom.css",
+        tmp_dir=tmp_path / "tmp",
+    )
 
     # Create a minimal fake input file so resource-path resolution works
     fake_input = tmp_path / "input.md"
@@ -93,7 +102,10 @@ def test_build_extra_args_includes_css_for_pdf(tmp_path):
 def test_build_extra_args_no_css_for_non_pdf(tmp_path):
     """The --css flag should NOT be present for non-PDF output (e.g. HTML)."""
     converter = _make_converter(output_type="html")
-    fake = _FakeSettings(pdf_custom_css_path="", tmp_dir=tmp_path / "tmp")
+    fake = _FakeSettings(
+        pdf_custom_css_path=tmp_path / "pdf" / "custom.css",
+        tmp_dir=tmp_path / "tmp",
+    )
 
     fake_input = tmp_path / "input.md"
     fake_input.write_text("# Test")
