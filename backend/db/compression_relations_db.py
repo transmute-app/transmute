@@ -183,6 +183,24 @@ class CompressionRelationsDB:
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
 
+    def list_relations_for_compressions(
+        self,
+        compressed_file_ids: list[str],
+        user_id: str,
+    ) -> list[dict]:
+        """Retrieve relations for a page of compressed files in one query."""
+        if not compressed_file_ids:
+            return []
+        placeholders = ", ".join("?" for _ in compressed_file_ids)
+        cursor = self.conn.cursor()
+        cursor.row_factory = sqlite3.Row
+        cursor.execute(
+            f"SELECT * FROM {self.TABLE_NAME} "  # nosec B608
+            f"WHERE user_id = ? AND compressed_file_id IN ({placeholders})",
+            (user_id, *compressed_file_ids),
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
     def close(self) -> None:
         """Close the current thread's database connection."""
         if hasattr(self._local, 'conn') and self._local.conn:

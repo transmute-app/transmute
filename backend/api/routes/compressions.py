@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from registry import compressor_registry
 from core import get_settings, delete_file_and_metadata
 from db import CompressionDB, FileDB, CompressionRelationsDB, SettingsDB, DefaultCompressionLevelsDB
@@ -12,6 +12,7 @@ from api.deps import (
     get_default_compression_levels_db,
 )
 from api.schemas import CompressionRequest, CompressionListResponse, FileMetadata, ErrorResponse, FileDeleteResponse
+from core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, build_pagination
 
 
 router = APIRouter(prefix="/compressions", tags=["compressions"])
@@ -32,22 +33,34 @@ COMPRESSED_DIR = settings.output_dir
         }
 )
 def list_compressions(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
     comp_db: CompressionDB = Depends(get_compression_db),
     comp_rel_db: CompressionRelationsDB = Depends(get_compression_relations_db),
     current_user: dict = Depends(get_current_active_user),
 ):
-    """List all completed compressions for the current user."""
-    compressed_files = comp_db.list_files(user_id=current_user["uuid"])
+    """List completed compressions for the current user, newest-first."""
+    user_id = current_user["uuid"]
+    total_items = comp_db.count_files(user_id=user_id)
+    compressed_files = comp_db.list_files(
+        user_id=user_id,
+        limit=page_size,
+        offset=(page - 1) * page_size,
+    )
     compressed_files_dict = {f['id']: f for f in compressed_files}
 
-    relations = comp_rel_db.list_relations(user_id=current_user["uuid"])
+    relations = comp_rel_db.list_relations_for_compressions(
+        list(compressed_files_dict),
+        user_id=user_id,
+    )
+    relations_by_compression = {rel['compressed_file_id']: rel for rel in relations}
     # For each relation, create a compression-centric record with original file metadata from the relation.
     # This uses denormalized data so original files can be deleted without breaking history.
     compression_records = []
-    for rel in relations:
-        comp_id = rel['compressed_file_id']
-        if comp_id in compressed_files_dict:
-            record = dict(compressed_files_dict[comp_id])
+    for comp_id, compressed_file in compressed_files_dict.items():
+        rel = relations_by_compression.get(comp_id)
+        if rel is not None:
+            record = dict(compressed_file)
             # Build original_file metadata from denormalized relation data
             record['original_file'] = {
                 'id': rel['original_file_id'],
@@ -58,7 +71,10 @@ def list_compressions(
             }
             compression_records.append(record)
 
-    return {"compressions": compression_records}
+    return {
+        "compressions": compression_records,
+        "pagination": build_pagination(total_items, page, page_size),
+    }
 
 
 @router.post(

@@ -3,6 +3,12 @@
     "name": "Transmute",
     "tagline": "Přetáhni soubor, vyber formát, konvertuj."
   },
+  "pagination": {
+    "label": "Stránkování",
+    "previous": "Předchozí",
+    "next": "Další",
+    "pageOf": "Strana {{current}} z {{total}}"
+  },
   "titles": {
     "signIn": "Transmute - Přihlášení",
     "converter": "Transmute - Pracovní prostor",

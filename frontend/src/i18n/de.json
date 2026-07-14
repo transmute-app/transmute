@@ -3,6 +3,12 @@
     "name": "Transmute",
     "tagline": "Datei hochladen, Format wählen, konvertieren."
   },
+  "pagination": {
+    "label": "Seitennavigation",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "pageOf": "Seite {{current}} von {{total}}"
+  },
   "titles": {
     "signIn": "Transmute - Anmelden",
     "converter": "Transmute - Arbeitsbereich",

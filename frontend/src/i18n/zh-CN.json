@@ -3,6 +3,12 @@
     "name": "Transmute",
     "tagline": "拖入文件，选择格式，开始转换。"
   },
+  "pagination": {
+    "label": "分页",
+    "previous": "上一页",
+    "next": "下一页",
+    "pageOf": "第 {{current}} 页，共 {{total}} 页"
+  },
   "titles": {
     "signIn": "Transmute - 登录",
     "converter": "Transmute - 工作区",

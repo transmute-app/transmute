@@ -3,6 +3,12 @@
     "name": "Transmute",
     "tagline": "Bir dosya bırakın, bir format seçin, Transmute."
   },
+  "pagination": {
+    "label": "Sayfalama",
+    "previous": "Önceki",
+    "next": "Sonraki",
+    "pageOf": "{{total}} sayfadan {{current}}. sayfa"
+  },
   "titles": {
     "signIn": "Transmute - Oturum Aç",
     "converter": "Transmute - Çalışma alanı",

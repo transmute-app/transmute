@@ -4,7 +4,7 @@ import hashlib
 import mimetypes
 import logging
 
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks, Query
 from fastapi.responses import FileResponse
 from zipfile import ZipFile
 from pathlib import Path
@@ -16,6 +16,7 @@ from api.schemas import FileListResponse, FileUploadResponse, FileUrlUploadRespo
 from registry import downloader_registry
 from downloaders import DownloadError, YtDlpDownloader
 from converters.ffmpeg_convert import FFmpegConverter
+from core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, build_pagination
 
 logger = logging.getLogger(__name__)
 
@@ -117,14 +118,25 @@ async def save_file(file: UploadFile, db: FileDB, user_id: str) -> dict:
     }
 )
 def list_files(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
     file_db: FileDB = Depends(get_file_db),
     current_user: dict = Depends(get_current_active_user),
 ):
-    """List all uploaded files for the current user"""
-    files = file_db.list_files(user_id=current_user["uuid"])
+    """List uploaded files for the current user, newest-first."""
+    user_id = current_user["uuid"]
+    total_items = file_db.count_files(user_id=user_id)
+    files = file_db.list_files(
+        user_id=user_id,
+        limit=page_size,
+        offset=(page - 1) * page_size,
+    )
     for file in files:
         file["compatible_formats"] = converter_registry.get_compatible_formats_and_qualities(file["media_type"])
-    return {"files": files}
+    return {
+        "files": files,
+        "pagination": build_pagination(total_items, page, page_size),
+    }
 
 
 @router.post(

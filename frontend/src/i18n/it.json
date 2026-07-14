@@ -3,6 +3,12 @@
     "name": "Transmute",
     "tagline": "Trascina un file, scegli un formato, Transmute."
   },
+  "pagination": {
+    "label": "Paginazione",
+    "previous": "Precedente",
+    "next": "Successiva",
+    "pageOf": "Pagina {{current}} di {{total}}"
+  },
   "titles": {
     "signIn": "Transmute - Accedi",
     "converter": "Transmute - Spazio di lavoro",

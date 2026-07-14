@@ -3,6 +3,12 @@
     "name": "Transmute",
     "tagline": "Déposer un fichier, choisir un format, Transmuter."
   },
+  "pagination": {
+    "label": "Pagination",
+    "previous": "Précédente",
+    "next": "Suivante",
+    "pageOf": "Page {{current}} sur {{total}}"
+  },
   "titles": {
     "signIn": "Transmute - Connexion",
     "converter": "Transmute - Espace de travail",

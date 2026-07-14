@@ -3,6 +3,12 @@
     "name": "Transmute",
     "tagline": "Solte um arquivo, escolha um formato, Transmute."
   },
+  "pagination": {
+    "label": "Paginação",
+    "previous": "Anterior",
+    "next": "Próxima",
+    "pageOf": "Página {{current}} de {{total}}"
+  },
   "titles": {
     "signIn": "Transmute - Entrar",
     "converter": "Transmute - Espaço de trabalho",

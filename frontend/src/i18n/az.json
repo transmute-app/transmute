@@ -3,6 +3,12 @@
     "name": "Transmute",
     "tagline": "Faylı atın, formatı seçin, Transmute."
   },
+  "pagination": {
+    "label": "Səhifələmə",
+    "previous": "Əvvəlki",
+    "next": "Növbəti",
+    "pageOf": "{{total}} səhifədən {{current}}-ci"
+  },
   "titles": {
     "signIn": "Transmute - Daxil Ol",
     "converter": "Transmute - İş sahəsi",

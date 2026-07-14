@@ -100,6 +100,18 @@ def test_count_jobs_filters_by_user_and_status(job_db):
     assert job_db.count_jobs(status="queued") == 2
 
 
+def test_list_and_count_jobs_can_exclude_completed(job_db):
+    completed = job_db.insert_job(_make_job(user_id="user-a", source_id="f1"))
+    job_db.insert_job(_make_job(user_id="user-a", source_id="f2"))
+    job_db.claim_next_queued_job()
+    job_db.mark_completed(completed["id"], output_file_id="out-1")
+
+    jobs = job_db.list_jobs(user_id="user-a", exclude_status="completed")
+
+    assert [job["source_file_id"] for job in jobs] == ["f2"]
+    assert job_db.count_jobs(user_id="user-a", exclude_status="completed") == 1
+
+
 def test_claim_next_queued_job_marks_running(job_db):
     job1 = job_db.insert_job(_make_job(source_id="f1"))
     job2 = job_db.insert_job(_make_job(source_id="f2"))

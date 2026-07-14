@@ -3,6 +3,12 @@
     "name": "Transmute",
     "tagline": "Træk en fil ind, vælg et format, Transmute."
   },
+  "pagination": {
+    "label": "Sidenavigation",
+    "previous": "Forrige",
+    "next": "Næste",
+    "pageOf": "Side {{current}} af {{total}}"
+  },
   "titles": {
     "signIn": "Transmute - Log ind",
     "converter": "Transmute - Arbejdsområde",

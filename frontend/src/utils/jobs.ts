@@ -1,4 +1,5 @@
 import { authFetch, apiJson, ApiError } from './api'
+import { withPagination, type PaginationMetadata } from './pagination'
 
 export type ConversionJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
 
@@ -31,6 +32,7 @@ export interface ConversionJob {
 
 export interface ConversionJobListResponse {
   jobs: ConversionJob[]
+  pagination: PaginationMetadata
 }
 
 export interface ConversionJobCreatePayload {
@@ -43,10 +45,19 @@ export function isTerminalJobStatus(status: ConversionJobStatus): boolean {
   return TERMINAL_JOB_STATUSES.has(status)
 }
 
-export async function listJobs(statusFilter?: ConversionJobStatus): Promise<ConversionJob[]> {
-  const url = statusFilter
+export async function listJobs(
+  statusFilter?: ConversionJobStatus,
+  page = 1,
+  pageSize = 100,
+  includeCompleted = true,
+): Promise<ConversionJob[]> {
+  let baseUrl = statusFilter
     ? `/api/jobs?status_filter=${encodeURIComponent(statusFilter)}`
     : '/api/jobs'
+  if (!includeCompleted && !statusFilter) {
+    baseUrl += '?include_completed=false'
+  }
+  const url = withPagination(baseUrl, page, pageSize)
   const data = await apiJson<ConversionJobListResponse>(url)
   return data.jobs
 }
@@ -130,6 +141,7 @@ export interface CompressionJob {
 
 export interface CompressionJobListResponse {
   jobs: CompressionJob[]
+  pagination: PaginationMetadata
 }
 
 export interface CompressionJobCreatePayload {
@@ -137,10 +149,19 @@ export interface CompressionJobCreatePayload {
   compression_level?: string | null
 }
 
-export async function listCompressionJobs(statusFilter?: ConversionJobStatus): Promise<CompressionJob[]> {
-  const url = statusFilter
+export async function listCompressionJobs(
+  statusFilter?: ConversionJobStatus,
+  page = 1,
+  pageSize = 100,
+  includeCompleted = true,
+): Promise<CompressionJob[]> {
+  let baseUrl = statusFilter
     ? `/api/compression-jobs?status_filter=${encodeURIComponent(statusFilter)}`
     : '/api/compression-jobs'
+  if (!includeCompleted && !statusFilter) {
+    baseUrl += '?include_completed=false'
+  }
+  const url = withPagination(baseUrl, page, pageSize)
   const data = await apiJson<CompressionJobListResponse>(url)
   return data.jobs
 }
