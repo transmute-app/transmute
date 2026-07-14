@@ -30,6 +30,17 @@ class Theme(str, Enum):
     ARGENTUM   = "argentum"
 
 
+class ThemeMode(str, Enum):
+    """How the active UI theme is selected."""
+
+    MANUAL = "manual"
+    SYSTEM = "system"
+
+
+DEFAULT_LIGHT_THEME = Theme.ALBEDO.value
+DEFAULT_DARK_THEME = Theme.RUBEDO.value
+
+
 # Color tokens every theme (built-in or custom) must define. Order matters
 # only for stable serialization in API responses.
 THEME_COLOR_TOKENS: tuple[str, ...] = (
@@ -119,6 +130,9 @@ def normalize_datetime_display_format(value: str) -> str:
 # Defaults applied when a user has no settings row yet
 _DEFAULT_SETTINGS = {
     "theme":            Theme.RUBEDO.value,
+    "theme_mode":       ThemeMode.MANUAL.value,
+    "light_theme":      DEFAULT_LIGHT_THEME,
+    "dark_theme":       DEFAULT_DARK_THEME,
     "auto_download":    False,
     "keep_originals":   True,
     "cleanup_enabled":  True,
@@ -183,6 +197,9 @@ class SettingsDB:
                     id             INTEGER PRIMARY KEY,
                     user_id        TEXT,
                     theme          TEXT    NOT NULL DEFAULT '{Theme.RUBEDO.value}',
+                    theme_mode     TEXT    NOT NULL DEFAULT '{ThemeMode.MANUAL.value}',
+                    light_theme    TEXT    NOT NULL DEFAULT '{DEFAULT_LIGHT_THEME}',
+                    dark_theme     TEXT    NOT NULL DEFAULT '{DEFAULT_DARK_THEME}',
                     auto_download  INTEGER NOT NULL DEFAULT 0,
                     keep_originals INTEGER NOT NULL DEFAULT 1,
                     cleanup_enabled INTEGER NOT NULL DEFAULT 1,
@@ -195,6 +212,9 @@ class SettingsDB:
         migrate_table_columns(self.conn, self.TABLE_NAME, {
             "user_id":             "TEXT",
             "theme":               f"TEXT NOT NULL DEFAULT '{Theme.RUBEDO.value}'",
+            "theme_mode":          f"TEXT NOT NULL DEFAULT '{ThemeMode.MANUAL.value}'",
+            "light_theme":         f"TEXT NOT NULL DEFAULT '{DEFAULT_LIGHT_THEME}'",
+            "dark_theme":          f"TEXT NOT NULL DEFAULT '{DEFAULT_DARK_THEME}'",
             "auto_download":       "INTEGER NOT NULL DEFAULT 0",
             "keep_originals":      "INTEGER NOT NULL DEFAULT 1",
             "cleanup_enabled":     "INTEGER NOT NULL DEFAULT 1",
@@ -235,11 +255,14 @@ class SettingsDB:
         if cursor.fetchone() is None:
             with self.conn:
                 self.conn.execute(
-                    f"INSERT INTO {self.TABLE_NAME} (user_id, theme, auto_download, keep_originals, cleanup_enabled, cleanup_ttl_minutes, datetime_display_format) "  # nosec B608
-                    f"VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    f"INSERT INTO {self.TABLE_NAME} (user_id, theme, theme_mode, light_theme, dark_theme, auto_download, keep_originals, cleanup_enabled, cleanup_ttl_minutes, datetime_display_format) "  # nosec B608
+                    f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         user_id,
                         _DEFAULT_SETTINGS["theme"],
+                        _DEFAULT_SETTINGS["theme_mode"],
+                        _DEFAULT_SETTINGS["light_theme"],
+                        _DEFAULT_SETTINGS["dark_theme"],
                         int(_DEFAULT_SETTINGS["auto_download"]),
                         int(_DEFAULT_SETTINGS["keep_originals"]),
                         int(_DEFAULT_SETTINGS["cleanup_enabled"]),
@@ -263,6 +286,9 @@ class SettingsDB:
         """
         return {
             "theme":               row["theme"],
+            "theme_mode":          row["theme_mode"],
+            "light_theme":         row["light_theme"],
+            "dark_theme":          row["dark_theme"],
             "auto_download":       bool(row["auto_download"]),
             "keep_originals":      bool(row["keep_originals"]),
             "cleanup_enabled":     bool(row["cleanup_enabled"]),
@@ -288,7 +314,17 @@ class SettingsDB:
         """Apply a partial or full update to a user's settings."""
         self._ensure_user_row(user_id)
         # Prevent SQL injection by allowing only known columns
-        allowed = {"theme", "auto_download", "keep_originals", "cleanup_enabled", "cleanup_ttl_minutes", "datetime_display_format"}
+        allowed = {
+            "theme",
+            "theme_mode",
+            "light_theme",
+            "dark_theme",
+            "auto_download",
+            "keep_originals",
+            "cleanup_enabled",
+            "cleanup_ttl_minutes",
+            "datetime_display_format",
+        }
         filtered = {k: v for k, v in updates.items() if k in allowed}
 
         if not filtered:
@@ -296,8 +332,10 @@ class SettingsDB:
 
         # Validate theme value against built-ins and the custom themes table.
         # Custom themes are admin-managed but every user may *select* them.
-        if "theme" in filtered:
-            theme_value = filtered["theme"]
+        for field in ("theme", "light_theme", "dark_theme"):
+            if field not in filtered:
+                continue
+            theme_value = filtered[field]
             if not isinstance(theme_value, str) or not theme_value:
                 raise ValueError("Theme must be a non-empty string")
             if theme_value not in BUILTIN_THEME_KEYS and not self._custom_theme_exists(theme_value):
@@ -306,7 +344,13 @@ class SettingsDB:
                     f"Invalid theme '{theme_value}'. Must be a built-in "
                     f"({valid_builtins}) or an existing custom theme key."
                 )
-            filtered["theme"] = theme_value
+            filtered[field] = theme_value
+
+        if "theme_mode" in filtered:
+            theme_mode = filtered["theme_mode"]
+            valid_modes = {mode.value for mode in ThemeMode}
+            if theme_mode not in valid_modes:
+                raise ValueError(f"Invalid theme mode '{theme_mode}'. Must be one of {sorted(valid_modes)}.")
 
         if "auto_download" in filtered:
             filtered["auto_download"] = int(bool(filtered["auto_download"]))
@@ -571,10 +615,18 @@ class SettingsDB:
             return False
         fallback = Theme.RUBEDO.value
         with self.conn:
-            # Reset users whose active selection is the theme being deleted.
+            # Reset every preference that references the deleted theme.
             self.conn.execute(
                 f"UPDATE {self.TABLE_NAME} SET theme = ? WHERE theme = ?",  # nosec B608
                 (fallback, key),
+            )
+            self.conn.execute(
+                f"UPDATE {self.TABLE_NAME} SET light_theme = ? WHERE light_theme = ?",  # nosec B608
+                (DEFAULT_LIGHT_THEME, key),
+            )
+            self.conn.execute(
+                f"UPDATE {self.TABLE_NAME} SET dark_theme = ? WHERE dark_theme = ?",  # nosec B608
+                (DEFAULT_DARK_THEME, key),
             )
             cursor = self.conn.execute(
                 f"DELETE FROM {self.CUSTOM_THEMES_TABLE_NAME} WHERE key = ?",  # nosec B608

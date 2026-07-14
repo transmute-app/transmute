@@ -17,10 +17,11 @@
     <!--
       Blocking theme script — runs synchronously before the browser paints
       anything, eliminating the flash of the default color scheme on refresh.
-      `transmute-theme` stores the active theme key; `transmute-theme-registry`
-      caches the full custom-theme list so we can synthesize their CSS
-      rules before React mounts (otherwise a custom theme would flash the
-      default colors until ThemeContext loads).
+      Theme preferences store the manual selection plus the paired system
+      light/dark selections; `transmute-theme-registry` caches the full
+      custom-theme list so we can synthesize their CSS rules before React
+      mounts (otherwise a custom theme would flash the default colors until
+      ThemeContext loads).
     -->
     <script>
       (function () {
@@ -61,7 +62,13 @@
         }
         try {
           var customKeys = injectCachedThemes();
+          var mode = localStorage.getItem('transmute-theme-mode');
           var t = localStorage.getItem('transmute-theme');
+          if (mode === 'system' && typeof window.matchMedia === 'function') {
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            t = localStorage.getItem(prefersDark ? 'transmute-dark-theme' : 'transmute-light-theme')
+              || (prefersDark ? 'rubedo' : 'albedo');
+          }
           if (t && (BUILTINS.indexOf(t) !== -1 || customKeys.indexOf(t) !== -1)) {
             document.documentElement.setAttribute('data-theme', t);
           }

@@ -24,6 +24,11 @@ import {
   type ThemeColorToken,
   type ThemeColors,
 } from '../utils/themeRegistry'
+import {
+  DEFAULT_DARK_THEME,
+  DEFAULT_LIGHT_THEME,
+  type ThemeMode,
+} from '../utils/themePreferences'
 
 interface Theme {
   value: string
@@ -107,8 +112,77 @@ function ThemeSwatch({ colors }: { colors: string[] }) {
   )
 }
 
+interface ThemePickerProps {
+  themes: Theme[]
+  value: ThemeName
+  onChange: (theme: ThemeName) => void
+  customBadgeLabel: string
+}
+
+function ThemePicker({ themes, value, onChange, customBadgeLabel }: ThemePickerProps) {
+  const [open, setOpen] = useState(false)
+  const pickerRef = useRef<HTMLDivElement>(null)
+  const selected = themes.find(theme => theme.value === value)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  return (
+    <div className="relative" ref={pickerRef}>
+      <button
+        type="button"
+        onClick={() => setOpen(current => !current)}
+        className="flex items-center gap-2 bg-surface-dark text-text border border-surface-light rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition duration-200 min-w-[200px]"
+      >
+        <ThemeSwatch colors={selected?.colors ?? []} />
+        <span className="flex-1 text-left">{selected?.label ?? value}</span>
+        <svg className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-1 w-full bg-surface-dark border border-surface-light rounded-lg shadow-xl z-10 overflow-hidden max-h-80 overflow-y-auto">
+          {themes.map(option => (
+            <button
+              type="button"
+              key={option.value}
+              onClick={() => {
+                onChange(option.value as ThemeName)
+                setOpen(false)
+              }}
+              className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left transition duration-150 ${
+                value === option.value
+                  ? 'bg-primary/20 text-primary-light'
+                  : 'text-text hover:bg-surface-light'
+              }`}
+            >
+              <ThemeSwatch colors={option.colors} />
+              <span className="flex-1">{option.label}</span>
+              {option.custom && (
+                <span className="text-[10px] uppercase tracking-wider text-text-muted">
+                  {customBadgeLabel}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface AppSettings {
   theme: string
+  theme_mode: ThemeMode
+  light_theme: string
+  dark_theme: string
   auto_download: boolean
   keep_originals: boolean
   cleanup_enabled: boolean
@@ -150,6 +224,12 @@ function Settings() {
   const {
     theme,
     setTheme,
+    themeMode,
+    setThemeMode,
+    lightTheme,
+    setLightTheme,
+    darkTheme,
+    setDarkTheme,
     setKeepOriginals,
     dateTimeDisplayFormat,
     setDateTimeDisplayFormat,
@@ -187,7 +267,6 @@ function Settings() {
   const [dateTimeFormat, setDateTimeFormat] = useState(dateTimeDisplayFormat)
   const [cleanupEnabled, setCleanupEnabled] = useState(true)
   const [cleanupTtl, setCleanupTtl] = useState(60)
-  const [themeOpen, setThemeOpen] = useState(false)
   const [languageOpen, setLanguageOpen] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -202,7 +281,6 @@ function Settings() {
     confirmLabel: string
     onConfirm: () => void
   } | null>(null)
-  const themeRef = useRef<HTMLDivElement>(null)
   const languageRef = useRef<HTMLDivElement>(null)
 
   // Default format mappings
@@ -310,9 +388,12 @@ function Settings() {
   // Load settings once on mount
   useEffect(() => {
     fetch('/api/settings')
-      .then(r => r.ok ? r.json() : Promise.reject(t('settings.loadFailed')))
+      .then(r => r.ok ? r.json() : Promise.reject())
       .then((data: AppSettings) => {
         setTheme(data.theme as ThemeName)
+        setThemeMode(data.theme_mode ?? 'manual')
+        setLightTheme((data.light_theme ?? DEFAULT_LIGHT_THEME) as ThemeName)
+        setDarkTheme((data.dark_theme ?? DEFAULT_DARK_THEME) as ThemeName)
         setAutoDownload(data.auto_download)
         setSaveOriginals(data.keep_originals)
         setDateTimeFormat(data.datetime_display_format || DEFAULT_DATETIME_DISPLAY_FORMAT)
@@ -326,13 +407,10 @@ function Settings() {
     loadDefaultQualities()
     loadCompressionMap()
     loadDefaultCompressionLevels()
-  }, [setTheme, loadConversionMap, loadDefaultFormats, loadDefaultQualities, loadCompressionMap, loadDefaultCompressionLevels])
+  }, [setTheme, setThemeMode, setLightTheme, setDarkTheme, loadConversionMap, loadDefaultFormats, loadDefaultQualities, loadCompressionMap, loadDefaultCompressionLevels])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (themeRef.current && !themeRef.current.contains(e.target as Node)) {
-        setThemeOpen(false)
-      }
       if (languageRef.current && !languageRef.current.contains(e.target as Node)) {
         setLanguageOpen(false)
       }
@@ -352,6 +430,9 @@ function Settings() {
     try {
       const payload: Record<string, unknown> = {
         theme,
+        theme_mode: themeMode,
+        light_theme: lightTheme,
+        dark_theme: darkTheme,
         auto_download: autoDownload,
         keep_originals: saveOriginals,
         datetime_display_format: dateTimeFormat.trim(),
@@ -572,9 +653,15 @@ function Settings() {
             if (!response.ok && response.status !== 204) {
               throw new Error(t('settings.saveFailed'))
             }
-            // If we just deleted the active theme, reset to the fallback.
+            // Keep local preferences in sync with the backend fallbacks.
             if (theme === ct.key) {
               setTheme(FALLBACK_THEME)
+            }
+            if (lightTheme === ct.key) {
+              setLightTheme(DEFAULT_LIGHT_THEME)
+            }
+            if (darkTheme === ct.key) {
+              setDarkTheme(DEFAULT_DARK_THEME)
             }
             await refreshThemes()
           } catch (err) {
@@ -684,47 +771,74 @@ function Settings() {
           <section className="bg-surface-light rounded-xl p-6">
             <h2 className="text-lg font-semibold text-text mb-4">{t('settings.appearance')}</h2>
             <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-text font-medium">{t('settings.theme')}</p>
-                  <p className="text-text-muted text-sm">{t('settings.themeDescription')}</p>
+                  <p className="text-text font-medium">{t('settings.themeMode')}</p>
+                  <p className="text-text-muted text-sm">{t('settings.themeModeDescription')}</p>
                 </div>
-                <div className="relative" ref={themeRef}>
+                <div className="flex rounded-lg border border-surface-light bg-surface-dark p-1">
                   <button
-                    onClick={() => setThemeOpen(o => !o)}
-                    className="flex items-center gap-2 bg-surface-dark text-text border border-surface-light rounded-lg py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition duration-200 min-w-[200px]"
+                    type="button"
+                    aria-pressed={themeMode === 'manual'}
+                    onClick={() => setThemeMode('manual')}
+                    className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+                      themeMode === 'manual'
+                        ? 'bg-primary text-white'
+                        : 'text-text-muted hover:text-text'
+                    }`}
                   >
-                    <ThemeSwatch colors={allThemes.find(t => t.value === theme)?.colors ?? []} />
-                    <span className="flex-1 text-left">{allThemes.find(t => t.value === theme)?.label ?? theme}</span>
-                    <svg className={`w-4 h-4 transition-transform duration-200 ${themeOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                    {t('settings.themeModeManual')}
                   </button>
-                  {themeOpen && (
-                    <div className="absolute right-0 mt-1 w-full bg-surface-dark border border-surface-light rounded-lg shadow-xl z-10 overflow-hidden max-h-80 overflow-y-auto">
-                      {allThemes.map(opt => (
-                        <button
-                          key={opt.value}
-                          onClick={() => { setTheme(opt.value as ThemeName); setThemeOpen(false) }}
-                          className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left transition duration-150 ${
-                            theme === opt.value
-                              ? 'bg-primary/20 text-primary-light'
-                              : 'text-text hover:bg-surface-light'
-                          }`}
-                        >
-                          <ThemeSwatch colors={opt.colors} />
-                          <span className="flex-1">{opt.label}</span>
-                          {opt.custom && (
-                            <span className="text-[10px] uppercase tracking-wider text-text-muted">
-                              {t('settings.customThemeBadge')}
-                            </span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    aria-pressed={themeMode === 'system'}
+                    onClick={() => setThemeMode('system')}
+                    className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+                      themeMode === 'system'
+                        ? 'bg-primary text-white'
+                        : 'text-text-muted hover:text-text'
+                    }`}
+                  >
+                    {t('settings.themeModeSystem')}
+                  </button>
                 </div>
               </div>
+
+              {themeMode === 'manual' ? (
+                <div className="flex items-center justify-between gap-4 border-t border-surface-dark pt-4">
+                  <div>
+                    <p className="text-text font-medium">{t('settings.theme')}</p>
+                    <p className="text-text-muted text-sm">{t('settings.themeDescription')}</p>
+                  </div>
+                  <ThemePicker
+                    themes={allThemes}
+                    value={theme}
+                    onChange={setTheme}
+                    customBadgeLabel={t('settings.customThemeBadge')}
+                  />
+                </div>
+              ) : (
+                <div className="grid gap-4 border-t border-surface-dark pt-4 sm:grid-cols-2">
+                  <div className="flex flex-col gap-2">
+                    <p className="text-text font-medium">{t('settings.lightTheme')}</p>
+                    <ThemePicker
+                      themes={allThemes}
+                      value={lightTheme}
+                      onChange={setLightTheme}
+                      customBadgeLabel={t('settings.customThemeBadge')}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <p className="text-text font-medium">{t('settings.darkTheme')}</p>
+                    <ThemePicker
+                      themes={allThemes}
+                      value={darkTheme}
+                      onChange={setDarkTheme}
+                      customBadgeLabel={t('settings.customThemeBadge')}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="border-t border-surface-dark pt-4 mt-2">
                 <div className="flex items-center justify-between gap-4">

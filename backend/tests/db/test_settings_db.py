@@ -1,7 +1,12 @@
 import pytest
 
 from db import SettingsDB
-from db.settings_db import DEFAULT_DATETIME_DISPLAY_FORMAT
+from db.settings_db import (
+    DEFAULT_DARK_THEME,
+    DEFAULT_DATETIME_DISPLAY_FORMAT,
+    DEFAULT_LIGHT_THEME,
+    ThemeMode,
+)
 
 
 @pytest.fixture
@@ -16,6 +21,34 @@ def test_get_settings_defaults_datetime_display_format(tmp_settings_db):
     settings = tmp_settings_db.get_settings("user-1")
 
     assert settings["datetime_display_format"] == DEFAULT_DATETIME_DISPLAY_FORMAT
+
+
+def test_get_settings_defaults_to_manual_theme_mode(tmp_settings_db):
+    settings = tmp_settings_db.get_settings("user-1")
+
+    assert settings["theme_mode"] == ThemeMode.MANUAL.value
+    assert settings["light_theme"] == DEFAULT_LIGHT_THEME
+    assert settings["dark_theme"] == DEFAULT_DARK_THEME
+
+
+def test_update_settings_persists_system_theme_pair(tmp_settings_db):
+    updated = tmp_settings_db.update_settings(
+        "user-1",
+        {
+            "theme_mode": "system",
+            "light_theme": "caelum",
+            "dark_theme": "nigredo",
+        },
+    )
+
+    assert updated["theme_mode"] == "system"
+    assert updated["light_theme"] == "caelum"
+    assert updated["dark_theme"] == "nigredo"
+
+
+def test_update_settings_rejects_invalid_theme_mode(tmp_settings_db):
+    with pytest.raises(ValueError, match="Invalid theme mode"):
+        tmp_settings_db.update_settings("user-1", {"theme_mode": "automatic"})
 
 
 def test_update_settings_persists_datetime_display_format(tmp_settings_db):
