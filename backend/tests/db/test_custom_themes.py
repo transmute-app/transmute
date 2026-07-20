@@ -2,6 +2,8 @@ import pytest
 from db import SettingsDB
 from db.settings_db import (
     BUILTIN_THEME_KEYS,
+    DEFAULT_DARK_THEME,
+    DEFAULT_LIGHT_THEME,
     THEME_COLOR_TOKENS,
     Theme,
     _normalize_hex_color,
@@ -127,15 +129,15 @@ def test_update_unknown_theme_raises(tmp_settings_db):
         tmp_settings_db.update_custom_theme("ghost", name="Nope")
 
 
-def test_delete_custom_theme_resets_users_to_rubedo(tmp_settings_db):
+def test_delete_custom_theme_resets_all_user_theme_references(tmp_settings_db):
     created = tmp_settings_db.create_custom_theme("Doomed", VALID_COLORS)
     key = created["key"]
     # Bypass admin scoping by inserting a settings row directly.
     user_id = "user-1"
     tmp_settings_db.conn.execute(
-        f"INSERT INTO {tmp_settings_db.TABLE_NAME} (user_id, theme, auto_download, keep_originals, cleanup_enabled, cleanup_ttl_minutes) "
-        f"VALUES (?, ?, 0, 1, 1, 60)",
-        (user_id, key),
+        f"INSERT INTO {tmp_settings_db.TABLE_NAME} (user_id, theme, theme_mode, light_theme, dark_theme, auto_download, keep_originals, cleanup_enabled, cleanup_ttl_minutes) "
+        f"VALUES (?, ?, 'system', ?, ?, 0, 1, 1, 60)",
+        (user_id, key, key, key),
     )
     tmp_settings_db.conn.commit()
 
@@ -143,10 +145,12 @@ def test_delete_custom_theme_resets_users_to_rubedo(tmp_settings_db):
     assert tmp_settings_db.get_custom_theme(key) is None
 
     row = tmp_settings_db.conn.execute(
-        f"SELECT theme FROM {tmp_settings_db.TABLE_NAME} WHERE user_id = ?",
+        f"SELECT theme, light_theme, dark_theme FROM {tmp_settings_db.TABLE_NAME} WHERE user_id = ?",
         (user_id,),
     ).fetchone()
     assert row[0] == Theme.RUBEDO.value
+    assert row[1] == DEFAULT_LIGHT_THEME
+    assert row[2] == DEFAULT_DARK_THEME
 
 
 def test_delete_missing_theme_returns_false(tmp_settings_db):
@@ -167,9 +171,28 @@ def test_update_settings_accepts_custom_theme(tmp_settings_db):
     assert tmp_settings_db.get_settings("u1")["theme"] == created["key"]
 
 
+def test_update_settings_accepts_custom_system_themes(tmp_settings_db):
+    light = tmp_settings_db.create_custom_theme("Custom Light", VALID_COLORS)
+    dark = tmp_settings_db.create_custom_theme("Custom Dark", VALID_COLORS)
+
+    updated = tmp_settings_db.update_settings(
+        "u1",
+        {"theme_mode": "system", "light_theme": light["key"], "dark_theme": dark["key"]},
+    )
+
+    assert updated["light_theme"] == light["key"]
+    assert updated["dark_theme"] == dark["key"]
+
+
 def test_update_settings_rejects_unknown_theme(tmp_settings_db):
     with pytest.raises(ValueError, match="Invalid theme"):
         tmp_settings_db.update_settings("u1", {"theme": "not-a-theme"})
+
+
+@pytest.mark.parametrize("field", ["light_theme", "dark_theme"])
+def test_update_settings_rejects_unknown_system_theme(tmp_settings_db, field):
+    with pytest.raises(ValueError, match="Invalid theme"):
+        tmp_settings_db.update_settings("u1", {field: "not-a-theme"})
 
 
 def test_update_settings_rejects_non_string_theme(tmp_settings_db):

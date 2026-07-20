@@ -50,6 +50,21 @@ Object.defineProperty(globalThis, 'sessionStorage', {
   value: sessionStorageMock,
 })
 
+Object.defineProperty(window, 'matchMedia', {
+  configurable: true,
+  writable: true,
+  value: (query: string): MediaQueryList => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }),
+})
+
 import '../i18n'
 
 afterEach(() => {

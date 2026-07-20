@@ -142,11 +142,15 @@ class BatchDownloadRequest(BaseModel):
 
 
 ThemeValue = Literal["rubedo", "citrinitas", "viriditas", "nigredo", "albedo", "aurora", "caelum", "argentum"]
+ThemeModeValue = Literal["manual", "system"]
 UserRoleValue = Literal["admin", "member", "guest"]
 
 
 class AppSettingsResponse(BaseModel):
     theme: str = Field(..., description="Active UI theme key (built-in or custom)", json_schema_extra={"example": "rubedo"})
+    theme_mode: ThemeModeValue = Field(..., description="Whether to use one theme or follow the system appearance", json_schema_extra={"example": "manual"})
+    light_theme: str = Field(..., description="Theme key used for the system light appearance", json_schema_extra={"example": "albedo"})
+    dark_theme: str = Field(..., description="Theme key used for the system dark appearance", json_schema_extra={"example": "rubedo"})
     auto_download: bool = Field(..., description="Auto-download converted files on completion", json_schema_extra={"example": False})
     keep_originals: bool = Field(..., description="Retain uploaded source files after conversion", json_schema_extra={"example": True})
     cleanup_enabled: bool = Field(..., description="Enable automatic cleanup of old files", json_schema_extra={"example": True})
@@ -156,6 +160,9 @@ class AppSettingsResponse(BaseModel):
 
 class AppSettingsUpdate(BaseModel):
     theme: Optional[str] = Field(None, description="Theme key to apply (built-in or custom)", json_schema_extra={"example": "rubedo"})
+    theme_mode: Optional[ThemeModeValue] = Field(None, description="Whether to use one theme or follow the system appearance", json_schema_extra={"example": "system"})
+    light_theme: Optional[str] = Field(None, description="Theme key used for the system light appearance", json_schema_extra={"example": "albedo"})
+    dark_theme: Optional[str] = Field(None, description="Theme key used for the system dark appearance", json_schema_extra={"example": "rubedo"})
     auto_download: Optional[bool] = Field(None, description="Auto-download on completion", json_schema_extra={"example": False})
     keep_originals: Optional[bool] = Field(None, description="Keep original files after conversion", json_schema_extra={"example": True})
     cleanup_enabled: Optional[bool] = Field(None, description="Enable automatic cleanup of old files", json_schema_extra={"example": True})
