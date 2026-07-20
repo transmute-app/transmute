@@ -1,13 +1,14 @@
 from pathlib import Path
 import shutil
 import uuid
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from registry import registry
 from core import get_settings, sanitize_extension, delete_file_and_metadata
 from db import ConversionDB, FileDB, ConversionRelationsDB, SettingsDB, DefaultQualitiesDB
 from services import ConversionFailedError, run_conversion_job
 from api.deps import get_current_active_user, get_file_db, get_conversion_db, get_conversion_relations_db, get_settings_db, get_default_qualities_db
 from api.schemas import ConversionRequest, ConversionListResponse, FileMetadata, ErrorResponse, FileDeleteResponse
+from core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, build_pagination
 
 
 router = APIRouter(prefix="/conversions", tags=["conversions"])
@@ -43,22 +44,34 @@ def copy_webvideo_to_mp4(input_path: str, temp_dir: Path, converted_id: str) -> 
         }
 )
 def list_conversions(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
     conv_db: ConversionDB = Depends(get_conversion_db),
     conv_rel_db: ConversionRelationsDB = Depends(get_conversion_relations_db),
     current_user: dict = Depends(get_current_active_user),
 ):
-    """List all completed conversions for the current user."""
-    converted_files = conv_db.list_files(user_id=current_user["uuid"])
+    """List completed conversions for the current user, newest-first."""
+    user_id = current_user["uuid"]
+    total_items = conv_db.count_files(user_id=user_id)
+    converted_files = conv_db.list_files(
+        user_id=user_id,
+        limit=page_size,
+        offset=(page - 1) * page_size,
+    )
     converted_files_dict = {f['id']: f for f in converted_files}
 
-    relations = conv_rel_db.list_relations(user_id=current_user["uuid"])
+    relations = conv_rel_db.list_relations_for_conversions(
+        list(converted_files_dict),
+        user_id=user_id,
+    )
+    relations_by_conversion = {rel['converted_file_id']: rel for rel in relations}
     # For each relation, create a conversion-centric record with original file metadata from the relation
     # This uses denormalized data so original files can be deleted without breaking history
     conversion_records = []
-    for rel in relations:
-        conv_id = rel['converted_file_id']
-        if conv_id in converted_files_dict:
-            record = dict(converted_files_dict[conv_id])
+    for conv_id, converted_file in converted_files_dict.items():
+        rel = relations_by_conversion.get(conv_id)
+        if rel is not None:
+            record = dict(converted_file)
             # Build original_file metadata from denormalized relation data
             record['original_file'] = {
                 'id': rel['original_file_id'],
@@ -69,7 +82,10 @@ def list_conversions(
             }
             conversion_records.append(record)
     
-    return {"conversions": conversion_records}
+    return {
+        "conversions": conversion_records,
+        "pagination": build_pagination(total_items, page, page_size),
+    }
 
 
 @router.post(

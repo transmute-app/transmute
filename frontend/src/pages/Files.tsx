@@ -1,9 +1,11 @@
-import { lazy, Suspense, useState, useEffect } from 'react'
+import { lazy, Suspense, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import FileTable, { FileInfo } from '../components/FileTable'
 import { isPreviewable } from '../components/previewUtils'
 import { authFetch as fetch } from '../utils/api'
+import Pagination from '../components/Pagination'
+import { withPagination, type PaginationMetadata } from '../utils/pagination'
 
 const PreviewModal = lazy(() => import('../components/PreviewModal'))
 
@@ -15,24 +17,35 @@ function Files() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [deletingSelected, setDeletingSelected] = useState(false)
   const [previewFile, setPreviewFile] = useState<FileInfo | null>(null)
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState<PaginationMetadata | null>(null)
   const navigate = useNavigate()
   const { t } = useTranslation()
 
-  useEffect(() => {
-    const fetchFiles = async () => {
-      try {
-        const response = await fetch('/api/files')
-        if (!response.ok) throw new Error(t('files.fetchFailed'))
-        const data = await response.json()
-        setFiles(data.files)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : t('files.loadFailed'))
-      } finally {
-        setLoading(false)
+  const fetchFiles = useCallback(async () => {
+    setLoading(true)
+    try {
+      const response = await fetch(withPagination('/api/files', page))
+      if (!response.ok) throw new Error(t('files.fetchFailed'))
+      const data = await response.json() as { files: FileInfo[]; pagination: PaginationMetadata }
+      if (data.pagination.total_pages > 0 && page > data.pagination.total_pages) {
+        setPage(data.pagination.total_pages)
+        return
       }
+      setFiles(data.files)
+      setPagination(data.pagination)
+      setSelectedIds(new Set())
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('files.loadFailed'))
+    } finally {
+      setLoading(false)
     }
-    fetchFiles()
-  }, [])
+  }, [page, t])
+
+  useEffect(() => {
+    void fetchFiles()
+  }, [fetchFiles])
 
   const handleDelete = async (fileId: string) => {
     setDeletingId(fileId)
@@ -45,6 +58,7 @@ function Files() {
         newSet.delete(fileId)
         return newSet
       })
+      await fetchFiles()
     } catch (err) {
       setError(err instanceof Error ? err.message : t('files.deleteFailed'))
     } finally {
@@ -100,6 +114,8 @@ function Files() {
       setError(errors.join('; '))
     }
 
+    await fetchFiles()
+
     setDeletingSelected(false)
   }
 
@@ -149,20 +165,29 @@ function Files() {
         )}
 
         {!loading && files.length > 0 && (
-          <FileTable
-            rows={files.map(file => ({
-              id: file.id,
-              file,
-              onDelete: () => handleDelete(file.id),
-              onPreview: isPreviewable(file.media_type) ? () => setPreviewFile(file) : undefined,
-              isDeleting: deletingId === file.id,
-            }))}
-            isPending={true}
-            showCheckbox={true}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelection}
-            onToggleSelectAll={toggleSelectAll}
-          />
+          <>
+            <FileTable
+              rows={files.map(file => ({
+                id: file.id,
+                file,
+                onDelete: () => handleDelete(file.id),
+                onPreview: isPreviewable(file.media_type) ? () => setPreviewFile(file) : undefined,
+                isDeleting: deletingId === file.id,
+              }))}
+              isPending={true}
+              showCheckbox={true}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelection}
+              onToggleSelectAll={toggleSelectAll}
+            />
+            {pagination && (
+              <Pagination
+                pagination={pagination}
+                onPageChange={setPage}
+                disabled={loading || deletingSelected}
+              />
+            )}
+          </>
         )}
 
         {previewFile && (

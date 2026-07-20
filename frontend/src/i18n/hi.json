@@ -3,6 +3,12 @@
     "name": "Transmute",
     "tagline": "फ़ाइल डालें, फ़ॉर्मेट चुनें, Transmute करें।"
   },
+  "pagination": {
+    "label": "पृष्ठ नेविगेशन",
+    "previous": "पिछला",
+    "next": "अगला",
+    "pageOf": "पृष्ठ {{current}} / {{total}}"
+  },
   "titles": {
     "signIn": "Transmute - साइन इन",
     "converter": "Transmute - वर्कस्पेस",

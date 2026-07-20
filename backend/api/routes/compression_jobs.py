@@ -4,7 +4,7 @@ These endpoints persist compression requests as durable jobs that a background
 worker processes asynchronously, in contrast with the synchronous
 ``POST /api/compressions`` endpoint which runs the compression inline.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from api.deps import (
     get_compression_job_db,
@@ -20,6 +20,7 @@ from api.schemas import (
 from core import validate_safe_path
 from db import CompressionJobDB, FileDB
 from registry import compressor_registry
+from core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, build_pagination
 
 
 router = APIRouter(prefix="/compression-jobs", tags=["compression-jobs"])
@@ -60,6 +61,9 @@ def _serialize_job(job: dict) -> dict:
 )
 def list_jobs(
     status_filter: str | None = None,
+    include_completed: bool = True,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
     job_db: CompressionJobDB = Depends(get_compression_job_db),
     current_user: dict = Depends(get_current_active_user),
 ):
@@ -67,9 +71,27 @@ def list_jobs(
 
     Optional ``status_filter`` query parameter narrows the result to one of:
     ``queued``, ``running``, ``completed``, ``failed``, ``cancelled``.
+    Set ``include_completed=false`` when completed records are loaded from the
+    compressions endpoint instead.
     """
-    rows = job_db.list_jobs(user_id=current_user["uuid"], status=status_filter)
-    return {"jobs": [_serialize_job(row) for row in rows]}
+    user_id = current_user["uuid"]
+    exclude_status = None if include_completed or status_filter is not None else "completed"
+    total_items = job_db.count_jobs(
+        user_id=user_id,
+        status=status_filter,
+        exclude_status=exclude_status,
+    )
+    rows = job_db.list_jobs(
+        user_id=user_id,
+        status=status_filter,
+        exclude_status=exclude_status,
+        limit=page_size,
+        offset=(page - 1) * page_size,
+    )
+    return {
+        "jobs": [_serialize_job(row) for row in rows],
+        "pagination": build_pagination(total_items, page, page_size),
+    }
 
 
 @router.post(

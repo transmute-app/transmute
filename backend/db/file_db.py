@@ -78,6 +78,12 @@ class FileDB:
         # Assign pre-auth orphaned rows to the first admin
         assign_orphaned_rows_to_admin(self.conn, self.TABLE_NAME)
 
+        with self.conn:
+            self.conn.execute(
+                f"CREATE INDEX IF NOT EXISTS idx_{self.TABLE_NAME}_user_created "  # nosec B608
+                f"ON {self.TABLE_NAME} (user_id, created_at DESC)"
+            )
+
     def create_tables(self) -> None:
         """Create the file metadata table if it does not already exist."""
         self._create_base_tables()
@@ -173,16 +179,44 @@ class FileDB:
             return None
         return self._refresh_pdf_media_type(dict(row))
 
-    def list_files(self, user_id: str | None = None) -> list[dict]:
-        """Retrieve metadata for files, optionally filtered by user."""
+    def list_files(
+        self,
+        user_id: str | None = None,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> list[dict]:
+        """Retrieve file metadata newest-first, optionally filtered and paginated."""
         cursor = self.conn.cursor()
         cursor.row_factory = sqlite3.Row
+        params: list = []
+        where_sql = ""
         if user_id is not None:
-            cursor.execute(f"SELECT * FROM {self.TABLE_NAME} WHERE user_id = ?", (user_id,))  # nosec B608
-        else:
-            cursor.execute(f"SELECT * FROM {self.TABLE_NAME}")  # nosec B608
+            where_sql = "WHERE user_id = ?"
+            params.append(user_id)
+        limit_sql = ""
+        if limit is not None:
+            limit_sql = " LIMIT ? OFFSET ?"
+            params.extend([int(limit), int(offset)])
+        cursor.execute(
+            f"SELECT * FROM {self.TABLE_NAME} {where_sql} "  # nosec B608
+            f"ORDER BY created_at DESC, rowid DESC{limit_sql}",
+            tuple(params),
+        )
         rows = cursor.fetchall()
         return [self._refresh_pdf_media_type(dict(row)) for row in rows]
+
+    def count_files(self, user_id: str | None = None) -> int:
+        """Count files, optionally restricted to a specific owner."""
+        cursor = self.conn.cursor()
+        if user_id is not None:
+            cursor.execute(
+                f"SELECT COUNT(*) FROM {self.TABLE_NAME} WHERE user_id = ?",  # nosec B608
+                (user_id,),
+            )
+        else:
+            cursor.execute(f"SELECT COUNT(*) FROM {self.TABLE_NAME}")  # nosec B608
+        row = cursor.fetchone()
+        return int(row[0]) if row is not None else 0
 
     def delete_file_metadata(self, file_id: str) -> None:
         """Delete the metadata record for a specific file.

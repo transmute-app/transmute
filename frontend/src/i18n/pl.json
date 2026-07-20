@@ -3,6 +3,12 @@
     "name": "Transmute",
     "tagline": "Upuść plik, wybierz format, konwertuj."
   },
+  "pagination": {
+    "label": "Stronicowanie",
+    "previous": "Poprzednia",
+    "next": "Następna",
+    "pageOf": "Strona {{current}} z {{total}}"
+  },
   "titles": {
     "signIn": "Transmute - Rejestracja",
     "converter": "Transmute - Obszar roboczy",

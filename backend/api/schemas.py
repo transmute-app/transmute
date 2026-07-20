@@ -39,8 +39,18 @@ class ConversionJobResponse(BaseModel):
     updated_at: Optional[str] = Field(None, description="Last update timestamp")
 
 
+class PaginationMetadata(BaseModel):
+    total_items: int = Field(..., description="Total number of matching records")
+    total_pages: int = Field(..., description="Total number of available pages")
+    current_page: int = Field(..., description="Current 1-based page number")
+    page_size: int = Field(..., description="Maximum number of records per page")
+    has_next: bool = Field(..., description="Whether another page is available")
+    has_prev: bool = Field(..., description="Whether a previous page is available")
+
+
 class ConversionJobListResponse(BaseModel):
     jobs: list[ConversionJobResponse] = Field(..., description="List of conversion jobs for the current user")
+    pagination: PaginationMetadata = Field(..., description="Pagination metadata")
 
 
 class FileMetadata(BaseModel):
@@ -72,6 +82,7 @@ class ConversionItem(BaseModel):
 
 class ConversionListResponse(BaseModel):
     conversions: list[ConversionItem] = Field(..., description="List of completed conversions")
+    pagination: PaginationMetadata = Field(..., description="Pagination metadata")
 
 class ConverterMetadata(BaseModel):
     name: str = Field(..., json_schema_extra={"example": "drawio_convert"})
@@ -117,6 +128,7 @@ class ReadinessResponse(BaseModel):
 
 class FileListResponse(BaseModel):
     files: list[FileMetadata] = Field(..., description="List of uploaded files")
+    pagination: PaginationMetadata = Field(..., description="Pagination metadata")
 
 
 class UrlUploadRequest(BaseModel):
@@ -259,6 +271,7 @@ class CompressionJobResponse(BaseModel):
 
 class CompressionJobListResponse(BaseModel):
     jobs: list[CompressionJobResponse] = Field(..., description="List of compression jobs for the current user")
+    pagination: PaginationMetadata = Field(..., description="Pagination metadata")
 
 
 class CompressionItem(BaseModel):
@@ -274,6 +287,7 @@ class CompressionItem(BaseModel):
 
 class CompressionListResponse(BaseModel):
     compressions: list[CompressionItem] = Field(..., description="List of completed compressions")
+    pagination: PaginationMetadata = Field(..., description="Pagination metadata")
 
 
 class DefaultCompressionLevelMapping(BaseModel):

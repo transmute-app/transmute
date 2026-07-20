@@ -6,6 +6,8 @@ import { authFetch as fetch } from '../utils/api'
 import { parseUtcTimestamp } from '../utils/datetime'
 import { downloadBlob } from '../utils/download'
 import { stripExtension } from '../utils/filename'
+import Pagination from '../components/Pagination'
+import { withPagination, type PaginationMetadata } from '../utils/pagination'
 import { cancelJob, deleteJob, listJobs, retryJob, isTerminalJobStatus, type ConversionJob,
   cancelCompressionJob, deleteCompressionJob, listCompressionJobs, retryCompressionJob, type CompressionJob } from '../utils/jobs'
 
@@ -62,38 +64,57 @@ function History() {
   const [deletingSelected, setDeletingSelected] = useState(false)
   const [downloadingSelected, setDownloadingSelected] = useState(false)
   const [previewConversion, setPreviewConversion] = useState<ConversionRecord | null>(null)
+  const [conversionPage, setConversionPage] = useState(1)
+  const [compressionPage, setCompressionPage] = useState(1)
+  const [conversionPagination, setConversionPagination] = useState<PaginationMetadata | null>(null)
+  const [compressionPagination, setCompressionPagination] = useState<PaginationMetadata | null>(null)
   const { t } = useTranslation()
   const isMountedRef = useRef(true)
 
   const refresh = useCallback(async () => {
     try {
       const [convResp, jobsList, compResp, compJobsList] = await Promise.all([
-        fetch('/api/conversions/complete'),
-        listJobs(),
-        fetch('/api/compressions/complete'),
-        listCompressionJobs(),
+        fetch(withPagination('/api/conversions/complete', conversionPage)),
+        listJobs(undefined, 1, 100, false),
+        fetch(withPagination('/api/compressions/complete', compressionPage)),
+        listCompressionJobs(undefined, 1, 100, false),
       ])
       if (!convResp.ok) throw new Error(t('history.fetchFailed'))
       if (!compResp.ok) throw new Error(t('history.fetchFailed'))
-      const convData = await convResp.json()
-      const compData = await compResp.json()
+      const convData = await convResp.json() as {
+        conversions: ConversionRecord[]
+        pagination: PaginationMetadata
+      }
+      const compData = await compResp.json() as {
+        compressions: CompressionRecord[]
+        pagination: PaginationMetadata
+      }
       if (!isMountedRef.current) return
       setConversions(convData.conversions)
       setCompressions(compData.compressions)
+      setConversionPagination(convData.pagination)
+      setCompressionPagination(compData.pagination)
+      if (conversionPage > Math.max(1, convData.pagination.total_pages)) {
+        setConversionPage(Math.max(1, convData.pagination.total_pages))
+      }
+      if (compressionPage > Math.max(1, compData.pagination.total_pages)) {
+        setCompressionPage(Math.max(1, compData.pagination.total_pages))
+      }
       // Hide completed jobs from the jobs list — the completed conversions
       // already represent them with full original-file metadata.
-      setJobs(jobsList.filter(j => j.status !== 'completed'))
-      setCompressionJobs(compJobsList.filter(j => j.status !== 'completed'))
+      setJobs(jobsList)
+      setCompressionJobs(compJobsList)
       setError(null)
     } catch (err) {
       if (isMountedRef.current) {
         setError(err instanceof Error ? err.message : t('history.loadFailed'))
       }
     }
-  }, [t])
+  }, [compressionPage, conversionPage, t])
 
   useEffect(() => {
     isMountedRef.current = true
+    setLoading(true)
     refresh().finally(() => {
       if (isMountedRef.current) setLoading(false)
     })
@@ -101,6 +122,10 @@ function History() {
       isMountedRef.current = false
     }
   }, [refresh])
+
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [compressionPage, conversionPage])
 
   // Poll while at least one job is non-terminal.
   const hasActiveJobs = jobs.some(j => !isTerminalJobStatus(j.status))
@@ -135,6 +160,7 @@ function History() {
       const response = await fetch(`/api/conversions/${conversionId}`, { method: 'DELETE' })
       if (!response.ok) throw new Error(t('history.deleteFailed'))
       setConversions(prev => prev.filter(c => c.id !== conversionId))
+      await refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : t('history.deleteFailed'))
     } finally {
@@ -203,6 +229,7 @@ function History() {
       const response = await fetch(`/api/compressions/${compressionId}`, { method: 'DELETE' })
       if (!response.ok) throw new Error(t('history.deleteFailed'))
       setCompressions(prev => prev.filter(c => c.id !== compressionId))
+      await refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : t('history.deleteFailed'))
     } finally {
@@ -309,6 +336,8 @@ function History() {
     if (errors.length > 0) {
       setError(errors.join('; '))
     }
+
+    await refresh()
 
     setDeletingSelected(false)
   }
@@ -426,7 +455,7 @@ function History() {
     }
   })
 
-  const allRows = [...jobRows, ...conversionRows]
+  const allRows = conversionPage === 1 ? [...jobRows, ...conversionRows] : conversionRows
 
   // Compression job rows (non-completed compression jobs).
   const compressionJobRows: FileTableRow[] = compressionJobs
@@ -514,8 +543,11 @@ function History() {
     }
   })
 
-  const compressAllRows = [...compressionJobRows, ...compressionRows]
+  const compressAllRows = compressionPage === 1
+    ? [...compressionJobRows, ...compressionRows]
+    : compressionRows
   const displayedRows = mode === 'compress' ? compressAllRows : allRows
+  const displayedPagination = mode === 'compress' ? compressionPagination : conversionPagination
 
   return (
     <div className="min-h-full bg-gradient-to-br from-surface-dark to-surface-light p-8 pb-12">
@@ -584,15 +616,24 @@ function History() {
         )}
 
         {!loading && displayedRows.length > 0 && (
-          <FileTable
-            rows={displayedRows}
-            showCheckbox={true}
-            showStatus={true}
-            typeColumnLabel={mode === 'compress' ? t('table.compressionLevel') : undefined}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelection}
-            onToggleSelectAll={toggleSelectAll}
-          />
+          <>
+            <FileTable
+              rows={displayedRows}
+              showCheckbox={true}
+              showStatus={true}
+              typeColumnLabel={mode === 'compress' ? t('table.compressionLevel') : undefined}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelection}
+              onToggleSelectAll={toggleSelectAll}
+            />
+            {displayedPagination && (
+              <Pagination
+                pagination={displayedPagination}
+                onPageChange={mode === 'compress' ? setCompressionPage : setConversionPage}
+                disabled={loading || deletingSelected}
+              />
+            )}
+          </>
         )}
 
         {previewConversion && (

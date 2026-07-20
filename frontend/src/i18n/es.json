@@ -3,6 +3,12 @@
     "name": "Transmute",
     "tagline": "Arrastra un archivo, selecciona un formato, Transmute."
   },
+  "pagination": {
+    "label": "Paginación",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pageOf": "Página {{current}} de {{total}}"
+  },
   "titles": {
     "signIn": "Transmute - Iniciar Sesión",
     "converter": "Transmute - Espacio de trabajo",

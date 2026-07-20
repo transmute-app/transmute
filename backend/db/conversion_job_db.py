@@ -189,6 +189,7 @@ class ConversionJobDB:
         self,
         user_id: str | None = None,
         status: str | None = None,
+        exclude_status: str | None = None,
         limit: int | None = None,
         offset: int = 0,
     ) -> list[dict]:
@@ -201,6 +202,9 @@ class ConversionJobDB:
         if status is not None:
             clauses.append("status = ?")
             params.append(status)
+        if exclude_status is not None:
+            clauses.append("status != ?")
+            params.append(exclude_status)
         where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         limit_sql = ""
         if limit is not None:
@@ -215,7 +219,12 @@ class ConversionJobDB:
         )
         return [dict(row) for row in cursor.fetchall()]
 
-    def count_jobs(self, user_id: str | None = None, status: str | None = None) -> int:
+    def count_jobs(
+        self,
+        user_id: str | None = None,
+        status: str | None = None,
+        exclude_status: str | None = None,
+    ) -> int:
         """Count jobs, optionally filtered by owner and/or status."""
         clauses: list[str] = []
         params: list = []
@@ -225,6 +234,9 @@ class ConversionJobDB:
         if status is not None:
             clauses.append("status = ?")
             params.append(status)
+        if exclude_status is not None:
+            clauses.append("status != ?")
+            params.append(exclude_status)
         where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
 
         cursor = self.conn.cursor()

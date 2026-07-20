@@ -3,6 +3,12 @@
     "name": "Transmute",
     "tagline": "Drop a file, pick a format, Transmute."
   },
+  "pagination": {
+    "label": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}"
+  },
   "titles": {
     "signIn": "Transmute - Sign In",
     "converter": "Transmute - Workspace",
