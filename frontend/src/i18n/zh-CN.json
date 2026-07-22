@@ -129,6 +129,12 @@
     "fetchFailed": "获取文件失败",
     "deleteFailed": "删除失败"
   },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}}"
+  },
   "history": {
     "title": "任务",
     "loading": "正在加载转换记录...",

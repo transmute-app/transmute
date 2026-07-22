@@ -2,6 +2,15 @@ import { authFetch, apiJson, ApiError } from './api'
 
 export type ConversionJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
 
+export interface PaginationMeta {
+  total_items: number
+  total_pages: number
+  current_page: number
+  page_size: number
+  has_next: boolean
+  has_prev: boolean
+}
+
 export const TERMINAL_JOB_STATUSES: ReadonlySet<ConversionJobStatus> = new Set([
   'completed',
   'failed',
@@ -33,6 +42,11 @@ export interface ConversionJobListResponse {
   jobs: ConversionJob[]
 }
 
+export interface PaginatedConversionJobListResponse {
+  data: ConversionJob[]
+  pagination: PaginationMeta
+}
+
 export interface ConversionJobCreatePayload {
   id: string
   output_format: string
@@ -44,11 +58,24 @@ export function isTerminalJobStatus(status: ConversionJobStatus): boolean {
 }
 
 export async function listJobs(statusFilter?: ConversionJobStatus): Promise<ConversionJob[]> {
-  const url = statusFilter
-    ? `/api/jobs?status_filter=${encodeURIComponent(statusFilter)}`
-    : '/api/jobs'
-  const data = await apiJson<ConversionJobListResponse>(url)
-  return data.jobs
+  const params = new URLSearchParams()
+  if (statusFilter) params.set('status_filter', statusFilter)
+  const url = `/api/jobs${params.size ? '?' + params : ''}`
+  const data = await apiJson<PaginatedConversionJobListResponse>(url)
+  return data.data
+}
+
+export async function listJobsPaginated(opts?: {
+  statusFilter?: ConversionJobStatus
+  page?: number
+  pageSize?: number
+}): Promise<PaginatedConversionJobListResponse> {
+  const params = new URLSearchParams()
+  if (opts?.statusFilter) params.set('status_filter', opts.statusFilter)
+  if (opts?.page != null) params.set('page', String(opts.page))
+  if (opts?.pageSize != null) params.set('page_size', String(opts.pageSize))
+  const url = `/api/jobs${params.size ? '?' + params : ''}`
+  return apiJson<PaginatedConversionJobListResponse>(url)
 }
 
 export async function getJob(jobId: string): Promise<ConversionJob> {
@@ -132,17 +159,35 @@ export interface CompressionJobListResponse {
   jobs: CompressionJob[]
 }
 
+export interface PaginatedCompressionJobListResponse {
+  data: CompressionJob[]
+  pagination: PaginationMeta
+}
+
 export interface CompressionJobCreatePayload {
   id: string
   compression_level?: string | null
 }
 
 export async function listCompressionJobs(statusFilter?: ConversionJobStatus): Promise<CompressionJob[]> {
-  const url = statusFilter
-    ? `/api/compression-jobs?status_filter=${encodeURIComponent(statusFilter)}`
-    : '/api/compression-jobs'
-  const data = await apiJson<CompressionJobListResponse>(url)
-  return data.jobs
+  const params = new URLSearchParams()
+  if (statusFilter) params.set('status_filter', statusFilter)
+  const url = `/api/compression-jobs${params.size ? '?' + params : ''}`
+  const data = await apiJson<PaginatedCompressionJobListResponse>(url)
+  return data.data
+}
+
+export async function listCompressionJobsPaginated(opts?: {
+  statusFilter?: ConversionJobStatus
+  page?: number
+  pageSize?: number
+}): Promise<PaginatedCompressionJobListResponse> {
+  const params = new URLSearchParams()
+  if (opts?.statusFilter) params.set('status_filter', opts.statusFilter)
+  if (opts?.page != null) params.set('page', String(opts.page))
+  if (opts?.pageSize != null) params.set('page_size', String(opts.pageSize))
+  const url = `/api/compression-jobs${params.size ? '?' + params : ''}`
+  return apiJson<PaginatedCompressionJobListResponse>(url)
 }
 
 export async function getCompressionJob(jobId: string): Promise<CompressionJob> {

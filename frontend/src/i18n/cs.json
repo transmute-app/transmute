@@ -129,6 +129,12 @@
     "fetchFailed": "Získání souborů se nezdařilo",
     "deleteFailed": "Smazání se nezdařilo"
   },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showing": "Showing {{from}}–{{to}} of {{total}}"
+  },
   "history": {
     "title": "Úlohy",
     "loading": "Načítám konverze...",
