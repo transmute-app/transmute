@@ -197,6 +197,7 @@ function Converter() {
   const handleDownloadRef = useRef<(c: ConversionInfo) => Promise<void>>(async () => {})
   const handleJobTransitionRef = useRef<(job: ConversionJob | CompressionJob, kind: JobKind) => Promise<void>>(async () => {})
   const pollJobsRef = useRef<() => Promise<boolean>>(async () => false)
+  const isProcessingFilesRef = useRef(false)
 
   // Load auto-download setting, default format mappings, and default quality mappings
   useEffect(() => {
@@ -329,71 +330,76 @@ function Converter() {
   }, [location.state, location.pathname, navigate])
 
   const processFiles = async (files: File[]) => {
-    if (files.length === 0) return
+    if (files.length === 0 || isProcessingFilesRef.current) return
 
-    setUploading(true)
-    setError(null)
-    setIgnoredUploadCount(0)
-    setUploadCount(files.length)
+    isProcessingFilesRef.current = true
 
-    const promises = files.map(async (file) => {
-      try {
-        const formData = new FormData()
-        formData.append('file', file)
+    try {
+      setUploading(true)
+      setError(null)
+      setIgnoredUploadCount(0)
+      setUploadCount(files.length)
 
-        const response = await fetch('/api/files', {
-          method: 'POST',
-          body: formData,
-        })
+      const promises = files.map(async (file) => {
+        try {
+          const formData = new FormData()
+          formData.append('file', file)
 
-        if (!response.ok) {
-          const detail = await getResponseDetail(response)
-          if (response.status === 422) {
+          const response = await fetch('/api/files', {
+            method: 'POST',
+            body: formData,
+          })
+
+          if (!response.ok) {
+            const detail = await getResponseDetail(response)
+            if (response.status === 422) {
+              setIgnoredUploadCount((prev) => prev + 1)
+              return null
+            }
+            throw new Error(`Upload failed for ${file.name}: ${detail}`)
+          }
+
+          const data = await response.json()
+          const fileInfo: FileInfo = {
+            id: data.metadata.id,
+            original_filename: data.metadata.original_filename,
+            media_type: data.metadata.media_type,
+            extension: data.metadata.extension,
+            size_bytes: data.metadata.size_bytes,
+            created_at: data.metadata.created_at,
+            compatible_formats: data.metadata.compatible_formats,
+          }
+
+          // In compress mode, a file may upload successfully (it has conversions)
+          // yet have no compressor for its media type. Treat those as ignored.
+          if (mode === 'compress' && !isCompressible(fileInfo)) {
             setIgnoredUploadCount((prev) => prev + 1)
             return null
           }
-          throw new Error(`Upload failed for ${file.name}: ${detail}`)
+
+          const pending: PendingFile = makePendingFile(fileInfo, mode)
+
+          // Add to pending list immediately as each upload completes
+          setPendingFiles((prev) => [...prev, pending])
+        } finally {
+          setUploadCount((prev) => Math.max(prev - 1, 0))
         }
+      })
 
-        const data = await response.json()
-        const fileInfo: FileInfo = {
-          id: data.metadata.id,
-          original_filename: data.metadata.original_filename,
-          media_type: data.metadata.media_type,
-          extension: data.metadata.extension,
-          size_bytes: data.metadata.size_bytes,
-          created_at: data.metadata.created_at,
-          compatible_formats: data.metadata.compatible_formats,
-        }
+      const results = await Promise.allSettled(promises)
 
-        // In compress mode, a file may upload successfully (it has conversions)
-        // yet have no compressor for its media type. Treat those as ignored.
-        if (mode === 'compress' && !isCompressible(fileInfo)) {
-          setIgnoredUploadCount((prev) => prev + 1)
-          return null
-        }
+      const errors = results
+        .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+        .map((r) => (r.reason instanceof Error ? r.reason.message : 'Upload failed'))
 
-        const pending: PendingFile = makePendingFile(fileInfo, mode)
-
-        // Add to pending list immediately as each upload completes
-        setPendingFiles((prev) => [...prev, pending])
-      } finally {
-        setUploadCount((prev) => Math.max(prev - 1, 0))
+      if (errors.length > 0) {
+        setError(errors.join('; '))
       }
-    })
-
-    const results = await Promise.allSettled(promises)
-
-    const errors = results
-      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-      .map((r) => (r.reason instanceof Error ? r.reason.message : 'Upload failed'))
-
-    if (errors.length > 0) {
-      setError(errors.join('; '))
+    } finally {
+      setUploading(false)
+      setUploadCount(0)
+      isProcessingFilesRef.current = false
     }
-
-    setUploading(false)
-    setUploadCount(0)
   }
 
   const processUrlUpload = async () => {
@@ -490,6 +496,18 @@ function Converter() {
 
   const handleDragLeave = () => {
     setDragOver(false)
+  }
+
+  const handlePaste = async (event: React.ClipboardEvent<HTMLElement>) => {
+    if (uploading) return
+    const clipboard = event.clipboardData
+    if (!clipboard) return
+
+    const files = Array.from(clipboard.files)
+    if (files.length > 0) {
+      event.preventDefault()
+      await processFiles(files)
+    }
   }
 
   const handleFormatChange = (fileId: string, format: string) => {
@@ -1030,11 +1048,13 @@ function Converter() {
             <ModeToggle mode={mode} onChange={handleModeChange} disabled={uploading} />
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4" onPaste={handlePaste}>
             <label
+              data-testid="drop-zone"
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
+              tabIndex={0}
               className={`flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-150 ${
                 dragOver
                   ? 'border-primary bg-primary/10'
@@ -1096,11 +1116,13 @@ function Converter() {
 
         {/* File input */}
         <div className="mb-6">
-          <div className="space-y-3">
+          <div className="space-y-3" onPaste={handlePaste}>
             <label
+              data-testid="drop-zone"
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
+              tabIndex={0}
               className={`flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-150 ${
                 dragOver
                   ? 'border-primary bg-primary/10'
