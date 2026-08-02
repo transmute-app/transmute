@@ -492,7 +492,7 @@ function Converter() {
     setDragOver(false)
   }
 
-  const handlePaste = async (event: React.ClipboardEvent<HTMLElement>) => {
+  const handlePaste = async (event: ClipboardEvent) => {
     const clipboard = event.clipboardData
     if (!clipboard) return
 
@@ -1037,6 +1037,20 @@ function Converter() {
     }
   }, [keydownHandler])
 
+  const handlePasteRef = useRef(handlePaste)
+
+  useEffect(() => {
+    handlePasteRef.current = handlePaste;
+  })
+
+  useEffect(() => {
+    const onPaste = (event: ClipboardEvent) => {
+      void handlePasteRef.current(event)
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+  }, [])
+
   useEffect(() => {
     handleConvertAllRef.current = handleConvertAll;
   })
@@ -1057,13 +1071,11 @@ function Converter() {
             <ModeToggle mode={mode} onChange={handleModeChange} disabled={uploading} />
           </div>
 
-          <div className="space-y-4" onPaste={handlePaste}>
+          <div className="space-y-4">
             <label
-              data-testid="drop-zone"
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              tabIndex={0}
               className={`flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-150 ${
                 dragOver
                   ? 'border-primary bg-primary/10'
@@ -1125,13 +1137,11 @@ function Converter() {
 
         {/* File input */}
         <div className="mb-6">
-          <div className="space-y-3" onPaste={handlePaste}>
+          <div className="space-y-3">
             <label
-              data-testid="drop-zone"
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              tabIndex={0}
               className={`flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-150 ${
                 dragOver
                   ? 'border-primary bg-primary/10'

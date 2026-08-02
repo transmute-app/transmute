@@ -56,10 +56,10 @@ function createDataTransfer(files: File[] = [], text = '', opts: { populateItems
   return dt as unknown as DataTransfer
 }
 
-function dispatchPaste(dropZone: HTMLElement, dt: DataTransfer) {
+function dispatchPaste(dt: DataTransfer) {
   const event = new Event('paste', { bubbles: true })
   Object.defineProperty(event, 'clipboardData', { value: dt })
-  fireEvent(dropZone, event)
+  fireEvent(document.body, event)
 }
 
 function dispatchDrop(dropZone: HTMLElement, dt: DataTransfer) {
@@ -68,10 +68,10 @@ function dispatchDrop(dropZone: HTMLElement, dt: DataTransfer) {
   fireEvent(dropZone, event)
 }
 
-const pasteFiles = (dropZone: HTMLElement, files: File[]) => dispatchPaste(dropZone, createDataTransfer(files))
-const pasteItems = (dropZone: HTMLElement, files: File[]) =>
-  dispatchPaste(dropZone, createDataTransfer(files, '', { populateItemsFromFiles: true, itemsOnly: true }))
-const pasteText = (dropZone: HTMLElement, text: string) => dispatchPaste(dropZone, createDataTransfer([], text))
+const pasteFiles = (files: File[]) => dispatchPaste(createDataTransfer(files))
+const pasteItems = (files: File[]) =>
+  dispatchPaste(createDataTransfer(files, '', { populateItemsFromFiles: true, itemsOnly: true }))
+const pasteText = (text: string) => dispatchPaste(createDataTransfer([], text))
 const dropFiles = (dropZone: HTMLElement, files: File[]) => dispatchDrop(dropZone, createDataTransfer(files))
 
 function selectFilesViaInput(input: HTMLInputElement, files: File[]) {
@@ -84,7 +84,7 @@ function selectFilesViaInput(input: HTMLInputElement, files: File[]) {
   fireEvent.change(input)
 }
 
-const findDropZone = () => screen.getByTestId('drop-zone')
+const findDropZone = () => document.querySelector('input[type="file"]')!.closest('label')!
 const findFileInput = () => document.querySelector('input[type="file"]') as HTMLInputElement
 
 function makeUploadResponse(filename: string, id: string) {
@@ -148,7 +148,7 @@ describe('Converter drop-zone interactions', () => {
   describe('paste handling', () => {
     it('uploads pasted files via POST with a FormData body', async () => {
       renderConverter()
-      pasteFiles(findDropZone(), [new File(['hello world'], 'pasted.txt', { type: 'text/plain' })])
+      pasteFiles([new File(['hello world'], 'pasted.txt', { type: 'text/plain' })])
 
       await screen.findByText('pasted.txt')
       const fileCalls = fetchSpy.mock.calls.filter(([input]: [RequestInfo | URL]) => urlMatchesPath(input, '/api/files'))
@@ -160,7 +160,7 @@ describe('Converter drop-zone interactions', () => {
 
     it('uploads screenshot-style image blobs surfaced only via clipboard.items', async () => {
       renderConverter()
-      pasteItems(findDropZone(), [new File([new Uint8Array([1, 2, 3, 4])], 'image.png', { type: 'image/png' })])
+      pasteItems([new File([new Uint8Array([1, 2, 3, 4])], 'image.png', { type: 'image/png' })])
 
       await screen.findByText('pasted.txt')
       expect(fileUploadCount()).toBe(1)
@@ -169,7 +169,7 @@ describe('Converter drop-zone interactions', () => {
     it('de-duplicates when the same file appears in both clipboard.files and clipboard.items', async () => {
       renderConverter()
       const file = new File(['hello world'], 'shared.txt', { type: 'text/plain' })
-      dispatchPaste(findDropZone(), createDataTransfer([file], '', { populateItemsFromFiles: true }))
+      dispatchPaste(createDataTransfer([file], '', { populateItemsFromFiles: true }))
 
       await screen.findByText('pasted.txt')
       expect(fileUploadCount()).toBe(1)
@@ -177,8 +177,8 @@ describe('Converter drop-zone interactions', () => {
 
     it('ignores empty and text-only pastes (no file or URL upload)', async () => {
       renderConverter()
-      pasteFiles(findDropZone(), [])
-      pasteText(findDropZone(), 'https://example.com/file.txt')
+      pasteFiles([])
+      pasteText('https://example.com/file.txt')
 
       expect(fileUploadCount()).toBe(0)
       expect(fetchSpy.mock.calls.some(([input]: [RequestInfo | URL]) => urlMatchesPath(input, '/api/files/url'))).toBe(false)
@@ -188,8 +188,8 @@ describe('Converter drop-zone interactions', () => {
       const resolveUpload = stallFileUpload()
       renderConverter()
 
-      pasteFiles(findDropZone(), [new File(['first'], 'first.txt', { type: 'text/plain' })])
-      pasteFiles(findDropZone(), [new File(['second'], 'second.txt', { type: 'text/plain' })])
+      pasteFiles([new File(['first'], 'first.txt', { type: 'text/plain' })])
+      pasteFiles([new File(['second'], 'second.txt', { type: 'text/plain' })])
 
       expect(fileUploadCount()).toBe(2)
       resolveUpload()
