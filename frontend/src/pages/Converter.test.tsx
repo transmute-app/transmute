@@ -69,8 +69,41 @@ function pasteText(dropZone: HTMLElement, text: string) {
   dispatchPaste(dropZone, dt)
 }
 
+function dispatchDrop(dropZone: HTMLElement, dt: DataTransfer) {
+  const event = new Event('drop', { bubbles: true, cancelable: true })
+  Object.defineProperty(event, 'dataTransfer', { value: dt })
+  fireEvent(dropZone, event)
+}
+
+function dropFiles(dropZone: HTMLElement, files: File[]) {
+  const dt = createDataTransfer(files)
+  dispatchDrop(dropZone, dt)
+}
+
+function dispatchDragOver(dropZone: HTMLElement) {
+  fireEvent(dropZone, new Event('dragover', { bubbles: true, cancelable: true }))
+}
+
+function dispatchDragLeave(dropZone: HTMLElement) {
+  fireEvent(dropZone, new Event('dragleave', { bubbles: true, cancelable: true }))
+}
+
+function selectFilesViaInput(input: HTMLInputElement, files: File[]) {
+  Object.defineProperty(input, 'files', { value: files, configurable: true })
+  Object.defineProperty(input, 'value', {
+    value: files.length > 0 ? `C:\\fakepath\\${files[0].name}` : '',
+    configurable: true,
+    writable: true,
+  })
+  fireEvent.change(input)
+}
+
 function findDropZone() {
   return screen.getByTestId('drop-zone')
+}
+
+function findFileInput() {
+  return document.querySelector('input[type="file"]') as HTMLInputElement
 }
 
 function makeUploadResponse(filename: string, id: string) {
@@ -97,7 +130,7 @@ function defaultFetchResponse(url: string): Response | undefined {
   return undefined
 }
 
-describe('Converter paste handling', () => {
+describe('Converter drop-zone interactions', () => {
   let fetchSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(async () => {
@@ -118,76 +151,196 @@ describe('Converter paste handling', () => {
     fetchSpy.mockRestore()
   })
 
-  it('uploads files pasted onto the drop zone', async () => {
-    renderConverter()
+  describe('paste handling', () => {
+    it('uploads files pasted onto the drop zone', async () => {
+      renderConverter()
 
-    const file = new File(['hello world'], 'pasted.txt', { type: 'text/plain' })
-    pasteFiles(findDropZone(), [file])
+      const file = new File(['hello world'], 'pasted.txt', { type: 'text/plain' })
+      pasteFiles(findDropZone(), [file])
 
-    await screen.findByText('pasted.txt')
-    expect(screen.getByText('pasted.txt')).toBeInTheDocument()
+      await screen.findByText('pasted.txt')
+      expect(screen.getByText('pasted.txt')).toBeInTheDocument()
 
-    const fileCalls = fetchSpy.mock.calls.filter(([input]: [RequestInfo | URL]) =>
-      urlMatchesPath(input, '/api/files'),
-    )
-    expect(fileCalls).toHaveLength(1)
+      const fileCalls = fetchSpy.mock.calls.filter(([input]: [RequestInfo | URL]) =>
+        urlMatchesPath(input, '/api/files'),
+      )
+      expect(fileCalls).toHaveLength(1)
 
-    const [, init] = fileCalls[0]
-    expect(init?.method).toBe('POST')
-    expect(init?.body).toBeInstanceOf(FormData)
-  })
-
-  it('ignores pasted files while an upload is already in progress', async () => {
-    let resolveUpload: (value: Response) => void
-    const uploadPromise = new Promise<Response>((resolve) => {
-      resolveUpload = resolve
+      const [, init] = fileCalls[0]
+      expect(init?.method).toBe('POST')
+      expect(init?.body).toBeInstanceOf(FormData)
     })
 
-    fetchSpy.mockImplementation(async (input: RequestInfo | URL) => {
-      const url = urlFromFetchInput(input)
-      if (urlMatchesPath(input, '/api/files')) return uploadPromise
-      const defaultResponse = defaultFetchResponse(url)
-      if (defaultResponse) return defaultResponse
-      return new Response(null, { status: 404 })
+    it('ignores pasted files while an upload is already in progress', async () => {
+      let resolveUpload: (value: Response) => void
+      const uploadPromise = new Promise<Response>((resolve) => {
+        resolveUpload = resolve
+      })
+
+      fetchSpy.mockImplementation(async (input: RequestInfo | URL) => {
+        const url = urlFromFetchInput(input)
+        if (urlMatchesPath(input, '/api/files')) return uploadPromise
+        const defaultResponse = defaultFetchResponse(url)
+        if (defaultResponse) return defaultResponse
+        return new Response(null, { status: 404 })
+      })
+
+      renderConverter()
+
+      const firstFile = new File(['first'], 'first.txt', { type: 'text/plain' })
+      pasteFiles(findDropZone(), [firstFile])
+
+      const secondFile = new File(['second'], 'second.txt', { type: 'text/plain' })
+      pasteFiles(findDropZone(), [secondFile])
+
+      const fileCallsBeforeResolve = fetchSpy.mock.calls.filter(
+        ([input]: [RequestInfo | URL]) => urlMatchesPath(input, '/api/files'),
+      )
+      expect(fileCallsBeforeResolve).toHaveLength(1)
+
+      resolveUpload!(new Response(JSON.stringify(makeUploadResponse('first.txt', 'file-1')), { status: 200 }))
     })
 
-    renderConverter()
+    it('ignores an empty paste', async () => {
+      renderConverter()
+      pasteFiles(findDropZone(), [])
 
-    const firstFile = new File(['first'], 'first.txt', { type: 'text/plain' })
-    pasteFiles(findDropZone(), [firstFile])
+      const fileCalls = fetchSpy.mock.calls.filter(([input]: [RequestInfo | URL]) =>
+        urlMatchesPath(input, '/api/files'),
+      )
+      expect(fileCalls).toHaveLength(0)
+    })
 
-    const secondFile = new File(['second'], 'second.txt', { type: 'text/plain' })
-    pasteFiles(findDropZone(), [secondFile])
+    it('ignores pasted plain text in the drop zone', async () => {
+      renderConverter()
+      pasteText(findDropZone(), 'https://example.com/file.txt')
 
-    const fileCallsBeforeResolve = fetchSpy.mock.calls.filter(
-      ([input]: [RequestInfo | URL]) => urlMatchesPath(input, '/api/files'),
-    )
-    expect(fileCallsBeforeResolve).toHaveLength(1)
-
-    resolveUpload!(new Response(JSON.stringify(makeUploadResponse('first.txt', 'file-1')), { status: 200 }))
+      const fileCalls = fetchSpy.mock.calls.filter(([input]: [RequestInfo | URL]) =>
+        urlMatchesPath(input, '/api/files'),
+      )
+      const urlCalls = fetchSpy.mock.calls.filter(([input]: [RequestInfo | URL]) =>
+        urlMatchesPath(input, '/api/files/url'),
+      )
+      expect(fileCalls).toHaveLength(0)
+      expect(urlCalls).toHaveLength(0)
+    })
   })
 
-  it('ignores an empty paste', async () => {
-    renderConverter()
-    pasteFiles(findDropZone(), [])
+  describe('drag-and-drop handling', () => {
+    it('uploads files dropped onto the drop zone', async () => {
+      renderConverter()
 
-    const fileCalls = fetchSpy.mock.calls.filter(([input]: [RequestInfo | URL]) =>
-      urlMatchesPath(input, '/api/files'),
-    )
-    expect(fileCalls).toHaveLength(0)
+      const file = new File(['hello world'], 'dropped.txt', { type: 'text/plain' })
+      dropFiles(findDropZone(), [file])
+
+      await screen.findByText('dropped.txt')
+      expect(screen.getByText('dropped.txt')).toBeInTheDocument()
+
+      const fileCalls = fetchSpy.mock.calls.filter(([input]: [RequestInfo | URL]) =>
+        urlMatchesPath(input, '/api/files'),
+      )
+      expect(fileCalls).toHaveLength(1)
+
+      const [, init] = fileCalls[0]
+      expect(init?.method).toBe('POST')
+      expect(init?.body).toBeInstanceOf(FormData)
+    })
+
+    it('enters then exits the drag-over highlight across dragover/dragleave', () => {
+      renderConverter()
+      const dropZone = findDropZone()
+
+      dispatchDragOver(dropZone)
+      expect(dropZone.className).toContain('bg-primary/10')
+
+      dispatchDragLeave(dropZone)
+      expect(dropZone.className).not.toContain('bg-primary/10')
+    })
+
+    it('clears the drag-over highlight after a drop', async () => {
+      renderConverter()
+      const dropZone = findDropZone()
+
+      dispatchDragOver(dropZone)
+      expect(dropZone.className).toContain('bg-primary/10')
+
+      const file = new File(['hello world'], 'dropped.txt', { type: 'text/plain' })
+      dropFiles(dropZone, [file])
+
+      await screen.findByText('dropped.txt')
+      expect(dropZone.className).not.toContain('bg-primary/10')
+    })
+
+    it('ignores drops while an upload is already in progress', async () => {
+      let resolveUpload: (value: Response) => void
+      const uploadPromise = new Promise<Response>((resolve) => {
+        resolveUpload = resolve
+      })
+
+      fetchSpy.mockImplementation(async (input: RequestInfo | URL) => {
+        const url = urlFromFetchInput(input)
+        if (urlMatchesPath(input, '/api/files')) return uploadPromise
+        const defaultResponse = defaultFetchResponse(url)
+        if (defaultResponse) return defaultResponse
+        return new Response(null, { status: 404 })
+      })
+
+      renderConverter()
+
+      const firstFile = new File(['first'], 'first.txt', { type: 'text/plain' })
+      dropFiles(findDropZone(), [firstFile])
+
+      const secondFile = new File(['second'], 'second.txt', { type: 'text/plain' })
+      dropFiles(findDropZone(), [secondFile])
+
+      const fileCallsBeforeResolve = fetchSpy.mock.calls.filter(
+        ([input]: [RequestInfo | URL]) => urlMatchesPath(input, '/api/files'),
+      )
+      expect(fileCallsBeforeResolve).toHaveLength(1)
+
+      resolveUpload!(new Response(JSON.stringify(makeUploadResponse('first.txt', 'file-1')), { status: 200 }))
+    })
   })
 
-  it('ignores pasted plain text in the drop zone', async () => {
-    renderConverter()
-    pasteText(findDropZone(), 'https://example.com/file.txt')
+  describe('file-select handling', () => {
+    it('uploads files chosen via the hidden file input', async () => {
+      renderConverter()
 
-    const fileCalls = fetchSpy.mock.calls.filter(([input]: [RequestInfo | URL]) =>
-      urlMatchesPath(input, '/api/files'),
-    )
-    const urlCalls = fetchSpy.mock.calls.filter(([input]: [RequestInfo | URL]) =>
-      urlMatchesPath(input, '/api/files/url'),
-    )
-    expect(fileCalls).toHaveLength(0)
-    expect(urlCalls).toHaveLength(0)
+      const file = new File(['hello world'], 'chosen.txt', { type: 'text/plain' })
+      selectFilesViaInput(findFileInput(), [file])
+
+      await screen.findByText('chosen.txt')
+      expect(screen.getByText('chosen.txt')).toBeInTheDocument()
+
+      const fileCalls = fetchSpy.mock.calls.filter(([input]: [RequestInfo | URL]) =>
+        urlMatchesPath(input, '/api/files'),
+      )
+      expect(fileCalls).toHaveLength(1)
+
+      const [, init] = fileCalls[0]
+      expect(init?.method).toBe('POST')
+      expect(init?.body).toBeInstanceOf(FormData)
+    })
+
+    it('ignores an empty file selection', async () => {
+      renderConverter()
+      selectFilesViaInput(findFileInput(), [])
+
+      const fileCalls = fetchSpy.mock.calls.filter(([input]: [RequestInfo | URL]) =>
+        urlMatchesPath(input, '/api/files'),
+      )
+      expect(fileCalls).toHaveLength(0)
+    })
+
+    it('clears the input value after a successful selection', async () => {
+      renderConverter()
+      const input = findFileInput()
+
+      const file = new File(['hello world'], 'chosen.txt', { type: 'text/plain' })
+      selectFilesViaInput(input, [file])
+
+      await screen.findByText('chosen.txt')
+      expect(input.value).toBe('')
+    })
   })
 })
