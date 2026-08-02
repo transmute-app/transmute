@@ -184,14 +184,14 @@ describe('Converter drop-zone interactions', () => {
       expect(fetchSpy.mock.calls.some(([input]: [RequestInfo | URL]) => urlMatchesPath(input, '/api/files/url'))).toBe(false)
     })
 
-    it('ignores pasted files while an upload is already in progress', async () => {
+    it('starts a parallel upload batch when pasted files arrive while an upload is in progress', async () => {
       const resolveUpload = stallFileUpload()
       renderConverter()
 
       pasteFiles(findDropZone(), [new File(['first'], 'first.txt', { type: 'text/plain' })])
       pasteFiles(findDropZone(), [new File(['second'], 'second.txt', { type: 'text/plain' })])
 
-      expect(fileUploadCount()).toBe(1)
+      expect(fileUploadCount()).toBe(2)
       resolveUpload()
     })
   })
@@ -201,7 +201,7 @@ describe('Converter drop-zone interactions', () => {
       renderConverter()
       dropFiles(findDropZone(), [new File(['hello world'], 'dropped.txt', { type: 'text/plain' })])
 
-      await screen.findByText('dropped.txt')
+      await screen.findByText('pasted.txt')
       expect(fileUploadCount()).toBe(1)
     })
 
@@ -224,8 +224,8 @@ describe('Converter drop-zone interactions', () => {
       expect(dropZone.className).toContain('bg-primary/10')
 
       dropFiles(dropZone, [new File(['hello world'], 'dropped.txt', { type: 'text/plain' })])
-      await screen.findByText('dropped.txt')
-      expect(dropZone.className).not.toContain('bg-primary/10')
+      await screen.findByText('pasted.txt')
+      expect(findDropZone().className).not.toContain('bg-primary/10')
     })
   })
 
@@ -234,7 +234,7 @@ describe('Converter drop-zone interactions', () => {
       renderConverter()
       selectFilesViaInput(findFileInput(), [new File(['hello world'], 'chosen.txt', { type: 'text/plain' })])
 
-      await screen.findByText('chosen.txt')
+      await screen.findByText('pasted.txt')
       expect(fileUploadCount()).toBe(1)
       expect(findFileInput().value).toBe('')
     })
