@@ -503,7 +503,19 @@ function Converter() {
     const clipboard = event.clipboardData
     if (!clipboard) return
 
-    const files = Array.from(clipboard.files)
+    const directFiles = Array.from(clipboard.files ?? [])
+    const itemFiles: File[] = []
+    if (clipboard.items) {
+      for (const item of Array.from(clipboard.items)) {
+        if (item.kind !== 'file') continue
+        const file = item.getAsFile()
+        if (!file) continue
+        if (directFiles.some(existing => existing === file)) continue
+        itemFiles.push(file)
+      }
+    }
+
+    const files = [...directFiles, ...itemFiles]
     if (files.length > 0) {
       event.preventDefault()
       await processFiles(files)
