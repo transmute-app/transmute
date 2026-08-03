@@ -141,6 +141,29 @@ class BatchDownloadRequest(BaseModel):
     file_ids: list[str] = Field(..., description="List of converted file IDs to download", json_schema_extra={"example": ["123e4567-e89b-12d3-a456-426614174000", "987fcdeb-51a2-43f1-b789-123456789abc"]})
 
 
+class ChunkedUploadInitRequest(BaseModel):
+    filename: str = Field(..., description="Original filename including extension", json_schema_extra={"example": "large_video.mp4"})
+    total_size: int = Field(..., description="Total file size in bytes", json_schema_extra={"example": 104857600})
+    total_chunks: int = Field(..., description="Number of chunks the file is split into", json_schema_extra={"example": 3})
+
+
+class ChunkedUploadInitResponse(BaseModel):
+    upload_id: str = Field(..., description="UUID identifying this chunked upload session", json_schema_extra={"example": "123e4567-e89b-12d3-a456-426614174000"})
+
+
+class ChunkedUploadChunkResponse(BaseModel):
+    upload_id: str = Field(..., description="Upload session UUID")
+    chunk_index: int = Field(..., description="Index of the chunk that was received")
+
+
+class ChunkedUploadCompleteRequest(BaseModel):
+    upload_id: str = Field(..., description="Upload session UUID to finalize", json_schema_extra={"example": "123e4567-e89b-12d3-a456-426614174000"})
+
+
+class UploadConfigResponse(BaseModel):
+    max_chunk_size: int = Field(..., description="Maximum bytes per request; files larger than this should be uploaded in chunks")
+
+
 ThemeValue = Literal["rubedo", "citrinitas", "viriditas", "nigredo", "albedo", "aurora", "caelum", "argentum"]
 UserRoleValue = Literal["admin", "member", "guest"]
 

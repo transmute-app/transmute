@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     upload_dir: Path | None = None
     output_dir: Path | None = None
     tmp_dir: Path | None = None
+    chunks_dir: Path | None = None
 
     # ===== SQLite =====
     file_table_name: str = "FILES_METADATA"
@@ -88,6 +89,12 @@ class Settings(BaseSettings):
     oidc_username_claim: str = "preferred_username"
     oidc_auto_create_users: bool = True
     oidc_auto_launch: bool = False  # If True, automatically redirect to OIDC login when accessing /auth
+
+    # ===== Chunked Transfers =====
+    # Maximum size in bytes of a single HTTP request for uploads/downloads.
+    # Files larger than this are split into chunks to stay under reverse-proxy
+    # limits (e.g. Cloudflare's 100 MB cap).  Default: 50 MB.
+    max_chunk_size: int = 52428800
 
     # ===== Guest Access =====
     allow_unauthenticated: bool = False
@@ -183,6 +190,7 @@ class Settings(BaseSettings):
         self.upload_dir = self.data_dir / "uploads"
         self.output_dir = self.data_dir / "outputs"
         self.tmp_dir = self.data_dir / "tmp"
+        self.chunks_dir = self.data_dir / "chunks"
         self.pdf_css_dir = self.data_dir / "pdf"
         self.pdf_custom_css_path = self.pdf_css_dir / "custom.css"
 
@@ -198,6 +206,7 @@ class Settings(BaseSettings):
             self.upload_dir,
             self.output_dir,
             self.tmp_dir,
+            self.chunks_dir,
             self.pdf_css_dir,
         ]:
             path.mkdir(parents=True, exist_ok=True)
