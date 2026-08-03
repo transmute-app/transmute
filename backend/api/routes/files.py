@@ -533,8 +533,14 @@ async def upload_chunk(
         raise HTTPException(status_code=400, detail=f"chunk_index must be 0..{meta['total_chunks'] - 1}")
 
     chunk_path = session_dir / f"{chunk_index}.part"
+    max_bytes = settings.max_chunk_size + 1024
+    written = 0
     with chunk_path.open("wb") as buffer:
         async for chunk in request.stream():
+            written += len(chunk)
+            if written > max_bytes:
+                chunk_path.unlink(missing_ok=True)
+                raise HTTPException(status_code=413, detail="Chunk exceeds max_chunk_size")
             buffer.write(chunk)
 
     return {"upload_id": upload_id, "chunk_index": chunk_index}
@@ -595,6 +601,7 @@ def complete_chunked_upload(
         if not (session_dir / f"{i}.part").exists():
             raise HTTPException(status_code=400, detail=f"Missing chunk {i}")
 
+    file_path = None
     try:
         uuid_str = str(uuid.uuid4())
         file_extension = get_file_extension(original_filename)
@@ -643,5 +650,7 @@ def complete_chunked_upload(
     except HTTPException:
         raise
     except Exception as e:
+        if file_path is not None:
+            file_path.unlink(missing_ok=True)
         shutil.rmtree(session_dir, ignore_errors=True)
         raise HTTPException(status_code=500, detail=f"Upload finalization failed: {str(e)}")
