@@ -1,10 +1,11 @@
 import os
 import uuid
+import shutil
 import hashlib
 import mimetypes
 import logging
 
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks, Request
 from fastapi.responses import FileResponse
 from zipfile import ZipFile
 from pathlib import Path
@@ -12,7 +13,12 @@ from core import get_settings, detect_media_type, sanitize_extension, sanitize_f
 from db import FileDB, ConversionDB, CompressionDB
 from registry import registry as converter_registry
 from api.deps import get_current_active_user, get_file_db, get_conversion_db, get_compression_db
-from api.schemas import FileListResponse, FileUploadResponse, FileUrlUploadResponse, FileDeleteResponse, ErrorResponse, BatchDownloadRequest, UrlUploadRequest
+from api.schemas import (
+    FileListResponse, FileUploadResponse, FileUrlUploadResponse, FileDeleteResponse,
+    ErrorResponse, BatchDownloadRequest, UrlUploadRequest,
+    ChunkedUploadInitRequest, ChunkedUploadInitResponse, ChunkedUploadChunkResponse,
+    ChunkedUploadCompleteRequest, UploadConfigResponse,
+)
 from registry import downloader_registry
 from downloaders import DownloadError, YtDlpDownloader
 from converters.ffmpeg_convert import FFmpegConverter
@@ -28,6 +34,7 @@ settings = get_settings()
 UPLOAD_DIR = settings.upload_dir
 CONVERTED_DIR = settings.output_dir
 TMP_DIR = settings.tmp_dir
+CHUNKS_DIR = settings.chunks_dir
 
 
 def resolve_downloaded_media_type(downloader: object, detected_media_type: str) -> str:
@@ -420,3 +427,220 @@ def delete_file(
         raise HTTPException(status_code=404, detail="File not found")
     delete_file_and_metadata(file_id, file_db)
     return {"message": "File deleted successfully"}
+
+
+@router.get(
+    "/config/upload",
+    summary="Get upload configuration",
+    responses={
+        200: {
+            "model": UploadConfigResponse,
+            "description": "Upload configuration including maximum chunk size",
+        }
+    },
+)
+def get_upload_config():
+    """Return upload-related configuration values."""
+    return {"max_chunk_size": settings.max_chunk_size}
+
+
+def _chunk_upload_dir(upload_id: str) -> Path:
+    """Return the per-session directory for chunked upload chunks."""
+    return CHUNKS_DIR / upload_id
+
+
+@router.post(
+    "/upload/init",
+    summary="Initialize a chunked upload session",
+    responses={
+        200: {
+            "model": ChunkedUploadInitResponse,
+            "description": "Chunked upload session initialized",
+        },
+        400: {
+            "model": ErrorResponse,
+            "description": "Invalid parameters",
+        },
+    },
+)
+def init_chunked_upload(
+    request: ChunkedUploadInitRequest,
+    current_user: dict = Depends(get_current_active_user),
+):
+    """Create a new chunked upload session and return an upload ID."""
+    if request.total_size <= 0:
+        raise HTTPException(status_code=400, detail="total_size must be positive")
+    if request.total_chunks <= 0:
+        raise HTTPException(status_code=400, detail="total_chunks must be positive")
+
+    upload_id = str(uuid.uuid4())
+    session_dir = _chunk_upload_dir(upload_id)
+    os.makedirs(session_dir, exist_ok=True)
+
+    meta_path = session_dir / "meta.json"
+    import json
+    with meta_path.open("w") as f:
+        json.dump({
+            "upload_id": upload_id,
+            "filename": request.filename,
+            "total_size": request.total_size,
+            "total_chunks": request.total_chunks,
+            "user_id": current_user["uuid"],
+        }, f)
+
+    return {"upload_id": upload_id}
+
+
+@router.post(
+    "/upload/chunk",
+    summary="Upload a single chunk",
+    responses={
+        200: {
+            "model": ChunkedUploadChunkResponse,
+            "description": "Chunk received",
+        },
+        400: {
+            "model": ErrorResponse,
+            "description": "Invalid chunk index or body",
+        },
+        404: {
+            "model": ErrorResponse,
+            "description": "Upload session not found",
+        },
+    },
+)
+async def upload_chunk(
+    request: Request,
+    upload_id: str,
+    chunk_index: int,
+    current_user: dict = Depends(get_current_active_user),
+):
+    """Receive and store a single chunk for a chunked upload session."""
+    session_dir = _chunk_upload_dir(upload_id)
+    if not session_dir.is_dir():
+        raise HTTPException(status_code=404, detail="Upload session not found")
+
+    import json
+    meta_path = session_dir / "meta.json"
+    with meta_path.open("r") as f:
+        meta = json.load(f)
+
+    if meta.get("user_id") != current_user["uuid"]:
+        raise HTTPException(status_code=404, detail="Upload session not found")
+
+    if chunk_index < 0 or chunk_index >= meta["total_chunks"]:
+        raise HTTPException(status_code=400, detail=f"chunk_index must be 0..{meta['total_chunks'] - 1}")
+
+    chunk_path = session_dir / f"{chunk_index}.part"
+    with chunk_path.open("wb") as buffer:
+        async for chunk in request.stream():
+            buffer.write(chunk)
+
+    return {"upload_id": upload_id, "chunk_index": chunk_index}
+
+
+@router.post(
+    "/upload/complete",
+    summary="Finalize a chunked upload",
+    responses={
+        200: {
+            "model": FileUploadResponse,
+            "description": "File assembled and uploaded successfully",
+        },
+        400: {
+            "model": ErrorResponse,
+            "description": "Missing chunks or invalid session",
+        },
+        404: {
+            "model": ErrorResponse,
+            "description": "Upload session not found",
+        },
+        422: {
+            "model": ErrorResponse,
+            "description": "File has no supported conversions",
+        },
+        500: {
+            "model": ErrorResponse,
+            "description": "Upload finalization failed",
+        },
+    },
+)
+def complete_chunked_upload(
+    request: ChunkedUploadCompleteRequest,
+    file_db: FileDB = Depends(get_file_db),
+    current_user: dict = Depends(get_current_active_user),
+):
+    """Assemble all chunks into the final file, validate, and store metadata."""
+    import json
+
+    session_dir = _chunk_upload_dir(request.upload_id)
+    if not session_dir.is_dir():
+        raise HTTPException(status_code=404, detail="Upload session not found")
+
+    meta_path = session_dir / "meta.json"
+    try:
+        with meta_path.open("r") as f:
+            meta = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        raise HTTPException(status_code=400, detail="Invalid session metadata")
+
+    if meta.get("user_id") != current_user["uuid"]:
+        raise HTTPException(status_code=404, detail="Upload session not found")
+
+    total_chunks = meta["total_chunks"]
+    original_filename = meta["filename"]
+
+    for i in range(total_chunks):
+        if not (session_dir / f"{i}.part").exists():
+            raise HTTPException(status_code=400, detail=f"Missing chunk {i}")
+
+    try:
+        uuid_str = str(uuid.uuid4())
+        file_extension = get_file_extension(original_filename)
+        unique_filename = f"{uuid_str}"
+        if file_extension:
+            unique_filename += f".{file_extension}"
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+        file_path = Path(UPLOAD_DIR) / unique_filename
+        hasher = hashlib.sha256()
+        size_bytes = 0
+
+        with file_path.open("wb") as out:
+            for i in range(total_chunks):
+                chunk_path = session_dir / f"{i}.part"
+                with chunk_path.open("rb") as cf:
+                    while True:
+                        data = cf.read(1024 * 1024)
+                        if not data:
+                            break
+                        out.write(data)
+                        hasher.update(data)
+                        size_bytes += len(data)
+
+        shutil.rmtree(session_dir, ignore_errors=True)
+
+        media_type = detect_media_type(file_path)
+        compatible_formats = converter_registry.get_compatible_formats_and_qualities(media_type)
+        if not compatible_formats:
+            file_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=422, detail=UNSUPPORTED_UPLOAD_DETAIL)
+
+        metadata = {
+            "id": uuid_str,
+            "storage_path": str(file_path),
+            "original_filename": original_filename,
+            "media_type": media_type,
+            "extension": file_extension,
+            "size_bytes": size_bytes,
+            "sha256_checksum": hasher.hexdigest(),
+            "user_id": current_user["uuid"],
+        }
+        file_db.insert_file_metadata(metadata)
+        metadata["compatible_formats"] = compatible_formats
+        return {"message": "File uploaded successfully", "metadata": metadata}
+    except HTTPException:
+        raise
+    except Exception as e:
+        shutil.rmtree(session_dir, ignore_errors=True)
+        raise HTTPException(status_code=500, detail=f"Upload finalization failed: {str(e)}")
