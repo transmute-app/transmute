@@ -250,8 +250,9 @@ async def upload_file_from_url(
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
-@router.get(
+@router.api_route(
     "/{file_id}",
+    methods=["GET", "HEAD"],
     summary="Download a file (either converted or original) based on file ID",
     response_class=FileResponse,
     responses={
