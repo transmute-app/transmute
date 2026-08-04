@@ -92,9 +92,9 @@ class Settings(BaseSettings):
 
     # ===== Chunked Transfers =====
     # Maximum size in bytes of a single HTTP request for uploads/downloads.
-    # Files larger than this are split into chunks to stay under reverse-proxy
-    # limits (e.g. Cloudflare's 100 MB cap).  Default: 50 MB.
-    max_chunk_size: int = 52428800
+    # Files larger than this are split into chunks. Helpful for avoiding request body size limits
+    # imposed by reverse proxies. 0 = unlimited (no chunking).
+    max_chunk_size: int = 0
 
     # ===== Guest Access =====
     allow_unauthenticated: bool = False

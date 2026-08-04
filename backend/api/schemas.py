@@ -161,7 +161,7 @@ class ChunkedUploadCompleteRequest(BaseModel):
 
 
 class UploadConfigResponse(BaseModel):
-    max_chunk_size: int = Field(..., description="Maximum bytes per request; files larger than this should be uploaded in chunks")
+    max_chunk_size: int = Field(..., description="Maximum bytes per request; files larger than this should be uploaded in chunks. 0 = unlimited")
 
 
 ThemeValue = Literal["rubedo", "citrinitas", "viriditas", "nigredo", "albedo", "aurora", "caelum", "argentum"]

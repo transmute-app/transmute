@@ -533,15 +533,17 @@ async def upload_chunk(
         raise HTTPException(status_code=400, detail=f"chunk_index must be 0..{meta['total_chunks'] - 1}")
 
     chunk_path = session_dir / f"{chunk_index}.part"
-    max_bytes = settings.max_chunk_size + 1024
     written = 0
-    with chunk_path.open("wb") as buffer:
-        async for chunk in request.stream():
-            written += len(chunk)
-            if written > max_bytes:
-                chunk_path.unlink(missing_ok=True)
-                raise HTTPException(status_code=413, detail="Chunk exceeds max_chunk_size")
-            buffer.write(chunk)
+    try:
+        with chunk_path.open("wb") as buffer:
+            async for chunk in request.stream():
+                written += len(chunk)
+                if settings.max_chunk_size > 0 and written > settings.max_chunk_size + 1024:
+                    raise HTTPException(status_code=413, detail="Chunk exceeds max_chunk_size")
+                buffer.write(chunk)
+    except Exception:
+        chunk_path.unlink(missing_ok=True)
+        raise
 
     return {"upload_id": upload_id, "chunk_index": chunk_index}
 

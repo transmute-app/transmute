@@ -52,19 +52,15 @@ export function downloadBlob(blob: Blob, filename: string): void {
 }
 
 /**
- * Download a file using HTTP Range requests, splitting the transfer into
- * chunks to stay under reverse-proxy size limits.
- *
+ * Download a file using HTTP Range requests, splitting the transfer into chunks
  * @param url - The API URL to download from (e.g. `/api/files/{id}`)
  * @param filename - The filename to save as
  * @param chunkSize - Maximum bytes per range request
- * @param onProgress - Optional callback with (bytesDownloaded, totalBytes)
  */
 export async function downloadChunked(
   url: string,
   filename: string,
   chunkSize: number,
-  onProgress?: (bytesDownloaded: number, totalBytes: number) => void,
 ): Promise<void> {
   const headResp = await fetch(url, { method: 'HEAD' })
   if (!headResp.ok) throw new Error(`Download failed: ${headResp.statusText}`)
@@ -75,10 +71,7 @@ export async function downloadChunked(
 
   if (totalBytes === 0 || totalBytes <= chunkSize) {
     const resp = await fetch(url)
-    if (!resp.ok) throw new Error(`Download failed: ${resp.statusText}`)
-    const blob = await resp.blob()
-    downloadBlob(blob, dispositionFilename)
-    onProgress?.(totalBytes, totalBytes)
+    await downloadFromResponse(resp, dispositionFilename)
     return
   }
 
@@ -96,7 +89,6 @@ export async function downloadChunked(
     const blob = await resp.blob()
     chunks.push(blob)
     downloaded += blob.size
-    onProgress?.(downloaded, totalBytes)
     if (blob.size === 0) break
   }
 
@@ -105,27 +97,20 @@ export async function downloadChunked(
 }
 
 /**
- * Download a file, automatically choosing between a simple fetch and a
- * chunked (Range-request) download based on the configured chunk size.
- *
+ * Download a file, automatically choosing between
+ * a simple fetch and a chunked download based on chunkSize
  * @param url - The API URL to download from
  * @param filename - The filename to save as
  * @param chunkSize - Maximum bytes per request (0 = no chunking)
- * @param onProgress - Optional progress callback
  */
 export async function downloadFile(
   url: string,
   filename: string,
   chunkSize: number,
-  onProgress?: (bytesDownloaded: number, totalBytes: number) => void,
 ): Promise<void> {
   if (chunkSize > 0) {
-    return downloadChunked(url, filename, chunkSize, onProgress)
+    return downloadChunked(url, filename, chunkSize)
   }
   const resp = await fetch(url)
-  if (!resp.ok) throw new Error(`Download failed: ${resp.statusText}`)
-  const blob = await resp.blob()
-  const dispositionFilename = extractFilename(resp, filename)
-  downloadBlob(blob, dispositionFilename)
-  onProgress?.(blob.size, blob.size)
+  await downloadFromResponse(resp, filename)
 }
