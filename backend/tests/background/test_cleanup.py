@@ -1,4 +1,6 @@
+import os
 import time
+import uuid
 import threading
 import pytest
 from unittest.mock import MagicMock, patch
@@ -6,6 +8,7 @@ from unittest.mock import MagicMock, patch
 from background.cleanup import (
     file_cleanup_logic,
     guest_cleanup_logic,
+    chunk_cleanup_logic,
     file_cleanup_task,
     get_upload_cleanup_thread,
 )
@@ -203,3 +206,38 @@ def test_returns_daemon_thread():
     assert isinstance(t, threading.Thread)
     assert t.daemon is True
     assert t.is_alive() is False
+
+
+# ── chunk_cleanup_logic ──────────────────────────────────────────────
+
+class TestChunkCleanupLogic:
+
+    def test_removes_stale_sessions(self, tmp_path, monkeypatch):
+        chunks_dir = tmp_path / "chunks"
+        chunks_dir.mkdir()
+        stale = chunks_dir / str(uuid.uuid4())
+        stale.mkdir()
+        (stale / "0.part").write_bytes(b"data")
+
+        old_time = time.time() - 90000
+        os.utime(stale, (old_time, old_time))
+
+        monkeypatch.setattr("background.cleanup.get_settings", lambda: MagicMock(chunks_dir=chunks_dir))
+
+        chunk_cleanup_logic()
+
+        assert not stale.exists()
+
+    def test_keeps_fresh_sessions(self, tmp_path, monkeypatch):
+        chunks_dir = tmp_path / "chunks"
+        chunks_dir.mkdir()
+        fresh = chunks_dir / str(uuid.uuid4())
+        fresh.mkdir()
+        (fresh / "0.part").write_bytes(b"data")
+
+        monkeypatch.setattr("background.cleanup.get_settings", lambda: MagicMock(chunks_dir=chunks_dir))
+
+        chunk_cleanup_logic()
+
+        assert fresh.exists()
+        assert (fresh / "0.part").read_bytes() == b"data"
