@@ -132,6 +132,7 @@ const LANGUAGE_LABELS: Record<(typeof SUPPORTED_LANGUAGES)[number], string> = {
   cs: 'Čeština',
   tr: 'Türkçe',
   'zh-CN': '简体中文',
+  sl: 'Slovenščina',
 }
 
 const BROWSER_DEFAULT_LANGUAGE = 'browser-default'
