@@ -338,6 +338,11 @@ class UserDeleteResponse(BaseModel):
 class UserBootstrapStatusResponse(BaseModel):
     requires_setup: bool = Field(..., description="Whether the first admin account still needs to be created", json_schema_extra={"example": True})
     user_count: int = Field(..., description="Current number of users", json_schema_extra={"example": 0})
+    allow_public_signup: bool = Field(
+        False,
+        description="Whether unauthenticated users may create standard member accounts",
+        json_schema_extra={"example": False},
+    )
 
 
 class UserSelfUpdateRequest(BaseModel):

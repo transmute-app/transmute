@@ -17,6 +17,7 @@ export interface AuthUser {
 interface BootstrapStatus {
   requires_setup: boolean
   user_count: number
+  allow_public_signup: boolean
 }
 
 interface AuthResponse {
@@ -43,6 +44,7 @@ interface AuthContextValue {
   isAdmin: boolean
   login: (input: LoginInput) => Promise<void>
   createBootstrapUser: (input: BootstrapInput) => Promise<void>
+  createPublicUser: (input: BootstrapInput) => Promise<void>
   loginAsGuest: () => Promise<void>
   logout: () => void
   refreshUser: () => Promise<void>
@@ -56,6 +58,7 @@ const AuthContext = createContext<AuthContextValue>({
   isAdmin: false,
   login: async () => {},
   createBootstrapUser: async () => {},
+  createPublicUser: async () => {},
   loginAsGuest: async () => {},
   logout: () => {},
   refreshUser: async () => {},
@@ -88,7 +91,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStoredToken(payload.access_token)
     setUser(payload.user)
     setStatus('authenticated')
-    setBootstrapStatus(prev => prev ? { ...prev, requires_setup: false, user_count: Math.max(prev.user_count, 1) } : { requires_setup: false, user_count: 1 })
+    setBootstrapStatus(prev => prev
+      ? { ...prev, requires_setup: false, user_count: Math.max(prev.user_count, 1) }
+      : { requires_setup: false, user_count: 1, allow_public_signup: false })
   }
 
   const login = async ({ username, password }: LoginInput) => {
@@ -105,6 +110,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const createBootstrapUser = async ({ username, password, email, full_name }: BootstrapInput) => {
+    await apiJson<AuthUser>(
+      '/api/users',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, email: email || null, full_name: full_name || null, role: 'member', disabled: false }),
+      },
+      { auth: false },
+    )
+    await login({ username, password })
+  }
+
+  const createPublicUser = async ({ username, password, email, full_name }: BootstrapInput) => {
     await apiJson<AuthUser>(
       '/api/users',
       {
@@ -136,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setBootstrapStatus(nextBootstrapStatus)
       } catch {
         if (!active) return
-        setBootstrapStatus({ requires_setup: false, user_count: 0 })
+        setBootstrapStatus({ requires_setup: false, user_count: 0, allow_public_signup: false })
       }
 
       // Pick up a one-time code returned by the OIDC callback redirect
@@ -202,6 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin: user?.role === 'admin',
         login,
         createBootstrapUser,
+        createPublicUser,
         loginAsGuest,
         logout,
         refreshUser,

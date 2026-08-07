@@ -92,6 +92,10 @@ class Settings(BaseSettings):
     # ===== Guest Access =====
     allow_unauthenticated: bool = False
 
+    # When True, unauthenticated callers may create standard (member) accounts
+    # after the initial admin bootstrap is complete.
+    allow_public_signup: bool = False
+
     # ===== Server =====
 
     # http://192.168.1.1:3313

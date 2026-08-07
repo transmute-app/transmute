@@ -16,7 +16,7 @@ interface OidcConfig {
 function Auth() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { bootstrapStatus, login, createBootstrapUser, loginAsGuest } = useAuth()
+  const { bootstrapStatus, login, createBootstrapUser, createPublicUser, loginAsGuest } = useAuth()
   const { t } = useTranslation()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -26,8 +26,11 @@ function Auth() {
   const [error, setError] = useState<string | null>(null)
   const [oidcConfig, setOidcConfig] = useState<OidcConfig | null>(null)
   const [showLocalLogin, setShowLocalLogin] = useState(false)
+  const [signupMode, setSignupMode] = useState(false)
 
   const requiresSetup = bootstrapStatus?.requires_setup ?? false
+  const allowPublicSignup = bootstrapStatus?.allow_public_signup ?? false
+  const isSignup = requiresSetup || (allowPublicSignup && signupMode)
 
   useEffect(() => {
     apiJson<OidcConfig>('/api/oidc/config', {}, { auth: false })
@@ -70,6 +73,8 @@ function Auth() {
     try {
       if (requiresSetup) {
         await createBootstrapUser({ username, password, email, full_name: fullName })
+      } else if (allowPublicSignup && signupMode) {
+        await createPublicUser({ username, password, email, full_name: fullName })
       } else {
         await login({ username, password })
       }
@@ -156,11 +161,19 @@ function Auth() {
             <form onSubmit={handleSubmit} className="w-full rounded-[2rem] border border-white/10 bg-surface-dark/80 p-8 shadow-2xl backdrop-blur">
               <div className="mb-8 flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/20 text-primary-light">
-                  {requiresSetup ? <FaUserPlus size={20} /> : <FaKey size={20} />}
+                  {isSignup ? <FaUserPlus size={20} /> : <FaKey size={20} />}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-text">{requiresSetup ? t('auth.createAdmin') : t('auth.logIn')}</h2>
-                  <p className="text-sm text-text-muted">{requiresSetup ? t('auth.initialAdmin') : t('auth.useCredentials')}</p>
+                  <h2 className="text-2xl font-bold text-text">
+                    {requiresSetup ? t('auth.createAdmin') : signupMode ? t('auth.createAccount') : t('auth.logIn')}
+                  </h2>
+                  <p className="text-sm text-text-muted">
+                    {requiresSetup
+                      ? t('auth.initialAdmin')
+                      : signupMode
+                        ? t('auth.publicSignupHint')
+                        : t('auth.useCredentials')}
+                  </p>
                 </div>
               </div>
 
@@ -180,7 +193,7 @@ function Auth() {
                   />
                 </label>
 
-                {requiresSetup && (
+                {isSignup && (
                   <>
                     <label className="block">
                       <span className="mb-2 block text-sm font-medium text-text">{t('fields.fullName')}</span>
@@ -214,14 +227,14 @@ function Auth() {
                   <PasswordField
                     value={password}
                     onChange={event => setPassword(event.target.value)}
-                    autoComplete={requiresSetup ? 'new-password' : 'current-password'}
+                    autoComplete={isSignup ? 'new-password' : 'current-password'}
                     inputClassName="rounded-xl border border-white/10 bg-surface-light/70 px-4 py-3 text-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                     toggleButtonClassName="rounded-xl border border-white/10 bg-surface-light/70 px-4 text-text-muted transition hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/20"
                     placeholder="••••••••"
                     required
-                    minLength={requiresSetup ? 8 : undefined}
+                    minLength={isSignup ? 8 : undefined}
                   />
-                  {requiresSetup && <p className="mt-1 text-xs text-text-muted">{t('auth.passwordMin8')}</p>}
+                  {isSignup && <p className="mt-1 text-xs text-text-muted">{t('auth.passwordMin8')}</p>}
                 </label>
               </div>
 
@@ -236,8 +249,27 @@ function Auth() {
                 disabled={submitting}
                 className="mt-6 w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {submitting ? t('auth.working') : requiresSetup ? t('auth.createAdminAccount') : t('auth.signIn')}
+                {submitting
+                  ? t('auth.working')
+                  : requiresSetup
+                    ? t('auth.createAdminAccount')
+                    : signupMode
+                      ? t('auth.createAccount')
+                      : t('auth.signIn')}
               </button>
+
+              {allowPublicSignup && !requiresSetup && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSignupMode(prev => !prev)
+                    setError(null)
+                  }}
+                  className="mt-3 w-full text-sm text-text-muted transition hover:text-text"
+                >
+                  {signupMode ? t('auth.haveAccountSignIn') : t('auth.needAccountSignUp')}
+                </button>
+              )}
 
               {/* Secondary options for local login view */}
               {(oidcConfig?.enabled || (oidcConfig?.allow_unauthenticated && !requiresSetup)) && (
