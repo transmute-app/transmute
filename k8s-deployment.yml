@@ -77,6 +77,16 @@ spec:
             # also change the Ingress "path" below from "/" to "/transmute".
             - name: APP_URL
               value: "https://transmute.your-domain.example"
+            # Optional: trust oauth2-proxy (or similar) identity headers.
+            # Only enable when the ingress/proxy strips these headers from clients.
+            # - name: HEADER_AUTH_ENABLED
+            #   value: "true"
+            # - name: HEADER_AUTH_USERNAME_HEADER
+            #   value: "X-Forwarded-User"
+            # - name: HEADER_AUTH_EMAIL_HEADER
+            #   value: "X-Forwarded-Email"
+            # - name: HEADER_AUTH_AUTO_CREATE
+            #   value: "true"
           ports:
             - name: http
               containerPort: 3313

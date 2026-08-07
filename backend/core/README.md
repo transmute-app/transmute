@@ -13,9 +13,22 @@ This package contains backend-wide utilities, configuration, and shared applicat
 - `settings.py`: application configuration and derived runtime paths.
 - `logging.py`: central logging setup based on uvicorn's default log configuration.
 - `auth.py`: token and password-related auth helpers.
+- `header_auth.py`: reverse-proxy HTTP header identity helpers (oauth2-proxy style).
 - `media_types.py`: alias mapping and normalization support for media types.
 - `helper_functions.py`: shared filesystem, validation, hashing, and cleanup helpers.
 - `__init__.py`: curated exports for commonly used core utilities.
+
+## Header auth environment variables
+
+Enable only behind a trusted reverse proxy that sets (and strips client-supplied) identity headers:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `HEADER_AUTH_ENABLED` | `false` | Accept identity from HTTP headers |
+| `HEADER_AUTH_USERNAME_HEADER` | `X-Forwarded-User` | Header carrying the username |
+| `HEADER_AUTH_EMAIL_HEADER` | `X-Forwarded-Email` | Optional email header |
+| `HEADER_AUTH_AUTO_CREATE` | `false` | Auto-provision unknown users |
+| `ALLOW_PUBLIC_SIGNUP` | `false` | Also enables header auto-create when true |
 
 ## How To Work In This Folder
 

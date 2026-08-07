@@ -92,6 +92,21 @@ class Settings(BaseSettings):
     # ===== Guest Access =====
     allow_unauthenticated: bool = False
 
+    # When True, unauthenticated callers may create standard (member) accounts
+    # after the initial admin bootstrap is complete (see #244). Also enables
+    # header-auth auto-provisioning when HEADER_AUTH_AUTO_CREATE is false.
+    allow_public_signup: bool = False
+
+    # ===== Header auth (oauth2-proxy and similar reverse proxies) =====
+    # Trust identity headers only when Transmute sits behind a proxy that
+    # strips/overwrites these headers from untrusted clients.
+    header_auth_enabled: bool = False
+    header_auth_username_header: str = "X-Forwarded-User"
+    header_auth_email_header: str = "X-Forwarded-Email"
+    # When True (or allow_public_signup is True), unknown header identities
+    # are auto-provisioned as local users.
+    header_auth_auto_create: bool = False
+
     # ===== Server =====
 
     # http://192.168.1.1:3313

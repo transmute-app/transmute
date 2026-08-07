@@ -1,7 +1,7 @@
 import sqlite3
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from api.deps import (
@@ -23,11 +23,16 @@ from api.schemas import (
 )
 from core import delete_file_and_metadata
 from core.auth import create_access_token, get_password_hash_str, verify_password
+from core.header_auth import header_auth_enabled, resolve_user_from_headers
 from db import UserDB, ApiKeyDB, FileDB, ConversionDB, ConversionRelationsDB, SettingsDB, DefaultFormatsDB
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-_UNUSABLE_PASSWORDS = frozenset({"!oidc-no-password", "!guest-no-password"})
+_UNUSABLE_PASSWORDS = frozenset({
+    "!oidc-no-password",
+    "!guest-no-password",
+    "!header-auth-no-password",
+})
 
 
 @router.get(
@@ -210,6 +215,38 @@ def authenticate_user(
         raise HTTPException(status_code=401, detail="Invalid username or password")
     if user["disabled"]:
         raise HTTPException(status_code=403, detail="User account is disabled")
+    return _build_auth_response(user)
+
+
+@router.post(
+    "/header-authenticate",
+    summary="Authenticate via trusted HTTP identity headers",
+    responses={
+        200: {
+            "model": UserAuthResponse,
+            "description": "Authentication succeeded",
+        },
+        401: {
+            "model": ErrorResponse,
+            "description": "Header auth disabled, missing headers, or unknown user",
+        },
+        403: {
+            "model": ErrorResponse,
+            "description": "User account is disabled",
+        },
+    },
+)
+def header_authenticate(
+    request: Request,
+    db: UserDB = Depends(get_user_db),
+):
+    """Issue a JWT from reverse-proxy identity headers (oauth2-proxy style)."""
+    if not header_auth_enabled():
+        raise HTTPException(status_code=401, detail="Header authentication is disabled")
+
+    user = resolve_user_from_headers(request, db)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Missing identity headers")
     return _build_auth_response(user)
 
 

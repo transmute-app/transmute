@@ -7,6 +7,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
 
 from core.auth import decode_access_token, verify_password
+from core.header_auth import resolve_user_from_headers
 from db import FileDB, ConversionDB, ConversionRelationsDB, ConversionJobDB, CompressionDB, CompressionRelationsDB, CompressionJobDB, SettingsDB, DefaultFormatsDB, DefaultQualitiesDB, DefaultCompressionLevelsDB, UserDB, ApiKeyDB, UserIdentityDB
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/token")
@@ -114,60 +115,63 @@ def _resolve_user_from_api_key(raw_key: str, api_key_db: ApiKeyDB, user_db: User
     return None
 
 
+def _resolve_user_from_bearer(
+    token: str,
+    user_db: UserDB,
+    api_key_db: ApiKeyDB,
+) -> dict | None:
+    """Resolve a user from a JWT or API key bearer token."""
+    try:
+        payload = decode_access_token(token)
+        subject = payload.get("sub")
+        if isinstance(subject, str) and subject:
+            user = user_db.get_user(subject)
+            if user is not None:
+                return user
+    except InvalidTokenError:
+        logger.debug("Token is not a valid JWT, attempting API key resolution")
+
+    return _resolve_user_from_api_key(token, api_key_db, user_db)
+
+
 def get_current_user(
     request: Request,
-    token: str = Depends(oauth2_scheme),
+    token: str | None = Depends(oauth2_scheme_optional),
     user_db: UserDB = Depends(get_user_db),
     api_key_db: ApiKeyDB = Depends(get_api_key_db),
 ) -> dict:
-    """Resolve the current user from a bearer token (JWT or API key)."""
+    """Resolve the current user from a bearer token or trusted identity headers."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    # Try JWT first
-    try:
-        payload = decode_access_token(token)
-        subject = payload.get("sub")
-        if isinstance(subject, str) and subject:
-            user = user_db.get_user(subject)
-            if user is not None:
-                return user
-    except InvalidTokenError:
-        logger.debug("Token is not a valid JWT, attempting API key resolution")
+    if token:
+        user = _resolve_user_from_bearer(token, user_db, api_key_db)
+        if user is not None:
+            return user
 
-    # Fall back to API key
-    user = _resolve_user_from_api_key(token, api_key_db, user_db)
-    if user is not None:
-        return user
+    header_user = resolve_user_from_headers(request, user_db)
+    if header_user is not None:
+        return header_user
 
     raise credentials_exception
 
 
 def get_current_user_optional(
+    request: Request,
     token: str | None = Depends(oauth2_scheme_optional),
     user_db: UserDB = Depends(get_user_db),
     api_key_db: ApiKeyDB = Depends(get_api_key_db),
 ) -> dict | None:
-    """Best-effort bearer token resolution for bootstrap-aware routes."""
-    if not token:
-        return None
+    """Best-effort auth resolution for bootstrap-aware routes."""
+    if token:
+        user = _resolve_user_from_bearer(token, user_db, api_key_db)
+        if user is not None:
+            return user
 
-    # Try JWT first
-    try:
-        payload = decode_access_token(token)
-        subject = payload.get("sub")
-        if isinstance(subject, str) and subject:
-            user = user_db.get_user(subject)
-            if user is not None:
-                return user
-    except InvalidTokenError:
-        logger.debug("Token is not a valid JWT, attempting API key resolution")
-
-    # Fall back to API key
-    return _resolve_user_from_api_key(token, api_key_db, user_db)
+    return resolve_user_from_headers(request, user_db)
 
 
 def get_current_active_user(current_user: dict = Depends(get_current_user)) -> dict:
