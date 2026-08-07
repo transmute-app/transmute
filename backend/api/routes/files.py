@@ -640,6 +640,13 @@ def complete_chunked_upload(
                         hasher.update(data)
                         size_bytes += len(data)
 
+        if size_bytes != meta["total_size"]:
+            file_path.unlink(missing_ok=True)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Size mismatch: expected {meta['total_size']} bytes but received {size_bytes} bytes",
+            )
+
         shutil.rmtree(session_dir, ignore_errors=True)
 
         media_type = detect_media_type(file_path)
