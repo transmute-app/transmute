@@ -14,7 +14,7 @@ FROM python:3.13-slim
 ARG BUILD_VERSION="dev"
 
 # https://github.com/kovidgoyal/calibre/releases
-ARG CALIBRE_VERSION="9.12.0"
+ARG CALIBRE_VERSION="9.13.0"
 ARG CALIBRE_SHA_AMD64="7cf8f5334503ac8f74b9e0b038c17df2dd2827405133ae7118f3aeb38e07ad76"
 ARG CALIBRE_SHA_ARM64="a7942d5d4a40ab02a4bf7503b058e17298b1fcff4491b460cf4e0a594c0f9197"
 # https://github.com/jgm/pandoc/releases
