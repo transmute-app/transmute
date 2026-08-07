@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Transmute",
-    "tagline": "Spusti datoteko, izberi format, Transmutiraj."
+    "tagline": "Naloži datoteko, izberi format, pretvori."
   },
   "titles": {
     "signIn": "Transmute - Prijava",
@@ -34,7 +34,7 @@
     "signInWith": "Prijava z {{provider}}",
     "bootstrapWith": "Začetna nastavitev z {{provider}}",
     "useLocalAccount": "Uporabi lokalni račun",
-    "useAsGuest": "Uporabi kot gost",
+    "useAsGuest": "Nadaljuj kot gost",
     "createAdmin": "Ustvari skrbnika",
     "createAdminAccount": "Ustvari skrbniški račun",
     "initialAdmin": "Ta račun bo postal začetni skrbnik.",
@@ -62,17 +62,17 @@
     "saving": "Shranjevanje...",
     "updated": "Račun uspešno posodobljen.",
     "updateFailed": "Posodobitev računa ni uspela",
-    "passwordHint": "Pri spremembi mora geslo imeti vsaj 8 znakov.",
+    "passwordHint": "Minimum 8 znakov ob spremembi.",
     "passwordPlaceholder": "Pustite prazno, da obdržite trenutno geslo",
     "role": "Vloga:"
   },
   "apiKeys": {
     "title": "API ključi",
-    "description": "Uporabite API ključe za avtentikacijo z API-jem brez gesla. Pošljite ključ kot Bearer žeton.",
-    "keyCreated": "Ključ ustvarjen! Kopirajte ga zdaj — ne boste ga videli več.",
+    "description": "Uporabite API ključe za avtentikacijo z API-jem brez gesla. Pošljite ključ kot Bearer token.",
+    "keyCreated": "Ključ ustvarjen! Kopirajte ga zdaj — ne boste ga spet videli.",
     "copied": "Kopirano!",
     "copy": "Kopiraj",
-    "namePlaceholder": "Ime ključa (npr. CI cevovod)",
+    "namePlaceholder": "Ime ključa (npr. CI pipeline)",
     "createKey": "Ustvari ključ",
     "creating": "Ustvarjanje...",
     "noKeys": "Ni še API ključev.",
@@ -112,7 +112,7 @@
     "ignoredNoCompression": "Prezrta {{count}} datoteka brez podprtih stiskanj.",
     "ignoredNoCompression_other": "Prezrtih {{count}} datotek brez podprtih stiskanj.",
     "jobsInQueue": "{{count}} opravilo se izvaja",
-    "jobsInQueue_other": "{{count}} opravil/a se izvaja/jo",
+    "jobsInQueue_other": "{{count}} opravil se izvaja",
     "jobsInProgressHint": "Vaše pretvorbe se obdelujejo v ozadju. Lahko nadaljujete z delom.",
     "viewQueue": "Prikaži opravila"
   },
@@ -197,11 +197,11 @@
     "autoDownloadDescription": "Samodejno prenesi datoteke, ko je pretvorba končana",
     "keepOriginals": "Obdrži izvirne datoteke",
     "keepOriginalsDescription": "Ohrani naložene izvorne datoteke po pretvorbi",
-    "cleanupTtl": "Čiščenje TTL",
-    "cleanupTtlDescription": "Samodejno počisti naložene in pretvorjene datoteke po določenem času",
-    "cleanupAdminOnly": "Upravlja skrbnik",
-    "cleanupInterval": "Interval čiščenja",
-    "cleanupIntervalDescription": "Minute, preden se naložene in pretvorjene datoteke počistijo",
+    "cleanupTtl": "Čas hranjenja datotek",
+    "cleanupTtlDescription": "Samodejno pobriši naložene in pretvorjene datoteke po določenem času",
+    "cleanupAdminOnly": "Dovoljeno samo skrbniku",
+    "cleanupInterval": "Interval brisanja",
+    "cleanupIntervalDescription": "Minute, preden se naložene in pretvorjene datoteke pobrišejo",
     "min": "min",
     "saveChanges": "Shrani spremembe",
     "saved": "Shranjeno!",
@@ -209,15 +209,15 @@
     "loadFailed": "Nalaganje nastavitev ni uspelo",
     "loadingSettings": "Nalaganje nastavitev...",
     "dataManagement": "Upravljanje podatkov",
-    "clearConversions": "Počisti pretvorbe",
+    "clearConversions": "Pobriši pretvorbe",
     "clearConversionsDescription": "Izbriši vse pretvorjene datoteke in zapise zgodovine pretvorb",
-    "clearHistory": "Počisti zgodovino",
-    "clearing": "Čiščenje...",
-    "cleared": "Počiščeno!",
-    "clearFailed": "Ni uspelo",
-    "clearUploads": "Počisti naložene datoteke",
+    "clearHistory": "Pobriši zgodovino",
+    "clearing": "Brisanje...",
+    "cleared": "Pobrisano!",
+    "clearFailed": "Brisanje ni uspelo",
+    "clearUploads": "Pobriši naložene datoteke",
     "clearUploadsDescription": "Izbriši vse naložene datoteke",
-    "clearFiles": "Počisti datoteke",
+    "clearFiles": "Pobriši datoteke",
     "defaultFormats": "Privzeti formati",
     "defaultFormatsDescription": "Nastavite privzete izhodne formate za določene vrste vhodnih datotek. Te je še vedno mogoče preglasiti za posamezno datoteko.",
     "allFormatsConfigured": "Vsi razpoložljivi vhodni formati imajo nastavljene privzete vrednosti.",
@@ -246,12 +246,12 @@
   },
   "confirm": {
     "cancel": "Prekliči",
-    "clearConversionsTitle": "Počistim zgodovino pretvorb?",
+    "clearConversionsTitle": "Pobrišem zgodovino pretvorb?",
     "clearConversionsMessage": "Izbrisali boste zgodovino pretvorb in pretvorjene datoteke. Tega dejanja ni mogoče razveljaviti. Ali želite nadaljevati?",
-    "clearConversionsConfirm": "Da, počisti zgodovino",
-    "clearUploadsTitle": "Počistim naložene datoteke?",
+    "clearConversionsConfirm": "Da, pobriši zgodovino",
+    "clearUploadsTitle": "Pobrišem naložene datoteke?",
     "clearUploadsMessage": "Izbrisali boste vse naložene datoteke. Tega dejanja ni mogoče razveljaviti. Ali želite nadaljevati?",
-    "clearUploadsConfirm": "Da, počisti datoteke"
+    "clearUploadsConfirm": "Da, pobriši datoteke"
   },
   "users": {
     "title": "Upravljanje uporabnikov",
@@ -261,7 +261,7 @@
     "creating": "Ustvarjanje...",
     "created": "Uporabnik uspešno ustvarjen.",
     "createFailed": "Ustvarjanje uporabnika ni uspelo",
-    "startDisabled": "Začni onemogočeno",
+    "startDisabled": "Ustvari kot onemogočeno",
     "disabled": "Onemogočeno",
     "uuid": "UUID: {{uuid}}",
     "thisIsYou": "To je vaš trenutni račun.",
@@ -287,7 +287,7 @@
   "stats": {
     "title": "Statistika",
     "loadFailed": "Nalaganje statistike ni uspelo",
-    "snapshotNotice": "Ta statistika je trenutni posnetek datotek, izhodnih datotek in shrambe na tem sistemu. Ne gre za skupne vsote.",
+    "snapshotNotice": "Ta statistika je trenutno stanje datotek, izhodnih datotek in shrambe na tem sistemu. Ne gre za skupne vsote.",
     "currentUploadedFiles": "Trenutno naložene datoteke",
     "currentOutputFiles": "Trenutne izhodne datoteke",
     "storageInUse": "Shramba v uporabi",
@@ -334,8 +334,8 @@
     "compressionLevelPlaceholder": "Raven stiskanja",
     "all": "Vse",
     "qualityDescriptions": {
-      "low": "Manjša velikost datoteke, hitra pretvorba, slaba kakovost",
-      "medium": "Srednja velikost datoteke, srednja hitrost pretvorbe, spodobna kakovost",
+      "low": "Manjša velikost datoteke, hitra pretvorba, nizka kakovost",
+      "medium": "Srednja velikost datoteke, srednja hitrost pretvorbe, srednja kakovost",
       "high": "Velika velikost datoteke, počasna pretvorba, visoka kakovost"
     },
     "compressionLevelDescriptions": {
@@ -376,9 +376,9 @@
     "select": "Izberi..."
   },
   "footer": {
-    "surveyCta": "Uporabljate Transmute? Delite povratne informacije v 2-minutni anketi.",
+    "surveyCta": "Uporabljate Transmute? Delite povratne informacije z 2-minutno anketo.",
     "sourceCode": "Izvorna koda",
     "apiDocs": "API dokumentacija",
-    "website": "Transmute spletna stran"
+    "website": "Spletna stran Transmute"
   }
 }
