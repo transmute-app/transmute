@@ -7,16 +7,22 @@ import {
   setStoredDateTimeDisplayFormat,
 } from './utils/datetime'
 import {
-  BUILTIN_THEMES,
   FALLBACK_THEME,
-  THEME_STORAGE_KEY,
   cacheRegistry,
   injectCustomThemesCSS,
-  isKnownTheme,
   loadCustomThemes,
   readCachedRegistry,
   type CustomTheme,
 } from './utils/themeRegistry'
+import {
+  DEFAULT_DARK_THEME,
+  DEFAULT_LIGHT_THEME,
+  readStoredThemePreferences,
+  resolveEffectiveTheme,
+  storeThemePreferences,
+  type ThemeMode,
+  type ThemePreferences,
+} from './utils/themePreferences'
 
 /**
  * Theme name is now an arbitrary string — built-in keys plus any custom
@@ -26,8 +32,15 @@ import {
 export type ThemeName = string
 
 interface ThemeContextValue {
+  /** Currently applied theme (resolved from manual or system preference). */
   theme: ThemeName
   setTheme: (theme: ThemeName) => void
+  themeMode: ThemeMode
+  setThemeMode: (mode: ThemeMode) => void
+  lightTheme: ThemeName
+  setLightTheme: (theme: ThemeName) => void
+  darkTheme: ThemeName
+  setDarkTheme: (theme: ThemeName) => void
   keepOriginals: boolean
   setKeepOriginals: (value: boolean) => void
   dateTimeDisplayFormat: string
@@ -40,6 +53,12 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue>({
   theme: FALLBACK_THEME,
   setTheme: () => {},
+  themeMode: 'manual',
+  setThemeMode: () => {},
+  lightTheme: DEFAULT_LIGHT_THEME,
+  setLightTheme: () => {},
+  darkTheme: DEFAULT_DARK_THEME,
+  setDarkTheme: () => {},
   keepOriginals: true,
   setKeepOriginals: () => {},
   dateTimeDisplayFormat: DEFAULT_DATETIME_DISPLAY_FORMAT,
@@ -50,24 +69,9 @@ const ThemeContext = createContext<ThemeContextValue>({
 
 const KEEP_ORIGINALS_KEY = 'transmute-keep-originals'
 
-function applyThemeToDom(name: ThemeName) {
-  document.documentElement.setAttribute('data-theme', name)
-  try { localStorage.setItem(THEME_STORAGE_KEY, name) } catch { /* storage unavailable */ }
-}
-
-function readStoredTheme(): ThemeName {
-  try {
-    const t = localStorage.getItem(THEME_STORAGE_KEY)
-    if (!t) return FALLBACK_THEME
-    // Accept any known built-in or anything that the cached registry knows
-    // about. If the registry hasn't been hydrated yet, the pre-paint
-    // script already injected the matching <style> rules so it's safe to
-    // trust the stored value here.
-    const cached = readCachedRegistry()
-    if (isKnownTheme(t, cached) || BUILTIN_THEMES.some(b => b.key === t)) return t
-    return FALLBACK_THEME
-  } catch { /* storage unavailable */ }
-  return FALLBACK_THEME
+function getSystemPrefersDark(): boolean {
+  return typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 
 function readStoredKeepOriginals(): boolean {
@@ -80,18 +84,33 @@ function readStoredKeepOriginals(): boolean {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { status } = useAuth()
+  const cachedThemes = readCachedRegistry()
   // Initialise from localStorage so React state matches what the blocking
-  // script already applied to the DOM — avoids a redundant re-render.
-  const [theme, setThemeState] = useState<ThemeName>(readStoredTheme)
+  // script already applied to the DOM — avoids a flash during hydration.
+  const [themePreferences, setThemePreferences] = useState<ThemePreferences>(
+    () => readStoredThemePreferences(cachedThemes),
+  )
+  const [prefersDark, setPrefersDark] = useState(getSystemPrefersDark)
   const [keepOriginals, setKeepOriginalsState] = useState(readStoredKeepOriginals)
   const [dateTimeDisplayFormat, setDateTimeDisplayFormatState] = useState(readStoredDateTimeDisplayFormat)
   // Seed from cache so the Settings page can render custom themes immediately
   // even before the network round-trip completes.
-  const [customThemes, setCustomThemes] = useState<CustomTheme[]>(readCachedRegistry)
+  const [customThemes, setCustomThemes] = useState<CustomTheme[]>(cachedThemes)
 
   const setTheme = useCallback((name: ThemeName) => {
-    setThemeState(name)
-    applyThemeToDom(name)
+    setThemePreferences(previous => ({ ...previous, theme: name }))
+  }, [])
+
+  const setThemeMode = useCallback((mode: ThemeMode) => {
+    setThemePreferences(previous => ({ ...previous, themeMode: mode }))
+  }, [])
+
+  const setLightTheme = useCallback((name: ThemeName) => {
+    setThemePreferences(previous => ({ ...previous, lightTheme: name }))
+  }, [])
+
+  const setDarkTheme = useCallback((name: ThemeName) => {
+    setThemePreferences(previous => ({ ...previous, darkTheme: name }))
   }, [])
 
   const setKeepOriginals = useCallback((value: boolean) => {
@@ -122,7 +141,28 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Once authenticated, validate against the backend (authoritative source).
+  useEffect(() => {
+    const media = typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-color-scheme: dark)')
+      : null
+    if (!media) return
+
+    const handleChange = (event: MediaQueryListEvent) => setPrefersDark(event.matches)
+    media.addEventListener('change', handleChange)
+    return () => media.removeEventListener('change', handleChange)
+  }, [])
+
+  useEffect(() => {
+    storeThemePreferences(themePreferences)
+    document.documentElement.setAttribute(
+      'data-theme',
+      resolveEffectiveTheme(themePreferences, prefersDark),
+    )
+  }, [themePreferences, prefersDark])
+
+  // Once authenticated, sync shared settings from the backend.
+  // Theme mode / light / dark pairings stay device-local (no API fields yet);
+  // only the manual theme key is authoritative from the server.
   useEffect(() => {
     if (status !== 'authenticated') return
 
@@ -139,14 +179,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         cacheRegistry(registryData.themes)
       }
       if (settingsData) {
-        const name = (settingsData.theme ?? FALLBACK_THEME) as ThemeName
-        setThemeState(prev => {
-          if (prev !== name) {
-            applyThemeToDom(name)
-            return name
-          }
-          return prev
-        })
+        setThemePreferences(previous => ({
+          ...previous,
+          theme: (settingsData.theme ?? previous.theme) as ThemeName,
+        }))
         setKeepOriginalsState(prev => {
           const next = settingsData.keep_originals ?? true
           if (prev !== next) {
@@ -166,7 +202,22 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [status])
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, keepOriginals, setKeepOriginals, dateTimeDisplayFormat, setDateTimeDisplayFormat, customThemes, refreshThemes }}>
+    <ThemeContext.Provider value={{
+      theme: themePreferences.theme,
+      setTheme,
+      themeMode: themePreferences.themeMode,
+      setThemeMode,
+      lightTheme: themePreferences.lightTheme,
+      setLightTheme,
+      darkTheme: themePreferences.darkTheme,
+      setDarkTheme,
+      keepOriginals,
+      setKeepOriginals,
+      dateTimeDisplayFormat,
+      setDateTimeDisplayFormat,
+      customThemes,
+      refreshThemes,
+    }}>
       {children}
     </ThemeContext.Provider>
   )
