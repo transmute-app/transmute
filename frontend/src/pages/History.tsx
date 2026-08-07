@@ -2,9 +2,9 @@ import { lazy, Suspense, useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import FileTable, { FileInfo, ConversionInfo, FileTableRow, JobStatus } from '../components/FileTable'
 import { isPreviewable } from '../components/previewUtils'
-import { authFetch as fetch } from '../utils/api'
+import { authFetch as fetch, getUploadConfig } from '../utils/api'
 import { parseUtcTimestamp } from '../utils/datetime'
-import { downloadBlob } from '../utils/download'
+import { downloadBlob, downloadFile } from '../utils/download'
 import { stripExtension } from '../utils/filename'
 import { cancelJob, deleteJob, listJobs, retryJob, isTerminalJobStatus, type ConversionJob,
   cancelCompressionJob, deleteCompressionJob, listCompressionJobs, retryCompressionJob, type CompressionJob } from '../utils/jobs'
@@ -62,6 +62,7 @@ function History() {
   const [deletingSelected, setDeletingSelected] = useState(false)
   const [downloadingSelected, setDownloadingSelected] = useState(false)
   const [previewConversion, setPreviewConversion] = useState<ConversionRecord | null>(null)
+  const [chunkSize, setChunkSize] = useState(0)
   const { t } = useTranslation()
   const isMountedRef = useRef(true)
 
@@ -102,6 +103,12 @@ function History() {
     }
   }, [refresh])
 
+  useEffect(() => {
+    getUploadConfig()
+      .then(data => setChunkSize(data.max_chunk_size))
+      .catch(() => {})
+  }, [])
+
   // Poll while at least one job is non-terminal.
   const hasActiveJobs = jobs.some(j => !isTerminalJobStatus(j.status))
     || compressionJobs.some(j => !isTerminalJobStatus(j.status))
@@ -114,14 +121,10 @@ function History() {
   const handleDownload = async (conversion: ConversionRecord) => {
     setDownloadingId(conversion.id)
     try {
-      const response = await fetch(`/api/files/${conversion.id}`)
-      if (!response.ok) throw new Error('Download failed')
-
       let filename = stripExtension(conversion.original_filename || 'download')
       filename += conversion.extension || ''
 
-      const blob = await response.blob();
-      downloadBlob(blob, filename);
+      await downloadFile(`/api/files/${conversion.id}`, filename, chunkSize)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Download failed')
     } finally {
@@ -184,12 +187,10 @@ function History() {
   const handleDownloadCompression = async (compression: CompressionRecord) => {
     setDownloadingId(compression.id)
     try {
-      const response = await fetch(`/api/files/${compression.id}`)
-      if (!response.ok) throw new Error('Download failed')
       let filename = stripExtension(compression.original_filename || 'download')
       filename += compression.extension || ''
-      const blob = await response.blob()
-      downloadBlob(blob, filename)
+
+      await downloadFile(`/api/files/${compression.id}`, filename, chunkSize)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Download failed')
     } finally {

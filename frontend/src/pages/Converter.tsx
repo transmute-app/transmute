@@ -5,8 +5,8 @@ import { FaListCheck } from 'react-icons/fa6'
 import { useTranslation } from 'react-i18next'
 import FileTable, { FileInfo, ConversionInfo } from '../components/FileTable'
 import { isPreviewable } from '../components/previewUtils'
-import { authFetch as fetch, apiJson } from '../utils/api'
-import { downloadBlob } from '../utils/download'
+import { authFetch as fetch, apiJson, chunkedUpload, getUploadConfig, ApiError } from '../utils/api'
+import { downloadBlob, downloadFile } from '../utils/download'
 import { stripExtension } from '../utils/filename'
 import {
   createJob,
@@ -187,6 +187,7 @@ function Converter() {
   const [compressibleFormats, setCompressibleFormats] = useState<Set<string>>(new Set())
   const [previewFile, setPreviewFile] = useState<{ id: string; filename: string; mediaType: string } | null>(null)
   const [activeJobCount, setActiveJobCount] = useState(0)
+  const [chunkSize, setChunkSize] = useState(0)
 
   // Keep mutable references so polling can read latest values without
   // forcing the interval effect to restart on every render.
@@ -251,6 +252,9 @@ function Converter() {
         for (const d of data.defaults) map[d.media_format] = d.compression_level
         setDefaultCompressionLevels(map)
       })
+      .catch(() => {})
+    getUploadConfig()
+      .then(data => setChunkSize(data.max_chunk_size))
       .catch(() => {})
   }, [])
 
@@ -338,24 +342,38 @@ function Converter() {
 
     const promises = files.map(async (file) => {
       try {
-        const formData = new FormData()
-        formData.append('file', file)
+        let data: { metadata: FileInfo }
 
-        const response = await fetch('/api/files', {
-          method: 'POST',
-          body: formData,
-        })
-
-        if (!response.ok) {
-          const detail = await getResponseDetail(response)
-          if (response.status === 422) {
-            setIgnoredUploadCount((prev) => prev + 1)
-            return null
+        if (chunkSize > 0 && file.size > chunkSize) {
+          try {
+            data = await chunkedUpload(file, chunkSize) as { metadata: FileInfo }
+          } catch (err) {
+            if (err instanceof ApiError && err.status === 422) {
+              setIgnoredUploadCount((prev) => prev + 1)
+              return null
+            }
+            throw err
           }
-          throw new Error(`Upload failed for ${file.name}: ${detail}`)
-        }
+        } else {
+          const formData = new FormData()
+          formData.append('file', file)
 
-        const data = await response.json()
+          const response = await fetch('/api/files', {
+            method: 'POST',
+            body: formData,
+          })
+
+          if (!response.ok) {
+            const detail = await getResponseDetail(response)
+            if (response.status === 422) {
+              setIgnoredUploadCount((prev) => prev + 1)
+              return null
+            }
+            throw new Error(`Upload failed for ${file.name}: ${detail}`)
+          }
+
+          data = await response.json()
+        }
         const fileInfo: FileInfo = {
           id: data.metadata.id,
           original_filename: data.metadata.original_filename,
@@ -680,14 +698,10 @@ function Converter() {
   const handleDownload = async (conversion: ConversionInfo) => {
     setDownloadingId(conversion.id)
     try {
-      const response = await fetch(`/api/files/${conversion.id}`)
-      if (!response.ok) throw new Error('Download failed')
-
       let filename = stripExtension(conversion.original_filename || 'download')
       filename += conversion.extension || ''
-      
-      const blob = await response.blob();
-      downloadBlob(blob, filename);
+
+      await downloadFile(`/api/files/${conversion.id}`, filename, chunkSize)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Download failed')
     } finally {
