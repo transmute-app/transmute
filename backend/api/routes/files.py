@@ -445,6 +445,14 @@ def get_upload_config():
     return {"max_chunk_size": settings.max_chunk_size}
 
 
+def _validate_upload_id(upload_id: str) -> None:
+    """Validate that upload_id is a valid UUID to prevent directory traversal."""
+    try:
+        uuid.UUID(upload_id)
+    except (ValueError, AttributeError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid upload_id format")
+
+
 def _chunk_upload_dir(upload_id: str) -> Path:
     """Return the per-session directory for chunked upload chunks."""
     return CHUNKS_DIR / upload_id
@@ -517,6 +525,7 @@ async def upload_chunk(
     current_user: dict = Depends(get_current_active_user),
 ):
     """Receive and store a single chunk for a chunked upload session."""
+    _validate_upload_id(upload_id)
     session_dir = _chunk_upload_dir(upload_id)
     if not session_dir.is_dir():
         raise HTTPException(status_code=404, detail="Upload session not found")
@@ -582,6 +591,7 @@ def complete_chunked_upload(
     """Assemble all chunks into the final file, validate, and store metadata."""
     import json
 
+    _validate_upload_id(request.upload_id)
     session_dir = _chunk_upload_dir(request.upload_id)
     if not session_dir.is_dir():
         raise HTTPException(status_code=404, detail="Upload session not found")
