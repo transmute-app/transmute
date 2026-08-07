@@ -173,16 +173,56 @@ class FileDB:
             return None
         return self._refresh_pdf_media_type(dict(row))
 
-    def list_files(self, user_id: str | None = None) -> list[dict]:
-        """Retrieve metadata for files, optionally filtered by user."""
+    def list_files(
+        self,
+        user_id: str | None = None,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> list[dict]:
+        """Retrieve metadata for files, newest-first, optionally filtered by user.
+
+        Args:
+            user_id: Optional user UUID to filter results.
+            limit: Maximum number of rows to return. ``None`` returns all.
+            offset: Number of rows to skip (used for pagination).
+        """
+        params: list = []
+        where_sql = ""
+        if user_id is not None:
+            where_sql = "WHERE user_id = ?"
+            params.append(user_id)
+        limit_sql = ""
+        if limit is not None:
+            limit_sql = " LIMIT ? OFFSET ?"
+            params.extend([int(limit), int(offset)])
         cursor = self.conn.cursor()
         cursor.row_factory = sqlite3.Row
-        if user_id is not None:
-            cursor.execute(f"SELECT * FROM {self.TABLE_NAME} WHERE user_id = ?", (user_id,))  # nosec B608
-        else:
-            cursor.execute(f"SELECT * FROM {self.TABLE_NAME}")  # nosec B608
+        cursor.execute(  # nosec B608
+            f"SELECT * FROM {self.TABLE_NAME} {where_sql} ORDER BY created_at DESC, rowid DESC{limit_sql}",
+            tuple(params),
+        )
         rows = cursor.fetchall()
         return [self._refresh_pdf_media_type(dict(row)) for row in rows]
+
+    def count_files(self, user_id: str | None = None) -> int:
+        """Count files, optionally filtered by user.
+
+        Args:
+            user_id: Optional user UUID to filter results.
+
+        Returns:
+            Total number of matching file rows.
+        """
+        cursor = self.conn.cursor()
+        if user_id is not None:
+            cursor.execute(  # nosec B608
+                f"SELECT COUNT(*) FROM {self.TABLE_NAME} WHERE user_id = ?",
+                (user_id,),
+            )
+        else:
+            cursor.execute(f"SELECT COUNT(*) FROM {self.TABLE_NAME}")  # nosec B608
+        row = cursor.fetchone()
+        return int(row[0]) if row is not None else 0
 
     def delete_file_metadata(self, file_id: str) -> None:
         """Delete the metadata record for a specific file.

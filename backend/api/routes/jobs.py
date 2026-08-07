@@ -4,13 +4,14 @@ These endpoints persist conversion requests as durable jobs that a background
 worker processes asynchronously, in contrast with the legacy synchronous
 ``POST /api/conversions`` endpoint which still runs the conversion inline.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from api.deps import (
     get_conversion_job_db,
     get_current_active_user,
     get_file_db,
 )
+from api.pagination import build_pagination_meta, resolve_pagination
 from api.schemas import (
     ConversionJobCreateRequest,
     ConversionJobListResponse,
@@ -55,12 +56,14 @@ def _serialize_job(job: dict) -> dict:
     responses={
         200: {
             "model": ConversionJobListResponse,
-            "description": "List of conversion jobs newest-first",
+            "description": "List of conversion jobs newest-first (optionally paginated)",
         }
     },
 )
 def list_jobs(
     status_filter: str | None = None,
+    page: int | None = Query(None, ge=1, description="Page number (1-indexed). Omit with page_size for an unpaginated list."),
+    page_size: int | None = Query(None, ge=1, le=100, description="Items per page (max 100). Omit with page for an unpaginated list."),
     job_db: ConversionJobDB = Depends(get_conversion_job_db),
     current_user: dict = Depends(get_current_active_user),
 ):
@@ -68,9 +71,33 @@ def list_jobs(
 
     Optional ``status_filter`` query parameter narrows the result to one of:
     ``queued``, ``running``, ``completed``, ``failed``, ``cancelled``.
+
+    When ``page`` and/or ``page_size`` are provided, results are paginated and
+    a ``pagination`` metadata object is included. Omitting both keeps the
+    legacy unpaginated ``{jobs: [...]}`` response.
     """
-    rows = job_db.list_jobs(user_id=current_user["uuid"], status=status_filter)
-    return {"jobs": [_serialize_job(row) for row in rows]}
+    user_id = current_user["uuid"]
+    paging = resolve_pagination(page, page_size)
+    if paging is None:
+        rows = job_db.list_jobs(user_id=user_id, status=status_filter)
+        return {"jobs": [_serialize_job(row) for row in rows]}
+
+    resolved_page, resolved_size, offset = paging
+    total_items = job_db.count_jobs(user_id=user_id, status=status_filter)
+    rows = job_db.list_jobs(
+        user_id=user_id,
+        status=status_filter,
+        limit=resolved_size,
+        offset=offset,
+    )
+    return {
+        "jobs": [_serialize_job(row) for row in rows],
+        "pagination": build_pagination_meta(
+            total_items=total_items,
+            page=resolved_page,
+            page_size=resolved_size,
+        ),
+    }
 
 
 @router.post(

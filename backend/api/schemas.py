@@ -12,6 +12,15 @@ class ConversionRequest(BaseModel):
 ConversionJobStatus = Literal["queued", "running", "completed", "failed", "cancelled"]
 
 
+class PaginationMeta(BaseModel):
+    total_items: int = Field(..., description="Total number of items across all pages", json_schema_extra={"example": 125})
+    total_pages: int = Field(..., description="Total number of pages", json_schema_extra={"example": 13})
+    current_page: int = Field(..., description="Current page number (1-indexed)", json_schema_extra={"example": 1})
+    page_size: int = Field(..., description="Number of items per page", json_schema_extra={"example": 10})
+    has_next: bool = Field(..., description="Whether a next page exists", json_schema_extra={"example": True})
+    has_prev: bool = Field(..., description="Whether a previous page exists", json_schema_extra={"example": False})
+
+
 class ConversionJobCreateRequest(BaseModel):
     id: str = Field(..., description="ID of the source file to convert", json_schema_extra={"example": "123e4567-e89b-12d3-a456-426614174000"})
     output_format: str = Field(..., description="Target format for conversion", json_schema_extra={"example": "png"})
@@ -41,6 +50,7 @@ class ConversionJobResponse(BaseModel):
 
 class ConversionJobListResponse(BaseModel):
     jobs: list[ConversionJobResponse] = Field(..., description="List of conversion jobs for the current user")
+    pagination: Optional[PaginationMeta] = Field(None, description="Present when page/page_size query params are used")
 
 
 class FileMetadata(BaseModel):
@@ -117,6 +127,7 @@ class ReadinessResponse(BaseModel):
 
 class FileListResponse(BaseModel):
     files: list[FileMetadata] = Field(..., description="List of uploaded files")
+    pagination: Optional[PaginationMeta] = Field(None, description="Present when page/page_size query params are used")
 
 
 class UrlUploadRequest(BaseModel):
@@ -259,6 +270,7 @@ class CompressionJobResponse(BaseModel):
 
 class CompressionJobListResponse(BaseModel):
     jobs: list[CompressionJobResponse] = Field(..., description="List of compression jobs for the current user")
+    pagination: Optional[PaginationMeta] = Field(None, description="Present when page/page_size query params are used")
 
 
 class CompressionItem(BaseModel):

@@ -4,7 +4,7 @@ import hashlib
 import mimetypes
 import logging
 
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks, Query
 from fastapi.responses import FileResponse
 from zipfile import ZipFile
 from pathlib import Path
@@ -12,6 +12,7 @@ from core import get_settings, detect_media_type, sanitize_extension, sanitize_f
 from db import FileDB, ConversionDB, CompressionDB
 from registry import registry as converter_registry
 from api.deps import get_current_active_user, get_file_db, get_conversion_db, get_compression_db
+from api.pagination import build_pagination_meta, resolve_pagination
 from api.schemas import FileListResponse, FileUploadResponse, FileUrlUploadResponse, FileDeleteResponse, ErrorResponse, BatchDownloadRequest, UrlUploadRequest
 from registry import downloader_registry
 from downloaders import DownloadError, YtDlpDownloader
@@ -108,23 +109,47 @@ async def save_file(file: UploadFile, db: FileDB, user_id: str) -> dict:
 
 @router.get(
     "",
-    summary="List all uploaded files",
+    summary="List uploaded files",
     responses={
         200: {
             "model": FileListResponse,
-            "description": "List of all uploaded files"
+            "description": "List of uploaded files (optionally paginated)"
         }
     }
 )
 def list_files(
+    page: int | None = Query(None, ge=1, description="Page number (1-indexed). Omit with page_size for an unpaginated list."),
+    page_size: int | None = Query(None, ge=1, le=100, description="Items per page (max 100). Omit with page for an unpaginated list."),
     file_db: FileDB = Depends(get_file_db),
     current_user: dict = Depends(get_current_active_user),
 ):
-    """List all uploaded files for the current user"""
-    files = file_db.list_files(user_id=current_user["uuid"])
+    """List uploaded files for the current user, newest-first.
+
+    When ``page`` and/or ``page_size`` are provided, results are paginated and
+    a ``pagination`` metadata object is included. Omitting both keeps the
+    legacy unpaginated ``{files: [...]}`` response so existing clients keep working.
+    """
+    user_id = current_user["uuid"]
+    paging = resolve_pagination(page, page_size)
+    if paging is None:
+        files = file_db.list_files(user_id=user_id)
+        for file in files:
+            file["compatible_formats"] = converter_registry.get_compatible_formats_and_qualities(file["media_type"])
+        return {"files": files}
+
+    resolved_page, resolved_size, offset = paging
+    total_items = file_db.count_files(user_id=user_id)
+    files = file_db.list_files(user_id=user_id, limit=resolved_size, offset=offset)
     for file in files:
         file["compatible_formats"] = converter_registry.get_compatible_formats_and_qualities(file["media_type"])
-    return {"files": files}
+    return {
+        "files": files,
+        "pagination": build_pagination_meta(
+            total_items=total_items,
+            page=resolved_page,
+            page_size=resolved_size,
+        ),
+    }
 
 
 @router.post(

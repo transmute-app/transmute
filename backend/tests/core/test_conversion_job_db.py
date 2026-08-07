@@ -100,6 +100,17 @@ def test_count_jobs_filters_by_user_and_status(job_db):
     assert job_db.count_jobs(status="queued") == 2
 
 
+def test_list_jobs_supports_limit_and_offset(job_db):
+    for i in range(5):
+        job_db.insert_job(_make_job(user_id="user-a", source_id=f"f{i}"))
+
+    page = job_db.list_jobs(user_id="user-a", limit=2, offset=0)
+    assert len(page) == 2
+    page2 = job_db.list_jobs(user_id="user-a", limit=2, offset=2)
+    assert len(page2) == 2
+    assert {j["id"] for j in page}.isdisjoint({j["id"] for j in page2})
+
+
 def test_claim_next_queued_job_marks_running(job_db):
     job1 = job_db.insert_job(_make_job(source_id="f1"))
     job2 = job_db.insert_job(_make_job(source_id="f2"))
