@@ -440,7 +440,9 @@ def delete_file(
         }
     },
 )
-def get_upload_config():
+def get_upload_config(
+    current_user: dict = Depends(get_current_active_user),
+):
     """Return upload-related configuration values."""
     return {"max_chunk_size": settings.max_chunk_size}
 
