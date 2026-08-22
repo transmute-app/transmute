@@ -147,3 +147,61 @@ export const publicFetch = (input: RequestInfo | URL, init: RequestInit = {}) =>
 export const apiJson = <T,>(input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) => api.json<T>(input, init, options)
 export const apiBlob = (input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) => api.blob(input, init, options)
 export const apiText = (input: RequestInfo | URL, init: RequestInit = {}, options: FetchOptions = {}) => api.text(input, init, options)
+
+export async function getUploadConfig(): Promise<{ max_chunk_size: number }> {
+  return apiJson<{ max_chunk_size: number }>('/api/files/config/upload')
+}
+
+export interface ChunkedUploadProgress {
+  bytesUploaded: number
+  totalBytes: number
+  chunksUploaded: number
+  totalChunks: number
+}
+
+export async function chunkedUpload(
+  file: File,
+  chunkSize: number,
+  onProgress?: (progress: ChunkedUploadProgress) => void,
+): Promise<unknown> {
+  const totalChunks = Math.ceil(file.size / chunkSize)
+
+  const initResp = await api.json<{ upload_id: string }>('/api/files/upload/init', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      filename: file.name,
+      total_size: file.size,
+      total_chunks: totalChunks,
+    }),
+  })
+  const uploadId = initResp.upload_id
+
+  let bytesUploaded = 0
+
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * chunkSize
+    const end = Math.min(start + chunkSize, file.size)
+    const chunk = file.slice(start, end)
+
+    const params = new URLSearchParams({ upload_id: uploadId, chunk_index: String(i) })
+    const resp = await api.fetch(`/api/files/upload/chunk?${params}`, {
+      method: 'POST',
+      body: chunk,
+      headers: { 'Content-Type': 'application/octet-stream' },
+    })
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => resp.statusText)
+      throw new ApiError(resp.status, text || `Chunk ${i} upload failed`)
+    }
+
+    bytesUploaded += end - start
+    onProgress?.({ bytesUploaded, totalBytes: file.size, chunksUploaded: i + 1, totalChunks })
+  }
+
+  return api.json('/api/files/upload/complete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ upload_id: uploadId }),
+  })
+}

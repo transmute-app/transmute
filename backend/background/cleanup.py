@@ -2,9 +2,12 @@ import logging
 import calendar
 import threading
 import time
+import shutil
+import os
 
+from pathlib import Path
 from db import FileDB, ConversionDB, ConversionRelationsDB, SettingsDB, DefaultFormatsDB, UserDB, ApiKeyDB
-from core import delete_file_and_metadata
+from core import delete_file_and_metadata, get_settings
 
 
 logger = logging.getLogger(__name__)
@@ -65,6 +68,25 @@ def guest_cleanup_logic() -> None:
         logger.info("Deleted expired guest user %s", guest_uuid)
 
 
+def chunk_cleanup_logic() -> None:
+    """Remove stale incomplete chunked upload sessions older than 24 hours."""
+    settings = get_settings()
+    chunks_dir = settings.chunks_dir
+    if not chunks_dir or not chunks_dir.is_dir():
+        return
+
+    cutoff = time.time() - 86400
+    for entry in chunks_dir.iterdir():
+        if not entry.is_dir():
+            continue
+        try:
+            if entry.stat().st_mtime < cutoff:
+                shutil.rmtree(entry, ignore_errors=True)
+                logger.info("Removed stale chunked upload session %s", entry.name)
+        except OSError:
+            logger.exception("Failed to clean up chunk session %s", entry.name)
+
+
 def file_cleanup_task() -> None:
     """Periodically run cleanup logic for uploaded and converted files.
 
@@ -77,6 +99,7 @@ def file_cleanup_task() -> None:
             file_cleanup_logic(FileDB())
             file_cleanup_logic(ConversionDB(), ConversionRelationsDB())
             guest_cleanup_logic()
+            chunk_cleanup_logic()
         except Exception:
             logger.exception("Cleanup error")
         time.sleep(60) # Sleep for 1 minute
