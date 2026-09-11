@@ -48,6 +48,6 @@ toons==0.5.3   # See https://github.com/alesanfra/toons/issues/10
 trimesh==4.12.2
 uvicorn==0.49.0
 vobject==0.9.9
-weasyprint==68.1
+weasyprint==70.0
 xlrd==2.0.2
 yt-dlp==2026.7.4
