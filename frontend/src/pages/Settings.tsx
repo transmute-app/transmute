@@ -960,7 +960,7 @@ function Settings() {
                 </div>
                 <button
                   onClick={() => setAutoDownload(v => !v)}
-                  className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${autoDownload ? 'bg-success' : 'bg-surface-dark border border-surface-light'}`}
+                  className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${autoDownload ? 'bg-primary' : 'bg-surface-dark border border-surface-light'}`}
                 >
                   <span
                     className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${autoDownload ? 'translate-x-6' : 'translate-x-0'}`}
@@ -975,7 +975,7 @@ function Settings() {
                 </div>
                 <button
                   onClick={() => setSaveOriginals(v => !v)}
-                  className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${saveOriginals ? 'bg-success' : 'bg-surface-dark border border-surface-light'}`}
+                  className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${saveOriginals ? 'bg-primary' : 'bg-surface-dark border border-surface-light'}`}
                 >
                   <span
                     className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${saveOriginals ? 'translate-x-6' : 'translate-x-0'}`}
@@ -992,7 +992,7 @@ function Settings() {
                 <button
                   onClick={() => setCleanupEnabled(v => !v)}
                   disabled={!isAdmin}
-                  className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${cleanupEnabled ? 'bg-success' : 'bg-surface-dark border border-surface-light'} ${!isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${cleanupEnabled ? 'bg-primary' : 'bg-surface-dark border border-surface-light'} ${!isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <span
                     className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${cleanupEnabled ? 'translate-x-6' : 'translate-x-0'}`}
@@ -1035,19 +1035,19 @@ function Settings() {
               </div>
               )}
             </div>
-
+            
             {/* Save */}
             <div className="mt-8 flex justify-end">
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-success hover:bg-success-dark text-white font-semibold py-2 px-8 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-primary hover:bg-primary-dark text-white font-semibold py-2 px-8 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? t('account.saving') : saved ? t('settings.saved') : t('settings.saveChanges')}
               </button>
             </div>
           </section>
-
+          
           {/* Data Management */}
           <section className="bg-surface-light rounded-xl p-6">
             <h2 className="text-lg font-semibold text-text mb-4">{t('settings.dataManagement')}</h2>
