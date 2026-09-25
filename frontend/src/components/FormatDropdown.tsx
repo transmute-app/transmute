@@ -183,7 +183,7 @@ function FormatDropdown({
       </div>)}
 
       {/* Options list */}
-      <div ref={listRef} className="max-h-[180px] overflow-y-auto py-1 scrollbar-thin">
+      <div ref={listRef} className="max-h-[14.1rem] overflow-y-auto scrollbar-thin">
         {filtered.length === 0 ? (
           <div className="px-3 py-2 text-xs text-text-muted italic">{t('dropdown.noMatches')}</div>
         ) : (
