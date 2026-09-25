@@ -268,6 +268,7 @@ function FileTable({
                     placeholder={t('table.all')}
                     title={t('table.setFormatAll')}
                     disabled={converting}
+                    hasSearch={true}
                   />
                 ) : null}
               </div>
@@ -411,6 +412,7 @@ function FileTable({
                         formats={Object.keys(row.file.compatible_formats!)}
                         onChange={(format) => row.onFormatChange!(format)}
                         title={`${row.file.media_type} → ${row.selectedFormat || ''}`}
+                        hasSearch={true}
                       />
                     ) : (
                       <span

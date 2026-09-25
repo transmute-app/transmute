@@ -13,6 +13,7 @@ interface FormatDropdownProps {
   triggerClassName?: string
   presorted?: boolean
   descriptions?: Record<string, string>
+  hasSearch?: boolean
 }
 
 function FormatDropdown({
@@ -25,6 +26,7 @@ function FormatDropdown({
   triggerClassName = '',
   presorted = false,
   descriptions,
+  hasSearch=false,
 }: FormatDropdownProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -165,7 +167,7 @@ function FormatDropdown({
       }}
     >
       {/* Search input */}
-      <div className="p-1.5 border-b border-surface-dark">
+      {hasSearch && (<div className="p-1.5 border-b border-surface-dark">
         <div className="flex items-center gap-1.5 bg-surface-dark rounded px-2 py-1">
           <FaSearch className="text-[0.6rem] text-text-muted flex-shrink-0" />
           <input
@@ -178,7 +180,7 @@ function FormatDropdown({
             placeholder={t('dropdown.search')}
           />
         </div>
-      </div>
+      </div>)}
 
       {/* Options list */}
       <div ref={listRef} className="max-h-[180px] overflow-y-auto py-1 scrollbar-thin">

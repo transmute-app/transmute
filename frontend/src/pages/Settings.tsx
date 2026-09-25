@@ -1110,6 +1110,7 @@ function Settings() {
                             onChange={(format) => handleUpdateDefaultFormat(d.input_format, format)}
                             title={`${d.input_format} -> ${d.output_format}`}
                             triggerClassName="w-full max-w-[12rem] border border-surface-light bg-surface-dark px-3 py-1.5 text-text"
+                            hasSearch={true}
                           />
                         </td>
                         <td className="px-2 py-2.5 text-center">
@@ -1139,6 +1140,7 @@ function Settings() {
                   placeholder={t('settings.inputFormatPlaceholder')}
                   title={newInputFormat || 'Select input format'}
                   triggerClassName="min-w-[10rem] border border-surface-light bg-surface-dark px-3 py-2 text-text"
+                  hasSearch={true}
                 />
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -1151,6 +1153,7 @@ function Settings() {
                   title={newOutputFormat || 'Select output format'}
                   disabled={!newInputFormat}
                   triggerClassName="min-w-[10rem] border border-surface-light bg-surface-dark px-3 py-2 text-text"
+                  hasSearch={true}
                 />
                 <button
                   onClick={handleAddDefaultFormat}
@@ -1223,6 +1226,7 @@ function Settings() {
                   placeholder={t('settings.outputFormatPlaceholder')}
                   title={newQualityFormat || 'Select output format'}
                   triggerClassName="min-w-[10rem] border border-surface-light bg-surface-dark px-3 py-2 text-text"
+                  hasSearch={true}
                 />
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -1308,6 +1312,7 @@ function Settings() {
                   placeholder={t('settings.mediaFormatPlaceholder')}
                   title={newCompressionFormat || 'Select media format'}
                   triggerClassName="min-w-[10rem] border border-surface-light bg-surface-dark px-3 py-2 text-text"
+                  hasSearch={true}
                 />
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
