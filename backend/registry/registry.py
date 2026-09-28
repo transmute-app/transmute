@@ -68,7 +68,7 @@ class ConverterRegistry:
                     continue
                 self.register_converter(obj)
     
-    def register_converter(self, converter_class) -> None:
+    def register_converter(self, converter_class: Type[ConverterInterface]) -> None:
         """
         Register a converter class in the registry.
         
@@ -95,7 +95,7 @@ class ConverterRegistry:
                     self.output_format_map[fmt] = []
                 self.output_format_map[fmt].append(converter_class)
     
-    def get_converter(self, name) -> Type[ConverterInterface] | None:
+    def get_converter(self, name: str) -> Type[ConverterInterface] | None:
         """
         Retrieve a converter class by name.
         
@@ -120,7 +120,7 @@ class ConverterRegistry:
             formats.update(getattr(converter_class, 'supported_output_formats', set()))
         return formats
     
-    def get_normalized_format(self, format_type) -> str:
+    def get_normalized_format(self, format_type: str) -> str:
         """
         Get the normalized format name for a given format type, using media type aliases.
         
@@ -142,7 +142,7 @@ class ConverterRegistry:
             return lower.split('/')[0]
         return normalized
     
-    def get_converters_for_input_format(self, format_type) -> list[Type[ConverterInterface]]:
+    def get_converters_for_input_format(self, format_type: str) -> list[Type[ConverterInterface]]:
         """
         Get all converters that support a specific input file format.
         
@@ -155,7 +155,7 @@ class ConverterRegistry:
         normalized_format = self.get_normalized_format(format_type)
         return self.input_format_map.get(normalized_format, [])
     
-    def get_converters_for_output_format(self, format_type) -> list[Type[ConverterInterface]]:
+    def get_converters_for_output_format(self, format_type: str) -> list[Type[ConverterInterface]]:
         """
         Get all converters that support a specific output file format.
         
@@ -168,7 +168,7 @@ class ConverterRegistry:
         normalized_format = self.get_normalized_format(format_type)
         return self.output_format_map.get(normalized_format, [])
     
-    def get_converter_for_conversion(self, input_format, output_format) -> Type[ConverterInterface] | None:
+    def get_converter_for_conversion(self, input_format: str, output_format: str) -> Type[ConverterInterface] | None:
         """
         Find the appropriate converter for a specific conversion.
         
@@ -239,7 +239,7 @@ class ConverterRegistry:
                 result[name] = []
         return result
     
-    def get_compatible_formats_and_qualities(self, format_type) -> dict[str, set[str]]:
+    def get_compatible_formats_and_qualities(self, format_type: str) -> dict[str, set[str]]:
         """
         Get all formats compatible with the given format.
         
@@ -295,7 +295,7 @@ class ConverterRegistry:
         
         for fmt in all_formats:
             normalized_fmt = self.get_normalized_format(fmt)
-            matrix[normalized_fmt] = self.get_compatible_formats_and_qualities(normalized_fmt).keys()
+            matrix[normalized_fmt] = set(self.get_compatible_formats_and_qualities(normalized_fmt).keys())
         
         return matrix
 
