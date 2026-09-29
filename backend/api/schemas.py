@@ -368,6 +368,7 @@ class UserSelfUpdateRequest(BaseModel):
     email: Optional[str] = Field(None, description="Optional email address", json_schema_extra={"example": "alice@example.com"})
     full_name: Optional[str] = Field(None, description="Optional full name", json_schema_extra={"example": "Alice Example"})
     password: Optional[str] = Field(None, min_length=8, description="New plain-text password (min 8 characters)", json_schema_extra={"example": "new secure password"})
+    current_password: Optional[str] = Field(None, description="Existing password, required when setting a new one", json_schema_extra={"example": "current password"})
 
 
 class ApiKeyCreateRequest(BaseModel):

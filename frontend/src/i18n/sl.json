@@ -50,6 +50,7 @@
     "username": "Uporabniško ime",
     "password": "Geslo",
     "newPassword": "Novo geslo",
+    "currentPassword": "Trenutno geslo",
     "email": "E-pošta",
     "fullName": "Polno ime",
     "role": "Vloga"
@@ -64,6 +65,8 @@
     "updateFailed": "Posodobitev računa ni uspela",
     "passwordHint": "Minimum 8 znakov ob spremembi.",
     "passwordPlaceholder": "Pustite prazno, da obdržite trenutno geslo",
+    "currentPasswordPlaceholder": "Vnesite svoje trenutno geslo",
+    "currentPasswordHint": "Obvezno za spremembo gesla.",
     "role": "Vloga:"
   },
   "apiKeys": {

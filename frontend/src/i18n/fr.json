@@ -50,6 +50,7 @@
     "username": "Nom d'utilisateur",
     "password": "Mot de passe",
     "newPassword": "Nouveau mot de passe",
+    "currentPassword": "Mot de passe actuel",
     "email": "Email",
     "fullName": "Nom complet",
     "role": "Rôle"
@@ -64,6 +65,8 @@
     "updateFailed": "La mise à jour du compte a échoué",
     "passwordHint": "Minimum 8 caractères.",
     "passwordPlaceholder": "Laisser vide pour conserver le mot de passe actuel",
+    "currentPasswordPlaceholder": "Saisissez votre mot de passe actuel",
+    "currentPasswordHint": "Requis pour modifier votre mot de passe.",
     "role": "Rôle:"
   },
   "apiKeys": {

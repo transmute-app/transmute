@@ -50,6 +50,7 @@
     "username": "Nome de usuário",
     "password": "Senha",
     "newPassword": "Nova senha",
+    "currentPassword": "Senha atual",
     "email": "E-mail",
     "fullName": "Nome completo",
     "role": "Função"
@@ -64,6 +65,8 @@
     "updateFailed": "Falha ao atualizar conta",
     "passwordHint": "Mínimo de 8 caracteres ao alterar.",
     "passwordPlaceholder": "Deixe em branco para manter a senha atual",
+    "currentPasswordPlaceholder": "Digite sua senha atual",
+    "currentPasswordHint": "Obrigatório para alterar sua senha.",
     "role": "Função:"
   },
   "apiKeys": {

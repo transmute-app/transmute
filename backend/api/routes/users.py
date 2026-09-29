@@ -291,11 +291,16 @@ def update_me(
 ):
     """Allow a user to update their own account except for role changes."""
     payload = updates.model_dump(exclude_none=True)
+    current_password = payload.pop("current_password", None)
     if "username" in payload and db.username_exists(payload["username"], exclude_uuid=current_user["uuid"]):
         raise HTTPException(status_code=409, detail=f"Username '{payload['username']}' already exists")
     if "password" in payload:
         if current_user.get("hashed_password") in _UNUSABLE_PASSWORDS:
             raise HTTPException(status_code=403, detail="Password changes are not allowed for externally managed accounts")
+        # Without this, a stolen bearer token is enough to replace the
+        # password and lock the owner out permanently.
+        if not current_password or not verify_password(current_password, current_user["hashed_password"]):
+            raise HTTPException(status_code=403, detail="Current password is incorrect")
         payload["hashed_password"] = get_password_hash_str(payload.pop("password"))
 
     try:

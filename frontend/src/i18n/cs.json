@@ -50,6 +50,7 @@
     "username": "Uživatelské jméno",
     "password": "Heslo",
     "newPassword": "Nové heslo",
+    "currentPassword": "Současné heslo",
     "email": "E-mail",
     "fullName": "Celé jméno",
     "role": "Role"
@@ -64,6 +65,8 @@
     "updateFailed": "Aktualizace účtu se nezdařila",
     "passwordHint": "Min. 8 znaků při změně hesla.",
     "passwordPlaceholder": "Ponechte prázdné pro zachování stávajícího hesla",
+    "currentPasswordPlaceholder": "Zadejte své současné heslo",
+    "currentPasswordHint": "Vyžadováno pro změnu hesla.",
     "role": "Role:"
   },
   "apiKeys": {

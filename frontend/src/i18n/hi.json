@@ -50,6 +50,7 @@
     "username": "उपयोगकर्ता नाम",
     "password": "***",
     "newPassword": "नया पासवर्ड",
+    "currentPassword": "वर्तमान पासवर्ड",
     "email": "ईमेल",
     "fullName": "पूरा नाम",
     "role": "भूमिका"
@@ -64,6 +65,8 @@
     "updateFailed": "खाता अपडेट करने में विफल",
     "passwordHint": "बदलते समय न्यूनतम 8 अक्षर।",
     "passwordPlaceholder": "वर्तमान पासवर्ड रखने के लिए खाली छोड़ें",
+    "currentPasswordPlaceholder": "अपना वर्तमान पासवर्ड दर्ज करें",
+    "currentPasswordHint": "अपना पासवर्ड बदलने के लिए आवश्यक।",
     "role": "भूमिका:"
   },
   "apiKeys": {

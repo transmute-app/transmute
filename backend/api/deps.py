@@ -162,7 +162,11 @@ def get_current_user_optional(
         if isinstance(subject, str) and subject:
             user = user_db.get_user(subject)
             if user is not None:
-                return user
+                # A disabled account resolves to None, matching the API-key
+                # branch. Callers are bootstrap-aware and read a present user
+                # as authorization, so returning one here would let a revoked
+                # token keep acting on routes that skip the active-user check.
+                return None if user.get("disabled") else user
     except InvalidTokenError:
         logger.debug("Token is not a valid JWT, attempting API key resolution")
 

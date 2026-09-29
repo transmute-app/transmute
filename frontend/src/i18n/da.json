@@ -50,6 +50,7 @@
     "username": "Brugernavn",
     "password": "Adgangskode",
     "newPassword": "Ny adgangskode",
+    "currentPassword": "Nuværende adgangskode",
     "email": "E-mail",
     "fullName": "Fulde navn",
     "role": "Rolle"
@@ -64,6 +65,8 @@
     "updateFailed": "Mislykkedes at opdatere konto",
     "passwordHint": "Min 8 tegn hvis ændret.",
     "passwordPlaceholder": "Lad stå tomt for at beholde den nuværende adgangskode",
+    "currentPasswordPlaceholder": "Indtast din nuværende adgangskode",
+    "currentPasswordHint": "Påkrævet for at ændre din adgangskode.",
     "role": "Rolle:"
   },
   "apiKeys": {

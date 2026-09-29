@@ -50,6 +50,7 @@
     "username": "Username",
     "password": "Password",
     "newPassword": "New password",
+    "currentPassword": "Current password",
     "email": "Email",
     "fullName": "Full name",
     "role": "Role"
@@ -64,6 +65,8 @@
     "updateFailed": "Failed to update account",
     "passwordHint": "Min 8 characters if changing.",
     "passwordPlaceholder": "Leave blank to keep the current password",
+    "currentPasswordPlaceholder": "Enter your current password",
+    "currentPasswordHint": "Required to change your password.",
     "role": "Role:"
   },
   "apiKeys": {

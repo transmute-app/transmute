@@ -50,6 +50,7 @@
     "username": "İstifadəçi adı",
     "password": "Şifrə",
     "newPassword": "Yeni şifrə",
+    "currentPassword": "Cari şifrə",
     "email": "E-poçt",
     "fullName": "Tam adı",
     "role": "Rol"
@@ -64,6 +65,8 @@
     "updateFailed": "Hesabı yeniləmək mümkün olmadı",
     "passwordHint": "Dəyişdirilirsə, min. 8 simvol.",
     "passwordPlaceholder": "Cari şifrəni saxlamaq üçün boş qoyun",
+    "currentPasswordPlaceholder": "Cari şifrənizi daxil edin",
+    "currentPasswordHint": "Şifrənizi dəyişmək üçün tələb olunur.",
     "role": "Rol:"
   },
   "apiKeys": {

@@ -50,6 +50,7 @@
     "username": "Kullanıcı adı",
     "password": "Şifre",
     "newPassword": "Yeni şifre",
+    "currentPassword": "Mevcut şifre",
     "email": "E-posta",
     "fullName": "Tam ad",
     "role": "Rol"
@@ -64,6 +65,8 @@
     "updateFailed": "Hesap güncellenemedi",
     "passwordHint": "Değiştirilecekse en az 8 karakter.",
     "passwordPlaceholder": "Mevcut şifreyi korumak için boş bırakın",
+    "currentPasswordPlaceholder": "Mevcut şifrenizi girin",
+    "currentPasswordHint": "Şifrenizi değiştirmek için gereklidir.",
     "role": "Rol:"
   },
   "apiKeys": {

@@ -50,6 +50,7 @@
     "username": "Nazwa użytkownika",
     "password": "Hasło",
     "newPassword": "Nowe hasło",
+    "currentPassword": "Obecne hasło",
     "email": "Adres e-mail",
     "fullName": "Imię i nazwisko",
     "role": "Rola"
@@ -64,6 +65,8 @@
     "updateFailed": "Nie udało się zaktualizować konta",
     "passwordHint": "Minimum 8 znaków, jeśli zmieniasz.",
     "passwordPlaceholder": "Pozostaw puste, aby zachować obecne hasło",
+    "currentPasswordPlaceholder": "Wprowadź swoje obecne hasło",
+    "currentPasswordHint": "Wymagane do zmiany hasła.",
     "role": "Rola:"
   },
   "apiKeys": {

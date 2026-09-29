@@ -24,6 +24,7 @@ function Account() {
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
+  const [currentPassword, setCurrentPassword] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -109,11 +110,12 @@ function Account() {
           username,
           email: email || null,
           full_name: fullName || null,
-          ...(password ? { password } : {}),
+          ...(password ? { password, current_password: currentPassword } : {}),
         }),
       })
       replaceUser(updatedUser)
       setPassword('')
+      setCurrentPassword('')
       setMessage(t('account.updated'))
     } catch (err) {
       setError(err instanceof Error ? err.message : t('account.updateFailed'))
@@ -157,6 +159,13 @@ function Account() {
               <span className="mb-2 block text-sm font-medium text-text">{t('fields.newPassword')}</span>
               <PasswordField value={password} onChange={event => setPassword(event.target.value)} inputClassName="rounded-lg border border-surface-light bg-surface-dark px-4 py-3 text-sm text-text outline-none focus:ring-2 focus:ring-primary/20" toggleButtonClassName="rounded-lg border border-surface-light bg-surface-dark px-4 text-text-muted transition hover:bg-primary/20 hover:text-primary-light focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder={t('account.passwordPlaceholder')} minLength={8} />
               <p className="mt-1 text-xs text-text-muted">{t('account.passwordHint')}</p>
+            </label>
+            )}
+            {user.has_usable_password && password && (
+            <label className="block md:col-span-2">
+              <span className="mb-2 block text-sm font-medium text-text">{t('fields.currentPassword')}</span>
+              <PasswordField value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} inputClassName="rounded-lg border border-surface-light bg-surface-dark px-4 py-3 text-sm text-text outline-none focus:ring-2 focus:ring-primary/20" toggleButtonClassName="rounded-lg border border-surface-light bg-surface-dark px-4 text-text-muted transition hover:bg-primary/20 hover:text-primary-light focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder={t('account.currentPasswordPlaceholder')} required autoComplete="current-password" />
+              <p className="mt-1 text-xs text-text-muted">{t('account.currentPasswordHint')}</p>
             </label>
             )}
           </div>
