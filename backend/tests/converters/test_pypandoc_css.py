@@ -79,24 +79,34 @@ def test_pdf_css_falls_back_when_custom_missing(tmp_path):
     assert css_path.endswith("default-pdf.css")
 
 
-def test_build_extra_args_includes_css_for_pdf(tmp_path):
-    """The --css flag should be present in extra_args for PDF output."""
+def test_render_pdf_passes_css_as_stylesheet(tmp_path):
+    """PDF styling is applied through WeasyPrint's stylesheets argument.
+
+    PDF is rendered in-process rather than via pandoc's --pdf-engine, so the CSS
+    reaches the renderer directly instead of through a --css flag.
+    """
     converter = _make_converter(output_type="pdf")
     fake = _FakeSettings(
         pdf_custom_css_path=tmp_path / "pdf" / "custom.css",
         tmp_dir=tmp_path / "tmp",
     )
 
-    # Create a minimal fake input file so resource-path resolution works
     fake_input = tmp_path / "input.md"
     fake_input.write_text("# Test")
+    output_file = str(tmp_path / "out.pdf")
 
-    with patch("converters.pypandoc_convert.get_settings", return_value=fake):
-        extra_args = converter._build_extra_args(str(fake_input))
+    fake_html = MagicMock()
+    with patch("converters.pypandoc_convert.get_settings", return_value=fake), \
+            patch("converters.pypandoc_convert.pypandoc.convert_file", return_value="<h1>Test</h1>"), \
+            patch.dict(
+                "sys.modules",
+                {"weasyprint": MagicMock(HTML=MagicMock(return_value=fake_html))},
+            ):
+        converter._render_pdf(str(fake_input), "gfm", output_file)
 
-    css_args = [a for a in extra_args if a.startswith("--css=")]
-    assert len(css_args) == 1
-    assert css_args[0].endswith("default-pdf.css") or "--css=" in css_args[0]
+    stylesheets = fake_html.write_pdf.call_args.kwargs["stylesheets"]
+    assert len(stylesheets) == 1
+    assert stylesheets[0].endswith("default-pdf.css")
 
 
 def test_build_extra_args_no_css_for_non_pdf(tmp_path):

@@ -14,6 +14,8 @@ import lxml.html
 import pypandoc
 from weasyprint import HTML
 
+from .safe_resources import safe_url_fetcher
+
 try:
     import extract_msg
 except ImportError:
@@ -545,6 +547,7 @@ class EmailConverter(ConverterInterface):
                 self.output_type.lower(),
                 format='html',
                 outputfile=output_file,
+                extra_args=['--sandbox'],
             )
         except Exception as exc:
             raise RuntimeError(
@@ -587,7 +590,7 @@ class EmailConverter(ConverterInterface):
                 with open(output_file, 'w', encoding='utf-8') as file_handle:
                     file_handle.write(self._build_json_output(parsed_email))
             elif self.output_type == 'pdf':
-                HTML(string=html_content).write_pdf(output_file)
+                HTML(string=html_content, url_fetcher=safe_url_fetcher).write_pdf(output_file)
             elif self.output_type in self._pandoc_output_formats:
                 self._convert_with_pandoc(html_content, output_file)
             else:

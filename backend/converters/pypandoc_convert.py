@@ -11,6 +11,7 @@ from typing import Optional
 
 from core.settings import get_settings
 from .converter_interface import ConverterInterface
+from .safe_resources import safe_url_fetcher
 
 
 class PyPandocConverter(ConverterInterface):
@@ -58,9 +59,9 @@ class PyPandocConverter(ConverterInterface):
         'opml',
     }
 
-    # PDF engine to use for PDF output (weasyprint is installed as a Python
-    # dependency and its system libraries are included in the Docker image).
-    _pdf_engine = 'weasyprint'
+    # PDF output is rendered in-process by WeasyPrint rather than through
+    # Pandoc's --pdf-engine, so that resource fetching is policed by
+    # safe_url_fetcher instead of WeasyPrint's default fetcher.
 
     # Pandoc reader and writer format identifiers are not fully symmetric.
     # In particular, `plain` is a writer but not a valid reader in Pandoc 3.x,
@@ -199,6 +200,11 @@ class PyPandocConverter(ConverterInterface):
         extra_args: list[str] = []
         input_dir = str(Path(conversion_input_file).resolve().parent)
 
+        # Confine reader/writer IO to files named on the command line. Without this,
+        # include directives in untrusted input (`.. include::`, `#+INCLUDE:`,
+        # `\input{}`) read arbitrary local files into the conversion output.
+        extra_args.append('--sandbox')
+
         # Resolve relative resources such as linked images from the source file's directory.
         extra_args.append(f'--resource-path={input_dir}')
 
@@ -208,19 +214,32 @@ class PyPandocConverter(ConverterInterface):
             extra_args.append('--quiet')
 
         if self.output_type.lower() == 'pdf':
-            extra_args.append(f'--pdf-engine={self._pdf_engine}')
-            if self._pdf_engine == 'weasyprint':
-                extra_args.append('--pdf-engine-opt=--quiet')
-
-            # Apply custom or default CSS for compact PDF styling
-            css_path = self._get_pdf_css_path()
-            if css_path:
-                extra_args.append(f'--css={css_path}')
+            extra_args.append('--standalone')
+            # Inline media from the source container so the renderer never has to
+            # resolve an external reference.
+            extra_args.append('--embed-resources')
 
         if self.output_type.lower() in ('html', 'revealjs', 'slidy', 's5', 'dzslides'):
             extra_args.append('--standalone')
 
         return extra_args
+
+    def _render_pdf(self, conversion_input_file: str, input_pandoc_fmt: str, output_file: str) -> None:
+        """Render PDF via Pandoc-generated HTML and in-process WeasyPrint."""
+        from weasyprint import HTML
+
+        html_content = pypandoc.convert_file(
+            conversion_input_file,
+            'html',
+            format=input_pandoc_fmt,
+            extra_args=self._build_extra_args(conversion_input_file),
+        )
+
+        css_path = self._get_pdf_css_path()
+        HTML(string=html_content, url_fetcher=safe_url_fetcher).write_pdf(
+            output_file,
+            stylesheets=[css_path] if css_path else None,
+        )
 
     def _get_temp_dir(self) -> str:
         return str(get_settings().tmp_dir)
@@ -426,15 +445,17 @@ class PyPandocConverter(ConverterInterface):
             input_pandoc_fmt = self._get_pandoc_input_format(self.input_type)
             output_pandoc_fmt = self._get_pandoc_output_format(self.output_type)
             conversion_input_file, cleanup_paths = self._prepare_input_file()
-            extra_args = self._build_extra_args(conversion_input_file)
 
-            pypandoc.convert_file(
-                conversion_input_file,
-                output_pandoc_fmt,
-                format=input_pandoc_fmt,
-                outputfile=output_file,
-                extra_args=extra_args,
-            )
+            if self.output_type.lower() == 'pdf':
+                self._render_pdf(conversion_input_file, input_pandoc_fmt, output_file)
+            else:
+                pypandoc.convert_file(
+                    conversion_input_file,
+                    output_pandoc_fmt,
+                    format=input_pandoc_fmt,
+                    outputfile=output_file,
+                    extra_args=self._build_extra_args(conversion_input_file),
+                )
 
             if not os.path.exists(output_file):
                 raise RuntimeError(
