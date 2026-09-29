@@ -79,3 +79,31 @@ def test_pandoc_include_directive_cannot_read_local_file(tmp_path):
 
     assert 'TRANSMUTE_SECRET_MARKER' not in output
     assert 'BEFORE' in output
+
+
+def test_markdown_remote_images_are_dropped(tmp_path):
+    """Sandboxed pandoc aborts on unfetchable images, so they must not survive."""
+    converter = _make_converter(tmp_path, input_type='md')
+    content = '# Title\n\n![GitHub Stars](https://img.shields.io/github/stars/x/y?style=flat)\n'
+
+    sanitized = converter._sanitize_markdown_content(content, tmp_path)
+
+    assert 'img.shields.io' not in sanitized
+    assert 'GitHub Stars' in sanitized
+
+
+def test_markdown_local_and_inline_images_are_kept(tmp_path):
+    converter = _make_converter(tmp_path, input_type='md')
+    (tmp_path / 'local.png').write_bytes(b'\x89PNG')
+    content = (
+        '![local](local.png)\n'
+        '![inline](data:image/png;base64,iVBORw0KGgo=)\n'
+        '![missing](absent.png)\n'
+    )
+
+    sanitized = converter._sanitize_markdown_content(content, tmp_path)
+
+    assert '![local](local.png)' in sanitized
+    assert 'data:image/png;base64' in sanitized
+    assert 'absent.png' not in sanitized
+

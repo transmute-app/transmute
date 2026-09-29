@@ -290,6 +290,28 @@ class PyPandocConverter(ConverterInterface):
 
         return re.sub(r'\[\[file:([^\]]+)\]\]', replace_file_link, content)
 
+    def _sanitize_markdown_content(self, content: str, input_dir: Path) -> str:
+        """Drop image references Pandoc cannot resolve under --sandbox.
+
+        Remote images would otherwise abort the whole conversion for writers
+        that embed media (pptx, docx), since the sandbox refuses the fetch.
+        The alt text is kept so the document still reads correctly.
+        """
+        def replace_image(match: re.Match[str]) -> str:
+            alt, target = match.group(1), match.group(2).strip()
+            # Angle-bracket form: ![alt](<path with spaces>)
+            if target.startswith('<') and target.endswith('>'):
+                target = target[1:-1]
+            # Strip an optional title: ![alt](path "title")
+            target = re.split(r'\s+(?=["\'(])', target, maxsplit=1)[0]
+            if not target or target.startswith('data:'):
+                return match.group(0)
+            if self._resource_exists(target, input_dir):
+                return match.group(0)
+            return alt
+
+        return re.sub(r'!\[([^\]]*)\]\(([^)]*)\)', replace_image, content)
+
     def _sanitize_muse_content(self, content: str, input_dir: Path) -> str:
         def replace_link(match: re.Match[str]) -> str:
             target = match.group(1)
@@ -377,7 +399,7 @@ class PyPandocConverter(ConverterInterface):
         if self.input_type.lower() == 'fb2':
             return self._prepare_fb2_input(input_path)
 
-        if self.input_type.lower() not in {'rst', 'org', 'muse'}:
+        if self.input_type.lower() not in {'rst', 'org', 'muse', 'md'}:
             return self.input_file, []
 
         with open(input_path, 'r', encoding='utf-8') as f:
@@ -387,6 +409,8 @@ class PyPandocConverter(ConverterInterface):
             sanitized = self._sanitize_rst_content(content, input_dir)
         elif self.input_type.lower() == 'org':
             sanitized = self._sanitize_org_content(content, input_dir)
+        elif self.input_type.lower() == 'md':
+            sanitized = self._sanitize_markdown_content(content, input_dir)
         else:
             sanitized = self._sanitize_muse_content(content, input_dir)
 
