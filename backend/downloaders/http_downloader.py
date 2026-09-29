@@ -33,8 +33,13 @@ class HttpDownloader(DownloaderInterface):
             normalized = normalized.replace("github.com", "raw.githubusercontent.com", count=1).replace("/blob/", "/", count=1)
         return normalized
 
-    async def validate_public_url(self, url: str) -> None:
-        """Reject URLs that resolve to non-public IP addresses."""
+    async def validate_public_url(self, url: str) -> str:
+        """Resolve a URL's host once and return the address the caller must connect to.
+
+        The returned address is what makes this safe: re-resolving the hostname
+        at connect time would let an attacker-controlled nameserver answer with
+        a public address here and an internal one moments later (DNS rebinding).
+        """
         parsed = urlparse(url)
         if parsed.scheme not in ("http", "https"):
             raise DownloadError("Only HTTP and HTTPS URLs are supported")
@@ -43,11 +48,16 @@ class HttpDownloader(DownloaderInterface):
         if not hostname:
             raise DownloadError("URL must include a hostname")
 
-        for address in await self._resolve_hostname_ips(hostname, parsed.port):
+        addresses = await self._resolve_hostname_ips(hostname, parsed.port)
+        for address in addresses:
             if not _is_public_ip(address):
                 raise DownloadError(
                     f"Refusing to download from non-public address: {hostname}"
                 )
+
+        # Every address passed, so any of them is a safe target; sorting only
+        # keeps the choice deterministic for tests and logs.
+        return sorted(addresses)[0]
 
     async def _resolve_hostname_ips(self, hostname: str, port: int | None) -> set[str]:
         try:
@@ -89,6 +99,23 @@ class HttpDownloader(DownloaderInterface):
             logger.debug("Applying configured domain auth for %s", domain_auth.domain)
         return request_kwargs
 
+    @staticmethod
+    def _pin_to_address(url: str, address: str) -> tuple[str, dict]:
+        """Rewrite a URL to target an already-validated address.
+
+        Returns the connect URL plus the kwargs that keep the request
+        indistinguishable from one aimed at the hostname: the original Host
+        header for routing, and `sni_hostname` so the TLS handshake still
+        presents and verifies the real name rather than the literal IP.
+        """
+        logical = httpx.URL(url)
+        connect_url = logical.copy_with(host=address)
+        extra = {
+            "headers": {"Host": logical.netloc.decode("ascii")},
+            "extensions": {"sni_hostname": logical.host},
+        }
+        return str(connect_url), extra
+
     async def download(self, url: str, dest_dir: Path, filename_stem: str) -> list[DownloadResult]:
         url = self.fix_url(url)
         original_filename = _extract_filename_from_url(url)
@@ -109,14 +136,21 @@ class HttpDownloader(DownloaderInterface):
             async with httpx.AsyncClient(**client_kwargs) as client:
                 current_url = url
                 for _redirect_count in range(MAX_REDIRECTS + 1):
-                    await self.validate_public_url(current_url)
+                    pinned_address = await self.validate_public_url(current_url)
+                    # Domain auth keys off the real hostname, not the pinned IP.
                     request_kwargs = self._request_kwargs(current_url)
-                    async with client.stream("GET", current_url, **request_kwargs) as response:
+                    connect_url, pin_kwargs = self._pin_to_address(current_url, pinned_address)
+                    headers = {**pin_kwargs["headers"], **request_kwargs.pop("headers", {})}
+                    request_kwargs["headers"] = headers
+                    request_kwargs["extensions"] = pin_kwargs["extensions"]
+                    async with client.stream("GET", connect_url, **request_kwargs) as response:
                         if response.status_code in {301, 302, 303, 307, 308}:
                             location = response.headers.get("location")
                             if not location:
                                 raise DownloadError("Failed to download file: redirect missing location header")
-                            current_url = str(response.url.join(location))
+                            # Resolve against the logical URL; response.url is
+                            # the pinned IP and would corrupt relative targets.
+                            current_url = str(httpx.URL(current_url).join(location))
                             continue
 
                         if response.status_code != 200:
