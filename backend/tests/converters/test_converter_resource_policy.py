@@ -16,6 +16,22 @@ from converters.pypandoc_convert import PyPandocConverter
 from converters.safe_resources import safe_url_fetcher, BlockedResourceError
 
 
+def _pandoc_available() -> bool:
+    """pypandoc imports fine without the pandoc binary, so probe for the binary."""
+    try:
+        import pypandoc
+        pypandoc.get_pandoc_path()
+        return True
+    except Exception:
+        return False
+
+
+requires_pandoc = pytest.mark.skipif(
+    not _pandoc_available(),
+    reason="The pandoc binary is not installed.",
+)
+
+
 def _make_converter(tmp_path, input_type='rst', output_type='txt'):
     return PyPandocConverter(
         input_file=str(tmp_path / f'in.{input_type}'),
@@ -60,6 +76,7 @@ def test_renderer_allows_inline_data_uris():
     fetcher.assert_called_once()
 
 
+@requires_pandoc
 def test_pandoc_include_directive_cannot_read_local_file(tmp_path):
     """End-to-end: an include directive must not pull in an unrelated file."""
     pypandoc = pytest.importorskip('pypandoc')
