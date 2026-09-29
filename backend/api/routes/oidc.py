@@ -191,15 +191,27 @@ async def oidc_callback(
         if user["disabled"]:
             raise HTTPException(status_code=403, detail="User account is disabled")
     else:
-        # Try to match by email first (if present and unique)
+        # Only a provider-verified email proves control of the address. Matching
+        # an unverified claim to an existing account lets anyone who can set that
+        # claim at the IdP take over the account (nOAuth).
         email = userinfo.get("email")
-        user = user_db.get_user_by_email(email) if email else None
+        email_verified = _claim_is_true(userinfo.get("email_verified"))
+        trusted_email = email if (email and email_verified) else None
+        user = user_db.get_user_by_email(trusted_email) if trusted_email else None
 
         if user is not None:
             if user["disabled"]:
                 raise HTTPException(status_code=403, detail="User account is disabled")
             # Link this OIDC identity to the existing local account
             identity_db.link_identity(user["uuid"], issuer, subject)
+        elif email and not email_verified and user_db.get_user_by_email(email) is not None:
+            # An account with this address exists, but the provider did not
+            # assert the claim. Refuse rather than silently provisioning a
+            # second account for an address the caller has not proven.
+            raise HTTPException(
+                status_code=403,
+                detail="OIDC provider did not assert a verified email for this account",
+            )
         elif settings.oidc_auto_create_users:
             # Auto-provision a new local account.
             # Mirror the bootstrap rule: the very first user becomes admin.
@@ -209,7 +221,9 @@ async def oidc_callback(
             user = user_db.insert_user({
                 "uuid": str(uuid.uuid4()),
                 "username": username,
-                "email": email,
+                # Storing an unverified address would make it a match target for
+                # a later login, reintroducing the takeover path.
+                "email": trusted_email,
                 "full_name": userinfo.get("name"),
                 "hashed_password": _unusable_password(),
                 "role": role,
@@ -278,6 +292,19 @@ def _unusable_password() -> str:
     but can never validate.
     """
     return "!oidc-no-password"
+
+
+def _claim_is_true(value) -> bool:
+    """Interpret a boolean OIDC claim, failing closed when it is absent.
+
+    Providers are inconsistent about JSON types here, so the string forms some
+    IdPs emit are accepted alongside a real boolean.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() == "true"
+    return False
 
 
 def _coerce_username_claim(value) -> str | None:
