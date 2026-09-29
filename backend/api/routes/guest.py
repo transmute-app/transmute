@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -12,6 +14,29 @@ router = APIRouter(prefix="/guest", tags=["guest"])
 
 _GUEST_COOKIE = "transmute_guest_id"
 _GUEST_LIFETIME_DAYS = 30
+
+
+def _guest_signature(guest_id: str) -> str:
+    secret = get_settings().auth_secret_key.encode("utf-8")
+    return hmac.new(secret, guest_id.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def _sign_guest_id(guest_id: str) -> str:
+    return f"{guest_id}.{_guest_signature(guest_id)}"
+
+
+def _unsign_guest_id(cookie_value: str) -> str | None:
+    """Recover a guest UUID from a cookie this server issued.
+
+    A guest's UUID is a public identifier the admin user list hands out, so it
+    only names the session; the signature is what proves the caller opened it.
+    """
+    guest_id, separator, signature = cookie_value.rpartition(".")
+    if not separator or not guest_id or not signature:
+        return None
+    if not hmac.compare_digest(signature, _guest_signature(guest_id)):
+        return None
+    return guest_id
 
 
 def _serialize_guest(user: dict) -> dict:
@@ -41,7 +66,8 @@ def create_guest_session(
         raise HTTPException(status_code=403, detail="Application must be set up before guest access is available")
 
     # Try to resume an existing guest session from cookie
-    guest_uuid = request.cookies.get(_GUEST_COOKIE)
+    cookie_value = request.cookies.get(_GUEST_COOKIE)
+    guest_uuid = _unsign_guest_id(cookie_value) if cookie_value else None
     if guest_uuid:
         user = user_db.get_user(guest_uuid)
         if user and user.get("is_guest") and not user.get("disabled"):
@@ -80,7 +106,7 @@ def create_guest_session(
 
     response.set_cookie(
         key=_GUEST_COOKIE,
-        value=guest_id,
+        value=_sign_guest_id(guest_id),
         max_age=_GUEST_LIFETIME_DAYS * 24 * 3600,
         httponly=True,
         samesite="strict",
