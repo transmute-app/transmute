@@ -17,8 +17,9 @@ import tr from './tr.json'
 import zhCN from './zh-CN.json'
 import sl from './sl.json'
 import el from './el.json'
+import ko from './ko.json'
 
-export const SUPPORTED_LANGUAGES = ['en', 'az', 'de', 'es', 'pl', 'pt', 'it', 'da', 'fr', 'hi', 'cs', 'tr', 'zh-CN', 'sl', 'el'] as const
+export const SUPPORTED_LANGUAGES = ['en', 'az', 'de', 'es', 'pl', 'pt', 'it', 'da', 'fr', 'hi', 'cs', 'tr', 'zh-CN', 'sl', 'el', 'ko'] as const
 export const LANGUAGE_STORAGE_KEY = 'transmute-language'
 const USER_LANGUAGE_PREFERENCE_KEY = 'transmute-language-user-selected'
 
@@ -69,7 +70,8 @@ i18n
       tr: { translation: tr },
       'zh-CN': { translation: zhCN },
       sl: { translation: sl },
-      el: { translation: el }
+      el: { translation: el },
+      ko: { translation: ko }
     },
     fallbackLng: 'en',
     interpolation: {
