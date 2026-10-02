@@ -4,14 +4,14 @@
     "tagline": "파일을 넣고 형식을 고르면 끝. Transmute가 변환합니다."
   },
   "titles": {
-    "signIn": "Transmute :: 로그인",
-    "converter": "Transmute :: 작업 공간",
-    "files": "Transmute :: 파일",
-    "history": "Transmute :: 작업 내역",
-    "settings": "Transmute :: 설정",
-    "account": "Transmute :: 내 계정",
-    "userManagement": "Transmute :: 사용자 관리",
-    "stats": "Transmute :: 통계"
+    "signIn": "Transmute - 로그인",
+    "converter": "Transmute - 작업 공간",
+    "files": "Transmute - 파일",
+    "history": "Transmute - 작업 내역",
+    "settings": "Transmute - 설정",
+    "account": "Transmute - 내 계정",
+    "userManagement": "Transmute - 사용자 관리",
+    "stats": "Transmute - 통계"
   },
   "nav": {
     "convert": "작업 공간",
