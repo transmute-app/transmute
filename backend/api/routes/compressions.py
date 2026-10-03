@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from registry import compressor_registry
 from core import get_settings, delete_file_and_metadata
-from db import CompressionDB, FileDB, CompressionRelationsDB, SettingsDB, DefaultCompressionLevelsDB
+from db import CompressionDB, CompressionJobDB, FileDB, CompressionRelationsDB, SettingsDB, DefaultCompressionLevelsDB
 from services import CompressionFailedError, run_compression_job
 from api.deps import (
     get_current_active_user,
     get_file_db,
     get_compression_db,
+    get_compression_job_db,
     get_compression_relations_db,
     get_settings_db,
     get_default_compression_levels_db,
@@ -137,6 +138,7 @@ def create_compression(
 def delete_all_compressions(
     compression_db: CompressionDB = Depends(get_compression_db),
     compression_relations_db: CompressionRelationsDB = Depends(get_compression_relations_db),
+    job_db: CompressionJobDB = Depends(get_compression_job_db),
     current_user: dict = Depends(get_current_active_user),
 ):
     """Delete all compressed files and their relations for the current user"""
@@ -144,6 +146,9 @@ def delete_all_compressions(
     for file in compressed_files:
         delete_file_and_metadata(file['id'], compression_db)
         compression_relations_db.delete_relation_by_compressed(file['id'])
+    # Failed and cancelled jobs never produced a compressed file, so deleting
+    # the files above would otherwise leave them on the Jobs page.
+    job_db.delete_terminal_jobs_for_user(current_user["uuid"])
     return {"message": "All compression history deleted successfully"}
 
 

@@ -387,6 +387,24 @@ class ConversionJobDB:
                 )
             return cursor.rowcount > 0
 
+    def delete_terminal_jobs_for_user(self, user_id: str) -> int:
+        """Delete a user's finished jobs, leaving queued and running ones alone.
+
+        Used when clearing conversion history so failed and cancelled jobs are
+        removed alongside the converted files, instead of lingering on the Jobs
+        page with no way to clear them in bulk. Returns the number of rows
+        deleted.
+        """
+        statuses = sorted(TERMINAL_STATUSES)
+        placeholders = ", ".join("?" for _ in statuses)
+        with self.conn:
+            cursor = self.conn.execute(
+                f"DELETE FROM {self.TABLE_NAME} "  # nosec B608
+                f"WHERE user_id = ? AND status IN ({placeholders})",
+                (user_id, *statuses),
+            )
+            return cursor.rowcount
+
     def delete_jobs_for_user(self, user_id: str) -> int:
         with self.conn:
             cursor = self.conn.execute(

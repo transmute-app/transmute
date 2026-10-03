@@ -6,7 +6,12 @@ import shutil
 import os
 
 from pathlib import Path
-from db import FileDB, ConversionDB, ConversionRelationsDB, SettingsDB, DefaultFormatsDB, UserDB, ApiKeyDB
+from db import (
+    FileDB, ConversionDB, ConversionRelationsDB, SettingsDB, DefaultFormatsDB, UserDB, ApiKeyDB,
+    ConversionJobDB, CompressionJobDB,
+)
+# Conversion and compression jobs share the same status vocabulary.
+from db.conversion_job_db import TERMINAL_STATUSES
 from core import delete_file_and_metadata, get_settings
 
 
@@ -39,6 +44,41 @@ def file_cleanup_logic(file_db: FileDB, conversion_relations_db: ConversionRelat
                 if conversion_relations_db:
                     # Additional cleanup logic for conversion relations
                     conversion_relations_db.delete_relation_by_converted(file['id'])
+
+
+def job_cleanup_logic(job_db) -> None:
+    """Delete finished jobs that have exceeded the configured cleanup TTL.
+
+    Job rows outlive the files they produce. A failed or cancelled job never
+    writes an output file, so ``file_cleanup_logic`` has nothing to delete for
+    it and its row would stay on the Jobs page forever; a completed job's row
+    is left orphaned once its converted file expires. Queued and running jobs
+    are owned by the worker and are never touched here.
+
+    Args:
+        job_db: A ``ConversionJobDB`` or ``CompressionJobDB`` instance.
+    """
+    now = time.time()
+    settings_db = SettingsDB()
+    admin_settings = settings_db.get_admin_cleanup_settings()
+    cleanup_enabled = admin_settings["cleanup_enabled"]
+    ttl_minutes = admin_settings["cleanup_ttl_minutes"]
+
+    if not cleanup_enabled:
+        return
+
+    for job in job_db.list_jobs():
+        if job.get("status") not in TERMINAL_STATUSES:
+            continue
+        # Age the job from when it finished, not when it was created, so a job
+        # that waited in the queue still gets the full TTL to be read. Rows
+        # written before completed_at existed fall back to created_at.
+        finished_timestamp = job.get("completed_at") or job.get("created_at")
+        if finished_timestamp:
+            finished_at = calendar.timegm(time.strptime(finished_timestamp, "%Y-%m-%d %H:%M:%S"))
+            if now - finished_at > ttl_minutes * 60:
+                job_db.delete_job(job["id"])
+
 
 def guest_cleanup_logic() -> None:
     """Delete expired guest users and all their associated data."""
@@ -92,12 +132,15 @@ def file_cleanup_task() -> None:
 
     Runs in an infinite loop, invoking file_cleanup_logic for both uploaded
     files (FileDB) and converted files (ConversionDB / ConversionRelationsDB)
-    on each iteration, then sleeps for 60 seconds before repeating.
+    and job_cleanup_logic for conversion and compression jobs on each
+    iteration, then sleeps for 60 seconds before repeating.
     """
     while True:
         try:
             file_cleanup_logic(FileDB())
             file_cleanup_logic(ConversionDB(), ConversionRelationsDB())
+            job_cleanup_logic(ConversionJobDB())
+            job_cleanup_logic(CompressionJobDB())
             guest_cleanup_logic()
             chunk_cleanup_logic()
         except Exception:

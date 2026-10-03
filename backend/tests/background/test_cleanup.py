@@ -9,6 +9,7 @@ from background.cleanup import (
     file_cleanup_logic,
     guest_cleanup_logic,
     chunk_cleanup_logic,
+    job_cleanup_logic,
     file_cleanup_task,
     get_upload_cleanup_thread,
 )
@@ -22,6 +23,22 @@ def _make_file(file_id, created_minutes_ago):
     return {
         "id": file_id,
         "created_at": time.strftime("%Y-%m-%d %H:%M:%S", ts),
+    }
+
+
+def _timestamp(minutes_ago):
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time() - minutes_ago * 60))
+
+
+def _make_job(job_id, status, created_minutes_ago, completed_minutes_ago=None):
+    """Return a fake job row with timestamps in the past."""
+    return {
+        "id": job_id,
+        "status": status,
+        "created_at": _timestamp(created_minutes_ago),
+        "completed_at": (
+            _timestamp(completed_minutes_ago) if completed_minutes_ago is not None else None
+        ),
     }
 
 
@@ -102,6 +119,118 @@ class TestFileCleanupLogic:
         mock_delete.assert_not_called()
 
 
+# ── job_cleanup_logic ───────────────────────────────────────────────
+
+class TestJobCleanupLogic:
+
+    @patch("background.cleanup.SettingsDB")
+    def test_cleanup_disabled_does_nothing(self, mock_settings_cls):
+        mock_settings_cls.return_value.get_admin_cleanup_settings.return_value = {
+            "cleanup_enabled": False,
+            "cleanup_ttl_minutes": 10,
+        }
+        job_db = MagicMock()
+        job_cleanup_logic(job_db)
+        job_db.list_jobs.assert_not_called()
+        job_db.delete_job.assert_not_called()
+
+    @patch("background.cleanup.SettingsDB")
+    def test_deletes_expired_failed_job(self, mock_settings_cls):
+        """A failed job produces no output file, so only this can clear it."""
+        mock_settings_cls.return_value.get_admin_cleanup_settings.return_value = {
+            "cleanup_enabled": True,
+            "cleanup_ttl_minutes": 5,
+        }
+        job_db = MagicMock()
+        job_db.list_jobs.return_value = [
+            _make_job("old-failed", "failed", 10, completed_minutes_ago=10),
+            _make_job("fresh-failed", "failed", 1, completed_minutes_ago=1),
+        ]
+
+        job_cleanup_logic(job_db)
+
+        job_db.delete_job.assert_called_once_with("old-failed")
+
+    @patch("background.cleanup.SettingsDB")
+    def test_deletes_expired_completed_and_cancelled_jobs(self, mock_settings_cls):
+        mock_settings_cls.return_value.get_admin_cleanup_settings.return_value = {
+            "cleanup_enabled": True,
+            "cleanup_ttl_minutes": 5,
+        }
+        job_db = MagicMock()
+        job_db.list_jobs.return_value = [
+            _make_job("old-completed", "completed", 10, completed_minutes_ago=10),
+            _make_job("old-cancelled", "cancelled", 10, completed_minutes_ago=10),
+        ]
+
+        job_cleanup_logic(job_db)
+
+        deleted = {call.args[0] for call in job_db.delete_job.call_args_list}
+        assert deleted == {"old-completed", "old-cancelled"}
+
+    @patch("background.cleanup.SettingsDB")
+    def test_keeps_unfinished_jobs_regardless_of_age(self, mock_settings_cls):
+        """Queued and running jobs belong to the worker, never to cleanup."""
+        mock_settings_cls.return_value.get_admin_cleanup_settings.return_value = {
+            "cleanup_enabled": True,
+            "cleanup_ttl_minutes": 5,
+        }
+        job_db = MagicMock()
+        job_db.list_jobs.return_value = [
+            _make_job("queued-1", "queued", 600),
+            _make_job("running-1", "running", 600),
+        ]
+
+        job_cleanup_logic(job_db)
+
+        job_db.delete_job.assert_not_called()
+
+    @patch("background.cleanup.SettingsDB")
+    def test_ages_terminal_job_from_completion_not_creation(self, mock_settings_cls):
+        """A job that sat in the queue for hours still gets its full TTL."""
+        mock_settings_cls.return_value.get_admin_cleanup_settings.return_value = {
+            "cleanup_enabled": True,
+            "cleanup_ttl_minutes": 5,
+        }
+        job_db = MagicMock()
+        job_db.list_jobs.return_value = [
+            _make_job("slow-queue", "failed", 600, completed_minutes_ago=1),
+        ]
+
+        job_cleanup_logic(job_db)
+
+        job_db.delete_job.assert_not_called()
+
+    @patch("background.cleanup.SettingsDB")
+    def test_falls_back_to_created_at_without_completed_at(self, mock_settings_cls):
+        """Older rows predate completed_at being written."""
+        mock_settings_cls.return_value.get_admin_cleanup_settings.return_value = {
+            "cleanup_enabled": True,
+            "cleanup_ttl_minutes": 5,
+        }
+        job_db = MagicMock()
+        job_db.list_jobs.return_value = [_make_job("legacy", "failed", 10)]
+
+        job_cleanup_logic(job_db)
+
+        job_db.delete_job.assert_called_once_with("legacy")
+
+    @patch("background.cleanup.SettingsDB")
+    def test_skips_job_without_timestamps(self, mock_settings_cls):
+        mock_settings_cls.return_value.get_admin_cleanup_settings.return_value = {
+            "cleanup_enabled": True,
+            "cleanup_ttl_minutes": 5,
+        }
+        job_db = MagicMock()
+        job_db.list_jobs.return_value = [
+            {"id": "no-ts", "status": "failed", "created_at": None, "completed_at": None},
+        ]
+
+        job_cleanup_logic(job_db)
+
+        job_db.delete_job.assert_not_called()
+
+
 # ── guest_cleanup_logic ──────────────────────────────────────────────
 
 class TestGuestCleanupLogic:
@@ -166,31 +295,41 @@ class TestGuestCleanupLogic:
 
 @patch("background.cleanup.time.sleep", side_effect=StopIteration)
 @patch("background.cleanup.guest_cleanup_logic")
+@patch("background.cleanup.job_cleanup_logic")
 @patch("background.cleanup.file_cleanup_logic")
+@patch("background.cleanup.CompressionJobDB")
+@patch("background.cleanup.ConversionJobDB")
 @patch("background.cleanup.ConversionRelationsDB")
 @patch("background.cleanup.ConversionDB")
 @patch("background.cleanup.FileDB")
 def test_cleanup_task_runs_one_iteration(
     mock_file_cls, mock_conv_cls, mock_conv_rel_cls,
-    mock_file_cleanup, mock_guest_cleanup, mock_sleep,
+    mock_conv_job_cls, mock_comp_job_cls,
+    mock_file_cleanup, mock_job_cleanup, mock_guest_cleanup, mock_sleep,
 ):
     with pytest.raises(StopIteration):
         file_cleanup_task()
 
     assert mock_file_cleanup.call_count == 2  # FileDB + ConversionDB
+    # ConversionJobDB + CompressionJobDB
+    assert mock_job_cleanup.call_count == 2
     mock_guest_cleanup.assert_called_once()
     mock_sleep.assert_called_once_with(60)
 
 
 @patch("background.cleanup.time.sleep", side_effect=StopIteration)
 @patch("background.cleanup.guest_cleanup_logic", side_effect=RuntimeError("boom"))
+@patch("background.cleanup.job_cleanup_logic")
 @patch("background.cleanup.file_cleanup_logic")
+@patch("background.cleanup.CompressionJobDB")
+@patch("background.cleanup.ConversionJobDB")
 @patch("background.cleanup.ConversionRelationsDB")
 @patch("background.cleanup.ConversionDB")
 @patch("background.cleanup.FileDB")
 def test_cleanup_task_catches_exceptions(
     mock_file_cls, mock_conv_cls, mock_conv_rel_cls,
-    mock_file_cleanup, mock_guest_cleanup, mock_sleep,
+    mock_conv_job_cls, mock_comp_job_cls,
+    mock_file_cleanup, mock_job_cleanup, mock_guest_cleanup, mock_sleep,
 ):
     """Exceptions inside the loop are caught so the task keeps running."""
     with pytest.raises(StopIteration):

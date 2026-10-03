@@ -4,9 +4,9 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from registry import registry
 from core import get_settings, sanitize_extension, delete_file_and_metadata
-from db import ConversionDB, FileDB, ConversionRelationsDB, SettingsDB, DefaultQualitiesDB
+from db import ConversionDB, ConversionJobDB, FileDB, ConversionRelationsDB, SettingsDB, DefaultQualitiesDB
 from services import ConversionFailedError, run_conversion_job
-from api.deps import get_current_active_user, get_file_db, get_conversion_db, get_conversion_relations_db, get_settings_db, get_default_qualities_db
+from api.deps import get_current_active_user, get_file_db, get_conversion_db, get_conversion_job_db, get_conversion_relations_db, get_settings_db, get_default_qualities_db
 from api.schemas import ConversionRequest, ConversionListResponse, FileMetadata, ErrorResponse, FileDeleteResponse
 
 
@@ -149,6 +149,7 @@ def create_conversion(
 def delete_all_conversions(
     conversion_db: ConversionDB = Depends(get_conversion_db),
     conversion_relations_db: ConversionRelationsDB = Depends(get_conversion_relations_db),
+    job_db: ConversionJobDB = Depends(get_conversion_job_db),
     current_user: dict = Depends(get_current_active_user),
 ):
     """Delete all converted files and their relations for the current user"""
@@ -156,6 +157,9 @@ def delete_all_conversions(
     for file in converted_files:
         delete_file_and_metadata(file['id'], conversion_db)
         conversion_relations_db.delete_relation_by_converted(file['id'])
+    # Failed and cancelled jobs never produced a converted file, so deleting
+    # the files above would otherwise leave them on the Jobs page.
+    job_db.delete_terminal_jobs_for_user(current_user["uuid"])
     return {"message": "All conversion history deleted successfully"}
 
 @router.delete(
