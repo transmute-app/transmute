@@ -8,6 +8,16 @@ export default defineConfig({
   // (resolved via the <base> tag injected by the backend). See index.html.
   base: './',
   plugins: [react()],
+  server: {
+    host: "0.0.0.0", // Exposes Vite to all interfaces (fixes WSL)
+    port: 5173,
+    proxy: {
+      "/api": {
+        target: process.env.BACKEND_URL || "http://localhost:3313",
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     outDir: 'dist',
     rollupOptions: {
