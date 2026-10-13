@@ -5,6 +5,7 @@ the FFmpeg binary is not required, and assertions are made against the command
 FFmpegConverter builds.
 """
 
+import pytest
 from PIL import Image
 
 from converters.ffmpeg_convert import FFmpegConverter
@@ -114,6 +115,55 @@ def test_video_to_audio_has_no_padding_filter(monkeypatch, safe_path_test_settin
     ffmpeg_cmd = calls[-1]
     assert '-vn' in ffmpeg_cmd
     assert _vf_value(ffmpeg_cmd) is None
+
+
+def _convert_and_capture(monkeypatch, safe_path_test_settings, input_type, output_type):
+    input_file = safe_path_test_settings.upload_dir / f"{'d' * 32}.{input_type}"
+    input_file.write_bytes(b"\x00\x00\x00\x14ftypqt  ")
+
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        "converters.ffmpeg_convert.subprocess.run", _fake_run_capturing(calls)
+    )
+
+    converter = FFmpegConverter(
+        input_file=str(input_file),
+        output_dir=str(safe_path_test_settings.output_dir),
+        input_type=input_type,
+        output_type=output_type,
+    )
+    converter.convert()
+    return calls[-1]
+
+
+@pytest.mark.parametrize("output_type", ["mp4", "mov", "m4v"])
+def test_mp4_family_output_uses_fixed_video_track_timescale(
+    monkeypatch, safe_path_test_settings, output_type
+):
+    """MP4/MOV outputs pin a 90 kHz video track timescale (issue #315).
+
+    Without it FFmpeg derives the timescale from the source frame rate, and a
+    VFR source with a long gap between frames overflows the 32-bit sample
+    duration, failing the mux.
+    """
+    ffmpeg_cmd = _convert_and_capture(
+        monkeypatch, safe_path_test_settings, "mkv", output_type
+    )
+
+    assert '-video_track_timescale' in ffmpeg_cmd
+    assert ffmpeg_cmd[ffmpeg_cmd.index('-video_track_timescale') + 1] == '90000'
+
+
+@pytest.mark.parametrize("output_type", ["mkv", "webm", "mp3"])
+def test_non_mp4_family_output_keeps_default_timescale(
+    monkeypatch, safe_path_test_settings, output_type
+):
+    """The timescale option is only valid for the MP4/MOV muxers."""
+    ffmpeg_cmd = _convert_and_capture(
+        monkeypatch, safe_path_test_settings, "mov", output_type
+    )
+
+    assert '-video_track_timescale' not in ffmpeg_cmd
 
 def assert_infinite_loop(cmd):
     """Assert that the command loops infinitely via -plays 0."""

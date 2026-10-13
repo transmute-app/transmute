@@ -122,6 +122,7 @@ class TGSConverter(ConverterInterface):
                     # Ensure even dimensions for yuv420p.
                     '-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2',
                     '-movflags', '+faststart',
+                    *FFmpegConverter.video_track_timescale_args,
                     output_file,
                 ]
                 try:

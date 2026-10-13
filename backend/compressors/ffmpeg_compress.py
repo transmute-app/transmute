@@ -131,6 +131,14 @@ class FFmpegCompressor(CompressorInterface):
     }
     # WebM must use a WebM-compatible codec (VP9 + Opus).
     _vp9_video_formats: set = {'webm'}
+    # MP4/MOV store each video sample's duration as a 32-bit count of track
+    # timescale ticks. FFmpeg derives that timescale from the source frame
+    # rate, which for variable frame rate input (e.g. macOS screen recordings,
+    # which emit no frames while the screen is static) can be a large, odd
+    # value. A long gap between two frames then overflows and muxing fails
+    # with "Not yet implemented in FFmpeg, patches welcome". A fixed 90 kHz
+    # timescale keeps the VFR timing and fits gaps of up to ~6.6 hours.
+    _mov_family_formats: set = {'mp4', 'mov', 'm4v'}
     # MPEG-family containers whose default codecs honor qscale (``-q:v``).
     _qscale_video_formats: set = {
         'flv',
@@ -352,6 +360,8 @@ class FFmpegCompressor(CompressorInterface):
                 '-c:a', 'aac',
                 '-b:a', audio_bitrate,
             ])
+            if fmt in self._mov_family_formats:
+                args.extend(['-video_track_timescale', '90000'])
             return args
 
         if fmt in self._vp9_video_formats:
