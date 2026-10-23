@@ -1,4 +1,4 @@
-Pillow==12.3.0
+Pillow==13.0.0
 PyJWT==2.15.0
 PyMuPDF==1.27.2
 # pyrender pins PyOpenGL==3.1.0; the Docker image force-reinstalls 3.1.7 for the
