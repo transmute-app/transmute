@@ -132,6 +132,12 @@
     "fetchFailed": "Mislykkedes at hente filer",
     "deleteFailed": "Sletning mislykkedes"
   },
+  "pagination": {
+    "label": "Sideinddeling",
+    "previous": "Forrige",
+    "next": "Næste",
+    "pageOf": "Side {{page}} af {{total}}"
+  },
   "history": {
     "title": "Jobs",
     "loading": "Henter konverteringer...",

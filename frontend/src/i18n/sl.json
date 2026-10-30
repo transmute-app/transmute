@@ -149,6 +149,12 @@
     "fetchFailed": "Pridobivanje datotek ni uspelo",
     "deleteFailed": "Brisanje ni uspelo"
   },
+  "pagination": {
+    "label": "Številčenje strani",
+    "previous": "Prejšnja",
+    "next": "Naslednja",
+    "pageOf": "Stran {{page}} od {{total}}"
+  },
   "history": {
     "title": "Opravila",
     "loading": "Nalaganje pretvorb...",

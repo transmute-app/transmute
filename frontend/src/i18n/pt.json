@@ -132,6 +132,12 @@
     "fetchFailed": "Falha ao buscar arquivos",
     "deleteFailed": "Falha ao excluir"
   },
+  "pagination": {
+    "label": "Paginação",
+    "previous": "Anterior",
+    "next": "Próxima",
+    "pageOf": "Página {{page}} de {{total}}"
+  },
   "history": {
     "title": "Tarefas",
     "loading": "Carregando conversões...",

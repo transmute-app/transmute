@@ -132,6 +132,12 @@
     "fetchFailed": "Dateien konnten nicht abgerufen werden",
     "deleteFailed": "Löschen fehlgeschlagen"
   },
+  "pagination": {
+    "label": "Seitennavigation",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "pageOf": "Seite {{page}} von {{total}}"
+  },
   "history": {
     "title": "Jobs",
     "loading": "Konvertierungen werden geladen...",
