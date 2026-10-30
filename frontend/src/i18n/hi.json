@@ -132,6 +132,12 @@
     "fetchFailed": "फ़ाइलें प्राप्त करने में विफल",
     "deleteFailed": "हटाना विफल"
   },
+  "pagination": {
+    "label": "पृष्ठ नेविगेशन",
+    "previous": "पिछला",
+    "next": "अगला",
+    "pageOf": "पृष्ठ {{page}} / {{total}}"
+  },
   "history": {
     "title": "Jobs",
     "loading": "रूपांतरण लोड हो रहे हैं...",

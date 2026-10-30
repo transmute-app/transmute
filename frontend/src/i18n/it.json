@@ -132,6 +132,12 @@
     "fetchFailed": "Impossibile recuperare i file",
     "deleteFailed": "Cancellazione fallita"
   },
+  "pagination": {
+    "label": "Paginazione",
+    "previous": "Precedente",
+    "next": "Successiva",
+    "pageOf": "Pagina {{page}} di {{total}}"
+  },
   "history": {
     "title": "Cronologia",
     "loading": "Caricamento delle conversioni in corso...",

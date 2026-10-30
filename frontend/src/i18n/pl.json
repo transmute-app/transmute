@@ -132,6 +132,12 @@
     "fetchFailed": "Niepowodzenie pobierania plików",
     "deleteFailed": "Niepowodzenie usuwania"
   },
+  "pagination": {
+    "label": "Stronicowanie",
+    "previous": "Poprzednia",
+    "next": "Następna",
+    "pageOf": "Strona {{page}} z {{total}}"
+  },
   "history": {
     "title": "Zadania",
     "loading": "Ładowanie konwersji...",

@@ -11,6 +11,18 @@ parameterized to prevent SQL injection.
 '''
 
 
+# Sort keys accepted by FileDB.list_files, mapped to the ORDER BY expression.
+# Only these fixed strings ever reach the SQL text; a caller-supplied key is
+# looked up here and rejected if it is not a key. Text columns use NOCASE so the
+# order matches the case-insensitive sort the Files table used in the browser.
+FILE_SORT_COLUMNS = {
+    "filename": "original_filename COLLATE NOCASE",
+    "type": "media_type COLLATE NOCASE",
+    "size": "size_bytes",
+    "date": "created_at",
+}
+
+
 class FileDB:
     """Database class for managing file metadata.
 
@@ -173,16 +185,76 @@ class FileDB:
             return None
         return self._refresh_pdf_media_type(dict(row))
 
-    def list_files(self, user_id: str | None = None) -> list[dict]:
-        """Retrieve metadata for files, optionally filtered by user."""
+    def list_files(
+        self,
+        user_id: str | None = None,
+        *,
+        sort_by: str | None = None,
+        order: str = "desc",
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> list[dict]:
+        """Retrieve metadata for files, optionally filtered, sorted and paged.
+
+        With no ``sort_by`` and no ``limit`` this behaves exactly as before: every
+        matching row, in whatever order SQLite returns them.
+
+        Args:
+            user_id: Only return files owned by this user.
+            sort_by: One of ``FILE_SORT_COLUMNS`` (filename, type, size, date).
+            order: ``"asc"`` or ``"desc"``.
+            limit: Maximum number of rows to return (enables paging).
+            offset: Number of rows to skip before the first returned row.
+
+        Paging always uses a deterministic order: ``rowid`` is appended as a
+        tiebreaker, because many files share a ``created_at`` (it only has
+        one-second resolution) and without a tiebreaker SQLite may return tied
+        rows in a different order on each query, so a row could appear on two
+        pages or on none.
+
+        Raises:
+            ValueError: If ``sort_by`` or ``order`` is not an accepted value.
+        """
+        clauses: list[str] = []
+        params: list = []
+        if user_id is not None:
+            clauses.append("user_id = ?")
+            params.append(user_id)
+        where_sql = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+
+        order_sql = ""
+        if sort_by is not None or limit is not None:
+            if order not in ("asc", "desc"):
+                raise ValueError(f"order must be 'asc' or 'desc', got {order!r}")
+            sort_key = sort_by or "date"
+            if sort_key not in FILE_SORT_COLUMNS:
+                raise ValueError(f"sort_by must be one of {sorted(FILE_SORT_COLUMNS)}, got {sort_by!r}")
+            direction = order.upper()
+            order_sql = f" ORDER BY {FILE_SORT_COLUMNS[sort_key]} {direction}, rowid {direction}"
+
+        limit_sql = ""
+        if limit is not None:
+            limit_sql = " LIMIT ? OFFSET ?"
+            params.extend([int(limit), int(offset)])
+
         cursor = self.conn.cursor()
         cursor.row_factory = sqlite3.Row
-        if user_id is not None:
-            cursor.execute(f"SELECT * FROM {self.TABLE_NAME} WHERE user_id = ?", (user_id,))  # nosec B608
-        else:
-            cursor.execute(f"SELECT * FROM {self.TABLE_NAME}")  # nosec B608
+        cursor.execute(
+            f"SELECT * FROM {self.TABLE_NAME}{where_sql}{order_sql}{limit_sql}",  # nosec B608
+            tuple(params),
+        )
         rows = cursor.fetchall()
         return [self._refresh_pdf_media_type(dict(row)) for row in rows]
+
+    def count_files(self, user_id: str | None = None) -> int:
+        """Count files, optionally only those owned by ``user_id``."""
+        cursor = self.conn.cursor()
+        if user_id is not None:
+            cursor.execute(f"SELECT COUNT(*) FROM {self.TABLE_NAME} WHERE user_id = ?", (user_id,))  # nosec B608
+        else:
+            cursor.execute(f"SELECT COUNT(*) FROM {self.TABLE_NAME}")  # nosec B608
+        row = cursor.fetchone()
+        return int(row[0]) if row is not None else 0
 
     def delete_file_metadata(self, file_id: str) -> None:
         """Delete the metadata record for a specific file.
