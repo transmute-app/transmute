@@ -5,7 +5,7 @@ PyMuPDF==1.27.2
 # OSMesa OSMesaCreateContextAttribs symbol (see docker/Dockerfile).
 PyOpenGL==3.1.0
 asn1crypto==1.5.1
-authlib==1.6.12
+authlib==1.9.1
 bcrypt==5.0.0
 brotli==1.2.0
 cairosvg==2.9.0
