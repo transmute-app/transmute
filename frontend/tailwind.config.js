@@ -6,6 +6,15 @@ export default {
   ],
   theme: {
     extend: {
+      keyframes: {
+        shimmer: {
+          '0%': { backgroundPosition: '200% 0' },
+          '100%': { backgroundPosition: '-200% 0' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 1.4s linear infinite',
+      },
       // All colors reference CSS custom properties defined per [data-theme] in
       // index.css. The `<alpha-value>` placeholder lets Tailwind's opacity
       // modifiers work (e.g. bg-primary/20 → rgb(var(--color-primary) / 0.2)).
