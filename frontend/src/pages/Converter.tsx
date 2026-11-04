@@ -104,6 +104,26 @@ function ModeToggle({
   )
 }
 
+function UploadProgressBar({ percent }: { percent: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+        className="h-1.5 w-40 overflow-hidden rounded-full bg-text-muted/30"
+      >
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary via-primary-light to-primary bg-[length:200%_100%] animate-shimmer motion-reduce:animate-none transition-[width] duration-500"
+          style={{ width: `${Math.max(percent, 3)}%` }}
+        />
+      </div>
+      <span className="text-xs tabular-nums">{percent}%</span>
+    </div>
+  )
+}
+
 function UrlUploadPlaceholder({
   value,
   disabled,
@@ -170,6 +190,7 @@ function Converter() {
   const [mode, setMode] = useState<ConversionMode>('convert')
   const [uploading, setUploading] = useState(false)
   const [uploadCount, setUploadCount] = useState(0)
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null)
   const [ignoredUploadCount, setIgnoredUploadCount] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [submittingJobs, setSubmittingJobs] = useState(false)
@@ -339,14 +360,24 @@ function Converter() {
     setError(null)
     setIgnoredUploadCount(0)
     setUploadCount(files.length)
+    setUploadPercent(0)
 
-    const promises = files.map(async (file) => {
+    // Track bytes sent per file so the bar reflects overall progress.
+    const totalBytes = files.reduce((sum, f) => sum + f.size, 0)
+    const sentBytes = new Array<number>(files.length).fill(0)
+    const reportSent = (index: number, bytes: number) => {
+      sentBytes[index] = bytes
+      const sent = sentBytes.reduce((sum, b) => sum + b, 0)
+      setUploadPercent(totalBytes > 0 ? Math.round((sent / totalBytes) * 100) : 100)
+    }
+
+    const promises = files.map(async (file, index) => {
       try {
         let data: { metadata: FileInfo }
 
         if (chunkSize > 0 && file.size > chunkSize) {
           try {
-            data = await chunkedUpload(file, chunkSize) as { metadata: FileInfo }
+            data = await chunkedUpload(file, chunkSize, (p) => reportSent(index, p.bytesUploaded)) as { metadata: FileInfo }
           } catch (err) {
             if (err instanceof ApiError && err.status === 422) {
               setIgnoredUploadCount((prev) => prev + 1)
@@ -373,6 +404,7 @@ function Converter() {
           }
 
           data = await response.json()
+          reportSent(index, file.size)
         }
         const fileInfo: FileInfo = {
           id: data.metadata.id,
@@ -412,6 +444,7 @@ function Converter() {
 
     setUploading(false)
     setUploadCount(0)
+    setUploadPercent(null)
   }
 
   const processUrlUpload = async () => {
@@ -1103,6 +1136,7 @@ function Converter() {
                 <span className="text-sm font-medium">
                   {uploading ? t('converter.uploading', { count: uploadCount }) : t('converter.dropFiles')}
                 </span>
+                {uploading && uploadPercent !== null && <UploadProgressBar percent={uploadPercent} />}
                 <span className="text-xs opacity-60">{t('converter.clickToBrowse')}</span>
                 <HotkeyHint label={hotkeyLabels.open} />
               </div>
@@ -1172,6 +1206,7 @@ function Converter() {
                       ? t('converter.uploading', { count: uploadCount })
                       : t('converter.dropOrClick')}
                   </span>
+                  {uploading && uploadPercent !== null && <UploadProgressBar percent={uploadPercent} />}
                   <HotkeyHint label={hotkeyLabels.open} />
                 </div>
               </div>

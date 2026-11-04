@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { I18nextProvider } from 'react-i18next'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -193,6 +193,19 @@ describe('Converter drop-zone interactions', () => {
 
       expect(fileUploadCount()).toBe(2)
       resolveUpload()
+    })
+
+    it('shows an upload progress bar while a file is uploading and removes it afterwards', async () => {
+      const resolveUpload = stallFileUpload()
+      renderConverter()
+
+      pasteFiles([new File(['first'], 'first.txt', { type: 'text/plain' })])
+
+      const bar = await screen.findByRole('progressbar')
+      expect(bar.getAttribute('aria-valuenow')).toBe('0')
+
+      resolveUpload()
+      await waitFor(() => expect(screen.queryByRole('progressbar')).toBeNull())
     })
   })
 
