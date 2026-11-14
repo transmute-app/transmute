@@ -176,8 +176,8 @@ class FFmpegCompressor(CompressorInterface):
     ffmpeg_path = ffmpeg_paths.get(sys.platform, 'ffmpeg')
     ffprobe_path = ffprobe_paths.get(sys.platform, 'ffprobe')
     min_timeout_seconds = 30
-    timeout_seconds_per_mb = 2
-    max_timeout_seconds = 3600
+    timeout_seconds_per_mb = 20
+    max_timeout_seconds = 86400 # 24h
 
     @classmethod
     def can_register(cls) -> bool:
@@ -280,7 +280,8 @@ class FFmpegCompressor(CompressorInterface):
             return 1.0
 
         baseline_pixels = 1280 * 720
-        return min(max(1.0, math.sqrt(max_pixels / baseline_pixels)), 3.0)
+        pixel_ratio = max_pixels / baseline_pixels
+        return min(max(1.0, pixel_ratio ** 0.85), 12.0)
 
     def get_media_based_timeout_seconds(self) -> int | None:
         """Estimate timeout from media duration and stream characteristics."""
@@ -298,10 +299,10 @@ class FFmpegCompressor(CompressorInterface):
         )
 
         if not has_video_stream:
-            seconds_per_second = 0.4
+            seconds_per_second = 0.8
         else:
             # Re-encoding video is the most expensive case; scale by resolution.
-            seconds_per_second = 1.0 * self.get_video_resolution_factor(probe_data)
+            seconds_per_second = 1.5 * self.get_video_resolution_factor(probe_data)
 
         timeout_seconds = self.min_timeout_seconds + math.ceil(duration_seconds * seconds_per_second)
         return min(timeout_seconds, self.max_timeout_seconds)
