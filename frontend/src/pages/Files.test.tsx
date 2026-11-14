@@ -156,6 +156,42 @@ describe('Files page pagination', () => {
     expect(screen.queryByRole('button', { name: /delete 1 file/i })).not.toBeInTheDocument()
   })
 
+  it.each([true, false])('keeps previous-page actions unavailable until matching rows load (success: %s)', async (success) => {
+    let resolveNext!: (response: Response) => void
+    fetchSpy = vi.spyOn(window, 'fetch').mockImplementation(async (input) => {
+      const page = Number(urlOf(input).searchParams.get('page'))
+      if (page === 1) return pageResponse([makeFile(1)], 1, 2, 21)
+      return new Promise<Response>(resolve => { resolveNext = resolve })
+    })
+    renderFiles()
+    await screen.findByText('file-1.png')
+
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Select' })).not.toBeInTheDocument()
+    expect(screen.queryByTitle('Delete')).not.toBeInTheDocument()
+
+    resolveNext(success
+      ? pageResponse([makeFile(2)], 2, 2, 21)
+      : new Response('', { status: 500 }))
+    if (success) {
+      await screen.findByText('file-2.png')
+      expect(screen.getByRole('button', { name: 'Select' })).toBeEnabled()
+      expect(screen.queryByRole('button', { name: /delete 1 file/i })).not.toBeInTheDocument()
+    } else {
+      await screen.findByText('Failed to fetch files')
+      expect(screen.queryByRole('button', { name: 'Select' })).not.toBeInTheDocument()
+      expect(screen.queryByTitle('Delete')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /next/i })).toBeEnabled()
+
+      fireEvent.click(screen.getByRole('button', { name: /next/i }))
+      resolveNext(pageResponse([makeFile(2)], 2, 2, 21))
+      await screen.findByText('file-2.png')
+      expect(screen.queryByText('Failed to fetch files')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Select' })).toBeEnabled()
+    }
+  })
+
   it('steps back a page when deleting the last file on the last page', async () => {
     // Page 2 holds one file. Once it is deleted the server has only one page.
     let deleted = false

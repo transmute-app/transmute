@@ -29,6 +29,7 @@ function Files() {
   const [reloadCount, setReloadCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [fetching, setFetching] = useState(false)
+  const [loadedQuery, setLoadedQuery] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -36,6 +37,13 @@ function Files() {
   const [previewFile, setPreviewFile] = useState<FileInfo | null>(null)
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const query = new URLSearchParams({
+    page: String(page),
+    limit: String(PAGE_SIZE),
+    sort: sortColumn,
+    order: sortDirection,
+  }).toString()
+  const canActOnRows = !fetching && loadedQuery === query
 
   useEffect(() => {
     // Ignore the response if a newer request has started (quick clicks on Next).
@@ -43,24 +51,22 @@ function Files() {
     const fetchFiles = async () => {
       setFetching(true)
       try {
-        const params = new URLSearchParams({
-          page: String(page),
-          limit: String(PAGE_SIZE),
-          sort: sortColumn,
-          order: sortDirection,
-        })
-        const response = await fetch(`/api/files?${params}`)
+        const response = await fetch(`/api/files?${query}`)
         if (!response.ok) throw new Error(t('files.fetchFailed'))
         const data = await response.json()
         if (cancelled) return
         const info: PaginationInfo = data.pagination
         // This page no longer exists (its files were deleted): step back to the last page.
         if (data.files.length === 0 && page > 1) {
-          setPage(Math.max(1, info.total_pages))
+          setPage(Math.min(page - 1, Math.max(1, info.total_pages)))
           return
         }
-        setFiles(data.files)
+        const nextFiles: FileInfo[] = data.files
+        const visibleIds = new Set(nextFiles.map(file => file.id))
+        setFiles(nextFiles)
+        setSelectedIds(previous => new Set([...previous].filter(id => visibleIds.has(id))))
         setPagination(info)
+        setLoadedQuery(query)
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : t('files.loadFailed'))
       } finally {
@@ -74,7 +80,7 @@ function Files() {
     return () => {
       cancelled = true
     }
-  }, [page, sortColumn, sortDirection, reloadCount, t])
+  }, [page, query, reloadCount, t])
 
   const reload = () => setReloadCount(count => count + 1)
 
@@ -83,7 +89,11 @@ function Files() {
   const goToPage = (nextPage: number) => {
     setError(null)
     setSelectedIds(new Set())
-    setPage(nextPage)
+    if (nextPage === page) {
+      reload()
+    } else {
+      setPage(nextPage)
+    }
   }
 
   const handleSortChange = (column: SortColumn, direction: SortDirection) => {
@@ -134,7 +144,7 @@ function Files() {
   }
 
   const handleDeleteSelected = async () => {
-    if (selectedIds.size === 0) return
+    if (!canActOnRows || selectedIds.size === 0) return
     
     setDeletingSelected(true)
     setError(null)
@@ -166,6 +176,7 @@ function Files() {
   }
 
   const handleBringToConverter = () => {
+    if (!canActOnRows) return
     const selectedFiles = files.filter(f => selectedIds.has(f.id))
     navigate('/', { state: { files: selectedFiles } })
   }
@@ -180,13 +191,14 @@ function Files() {
               <>
                 <button
                   onClick={handleBringToConverter}
+                  disabled={!canActOnRows}
                   className="bg-success hover:bg-success-dark text-white font-semibold py-2 px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg"
                 >
                   {t('files.convertSelected', { count: selectedIds.size })}
                 </button>
                 <button
                   onClick={handleDeleteSelected}
-                  disabled={deletingSelected}
+                  disabled={!canActOnRows || deletingSelected}
                   className="bg-primary/20 hover:bg-primary/40 text-primary-light font-semibold py-2 px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {deletingSelected ? t('files.deleting') : t('files.deleteSelected', { count: selectedIds.size })}
@@ -215,26 +227,26 @@ function Files() {
             rows={files.map(file => ({
               id: file.id,
               file,
-              onDelete: () => handleDelete(file.id),
-              onPreview: isPreviewable(file.media_type) ? () => setPreviewFile(file) : undefined,
+              onDelete: canActOnRows ? () => handleDelete(file.id) : undefined,
+              onPreview: canActOnRows && isPreviewable(file.media_type) ? () => setPreviewFile(file) : undefined,
               isDeleting: deletingId === file.id,
             }))}
             isPending={true}
             showCheckbox={true}
             selectedIds={selectedIds}
-            onToggleSelect={toggleSelection}
-            onToggleSelectAll={toggleSelectAll}
+            onToggleSelect={canActOnRows ? toggleSelection : undefined}
+            onToggleSelectAll={canActOnRows ? toggleSelectAll : undefined}
             sortColumn={sortColumn}
             sortDirection={sortDirection}
             onSortChange={handleSortChange}
-            className={fetching ? 'opacity-60' : undefined}
+            className={canActOnRows ? undefined : 'opacity-60'}
           />
         )}
 
-        {!loading && files.length > 0 && (
+        {pagination && (
           <Pagination
-            page={page}
-            totalPages={pagination?.total_pages ?? 1}
+            page={pagination.current_page}
+            totalPages={pagination.total_pages}
             onPageChange={goToPage}
             disabled={fetching}
           />

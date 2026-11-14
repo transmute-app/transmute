@@ -239,12 +239,27 @@ class FileDB:
 
         cursor = self.conn.cursor()
         cursor.row_factory = sqlite3.Row
+        if sort_by == "type":
+            # Refresh all matching PDFs before ORDER BY so a subtype update
+            # cannot move a file across page boundaries as it is returned.
+            pdf_filter = "(LOWER(extension) = '.pdf' OR media_type LIKE 'pdf%')"
+            pdf_where = f"{where_sql} AND {pdf_filter}" if where_sql else f" WHERE {pdf_filter}"
+            user_params = (user_id,) if user_id is not None else ()
+            cursor.execute(
+                f"SELECT id, storage_path, extension, media_type FROM {self.TABLE_NAME}{pdf_where}",  # nosec B608
+                user_params,
+            )
+            for row in cursor.fetchall():
+                self._refresh_pdf_media_type(dict(row))
+
         cursor.execute(
             f"SELECT * FROM {self.TABLE_NAME}{where_sql}{order_sql}{limit_sql}",  # nosec B608
             tuple(params),
         )
-        rows = cursor.fetchall()
-        return [self._refresh_pdf_media_type(dict(row)) for row in rows]
+        rows = [dict(row) for row in cursor.fetchall()]
+        if sort_by == "type":
+            return rows
+        return [self._refresh_pdf_media_type(row) for row in rows]
 
     def count_files(self, user_id: str | None = None) -> int:
         """Count files, optionally only those owned by ``user_id``."""

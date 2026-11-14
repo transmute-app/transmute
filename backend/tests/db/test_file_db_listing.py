@@ -18,11 +18,11 @@ def db(monkeypatch):
     database.close()
 
 
-def _add(db, name, *, size=1, media_type="png", user=USER, created_at=None):
+def _add(db, name, *, size=1, media_type="png", user=USER, created_at=None, storage_path=None):
     file_id = str(uuid.uuid4())
     db.insert_file_metadata({
         "id": file_id,
-        "storage_path": f"/data/uploads/{file_id}",
+        "storage_path": str(storage_path) if storage_path else f"/data/uploads/{file_id}",
         "original_filename": name,
         "media_type": media_type,
         "extension": ".bin",
@@ -135,6 +135,24 @@ class TestPaging:
             seen.extend(r["id"] for r in page)
         assert len(seen) == 11
         assert set(seen) == expected
+
+    def test_type_paging_refreshes_older_pdf_subtypes_before_sorting(self, db, pytestconfig):
+        pdfa = pytestconfig.rootpath.parent / "assets" / "samples" / "pdfa.pdf"
+        legacy = _add(db, "legacy.pdf", media_type="pdf", storage_path=pdfa)
+        plain = _add(db, "plain.pdf", media_type="pdf")
+        current = _add(db, "current.pdf", media_type="pdf/a", storage_path=pdfa)
+        other = _add(db, "other.pdf", media_type="pdf", user=OTHER, storage_path=pdfa)
+
+        files = []
+        for offset in range(3):
+            files.extend(db.list_files(user_id=USER, sort_by="type", order="asc", limit=1, offset=offset))
+
+        assert [(file["id"], file["media_type"]) for file in files] == [
+            (plain, "pdf"), (legacy, "pdf/a"), (current, "pdf/a"),
+        ]
+        assert db.conn.execute(
+            f"SELECT media_type FROM {db.TABLE_NAME} WHERE id = ?", (other,),
+        ).fetchone() == ("pdf",)
 
     def test_tied_rows_have_a_stable_order_across_calls(self, db):
         for _ in range(6):
