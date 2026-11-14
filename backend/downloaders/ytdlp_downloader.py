@@ -16,6 +16,28 @@ from .downloader_interface import DownloaderInterface, DownloadResult, DownloadE
 logger = logging.getLogger(__name__)
 
 
+class _YtDlpLogger:
+    """Keep the last download error while allowing playlist entries to fail."""
+
+    def __init__(self) -> None:
+        self.last_error: str | None = None
+
+    def debug(self, message: str) -> None:
+        logger.debug("%s", message)
+
+    def warning(self, message: str) -> None:
+        logger.warning("%s", message)
+
+    def error(self, message: str) -> None:
+        self.last_error = message
+        logger.warning("%s", message)
+
+    def failure_message(self, fallback: str) -> str:
+        if self.last_error:
+            return f"Failed to download from supported site: {self.last_error}"
+        return fallback
+
+
 @lru_cache(maxsize=1)
 def _site_specific_extractors() -> tuple[object, ...]:
     """Return yt-dlp extractors, excluding the generic catch-all extractor."""
@@ -42,6 +64,7 @@ class YtDlpDownloader(DownloaderInterface):
     async def download(self, url: str, dest_dir: Path, filename_stem: str) -> list[DownloadResult]:
         os.makedirs(dest_dir, exist_ok=True)
         download_status = {"status": "unknown"}
+        download_logger = _YtDlpLogger()
 
         # Only treat the URL as a playlist when the user actually pasted a
         # playlist-style URL. A regular watch URL that happens to carry a
@@ -70,6 +93,11 @@ class YtDlpDownloader(DownloaderInterface):
             "no_warnings": True,
             "noprogress": True,
             "progress_hooks": [_record_download_status],
+            "logger": download_logger,
+            # The Python API does not apply yt-dlp's CLI retry defaults.
+            "retries": 10,
+            "extractor_retries": 3,
+            "fragment_retries": 10,
             # Prefer merged mp4+m4a for video sources, fall back to the best
             # available single-file video format, and finally to bestaudio for
             # audio-only sources (e.g. YouTube Music, SoundCloud, Bandcamp).
@@ -92,7 +120,7 @@ class YtDlpDownloader(DownloaderInterface):
 
         if info is None:
             shutil.rmtree(staging_dir, ignore_errors=True)
-            raise DownloadError("yt-dlp returned no info for the given URL")
+            raise DownloadError(download_logger.failure_message("yt-dlp returned no info for the given URL"))
 
         is_playlist = info.get("_type") == "playlist" or "entries" in info
         raw_entries = info.get("entries") if is_playlist else [info]
@@ -100,7 +128,7 @@ class YtDlpDownloader(DownloaderInterface):
 
         if not entries:
             shutil.rmtree(staging_dir, ignore_errors=True)
-            raise DownloadError("yt-dlp completed but no files were downloaded")
+            raise DownloadError(download_logger.failure_message("yt-dlp completed but no files were downloaded"))
 
         extractor_key = info.get("extractor_key", "unknown")
         results: list[DownloadResult] = []
@@ -151,7 +179,7 @@ class YtDlpDownloader(DownloaderInterface):
         shutil.rmtree(staging_dir, ignore_errors=True)
 
         if not results:
-            raise DownloadError("yt-dlp completed but no valid output files were found")
+            raise DownloadError(download_logger.failure_message("yt-dlp completed but no valid output files were found"))
 
         logger.info(
             "yt-dlp download: url=%s status=%s extractor=%s files=%d",
