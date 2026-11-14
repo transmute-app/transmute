@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { I18nextProvider } from 'react-i18next'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import Converter from './Converter'
+import * as api from '../utils/api'
 
 function renderConverter() {
   return render(
@@ -127,7 +128,7 @@ describe('Converter drop-zone interactions', () => {
     })
   })
 
-  afterEach(() => { fetchSpy.mockRestore() })
+  afterEach(() => { vi.restoreAllMocks() })
 
   const fileUploadCount = () =>
     fetchSpy.mock.calls.filter(([input]: [RequestInfo | URL]) => urlMatchesPath(input, '/api/files')).length
@@ -193,6 +194,101 @@ describe('Converter drop-zone interactions', () => {
 
       expect(fileUploadCount()).toBe(2)
       resolveUpload()
+    })
+
+    it('shows an upload progress bar while a file is uploading and removes it afterwards', async () => {
+      const resolveUpload = stallFileUpload()
+      renderConverter()
+
+      pasteFiles([new File(['first'], 'first.txt', { type: 'text/plain' })])
+
+      const bar = await screen.findByRole('progressbar')
+      expect(bar.getAttribute('aria-valuenow')).toBe('0')
+
+      resolveUpload()
+      await waitFor(() => expect(screen.queryByRole('progressbar')).toBeNull())
+    })
+
+    it.each([0, 1])('aggregates overlapping chunked uploads when batch %i finishes first', async (firstToFinish) => {
+      vi.spyOn(api, 'getUploadConfig').mockResolvedValue({ max_chunk_size: 2 })
+      const uploads: {
+        report: (bytes: number) => void
+        finish: () => void
+      }[] = []
+      vi.spyOn(api, 'chunkedUpload').mockImplementation((file, chunkSize, onProgress) =>
+        new Promise((resolve) => {
+          uploads.push({
+            report: (bytes) => onProgress?.({
+              bytesUploaded: bytes,
+              totalBytes: file.size,
+              chunksUploaded: bytes / chunkSize,
+              totalChunks: Math.ceil(file.size / chunkSize),
+            }),
+            finish: () => resolve(makeUploadResponse(file.name, file.name)),
+          })
+        }),
+      )
+      await act(async () => { renderConverter() })
+      const percent = () => screen.getByRole('progressbar').getAttribute('aria-valuenow')
+
+      pasteFiles([new File(['1234'], 'first.txt')])
+      act(() => uploads[0].report(2))
+      expect(percent()).toBe('50')
+
+      pasteFiles([new File(['123456789012'], 'second.txt')])
+      expect(percent()).toBe('13')
+      expect(screen.getByText('Uploading 2 files...')).toBeTruthy()
+      act(() => uploads[1].report(6))
+      expect(percent()).toBe('50')
+
+      await act(async () => {
+        uploads[firstToFinish].report(firstToFinish === 0 ? 4 : 12)
+        uploads[firstToFinish].finish()
+      })
+      expect(percent()).toBe(firstToFinish === 0 ? '63' : '88')
+      expect(screen.getByText('Uploading 1 file...')).toBeTruthy()
+      expect(findFileInput().disabled).toBe(true)
+
+      const remaining = 1 - firstToFinish
+      act(() => uploads[remaining].report(remaining === 0 ? 4 : 12))
+      expect(percent()).toBe('100')
+      await act(async () => { uploads[remaining].finish() })
+      expect(screen.queryByRole('progressbar')).toBeNull()
+      expect(findFileInput().disabled).toBe(false)
+
+      // A later upload starts with fresh totals, not the previous session's bytes.
+      pasteFiles([new File(['1234'], 'third.txt')])
+      expect(percent()).toBe('0')
+      act(() => uploads[2].report(2))
+      expect(percent()).toBe('50')
+      await act(async () => { uploads[2].finish() })
+      expect(screen.queryByRole('progressbar')).toBeNull()
+    })
+
+    it('keeps another upload visible when an overlapping batch fails', async () => {
+      const responses: ((response: Response) => void)[] = []
+      fetchSpy.mockImplementation(async (input: RequestInfo | URL) => {
+        if (urlMatchesPath(input, '/api/files')) {
+          return new Promise<Response>((resolve) => { responses.push(resolve) })
+        }
+        return defaultFetchResponse(urlFromFetchInput(input)) ?? new Response(null, { status: 404 })
+      })
+      renderConverter()
+      pasteFiles([new File(['first'], 'first.txt')])
+      pasteFiles([new File(['second'], 'second.txt')])
+
+      await act(async () => {
+        responses[0](new Response(JSON.stringify({ detail: 'Upload failed' }), { status: 500 }))
+      })
+      expect(screen.getByRole('progressbar')).toBeTruthy()
+      expect(screen.getByText('Uploading 1 file...')).toBeTruthy()
+      expect(findFileInput().disabled).toBe(true)
+
+      await act(async () => {
+        responses[1](new Response(JSON.stringify(makeUploadResponse('second.txt', 'file-2')), { status: 200 }))
+      })
+      expect(screen.queryByRole('progressbar')).toBeNull()
+      expect(findFileInput().disabled).toBe(false)
     })
   })
 
