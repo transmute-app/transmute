@@ -132,6 +132,12 @@
     "fetchFailed": "파일을 가져오지 못했습니다",
     "deleteFailed": "삭제에 실패했습니다"
   },
+  "pagination": {
+    "label": "페이지 이동",
+    "previous": "이전",
+    "next": "다음",
+    "pageOf": "{{total}}페이지 중 {{page}}페이지"
+  },
   "history": {
     "title": "작업 내역",
     "loading": "작업 내역 불러오는 중…",

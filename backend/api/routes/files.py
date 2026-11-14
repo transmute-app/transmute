@@ -5,7 +5,9 @@ import hashlib
 import mimetypes
 import logging
 
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks, Request
+from typing import Literal
+
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, BackgroundTasks, Request, Query
 from fastapi.responses import FileResponse
 from zipfile import ZipFile
 from pathlib import Path
@@ -13,6 +15,7 @@ from core import get_settings, detect_media_type, sanitize_extension, sanitize_f
 from db import FileDB, ConversionDB, CompressionDB
 from registry import registry as converter_registry
 from api.deps import get_current_active_user, get_file_db, get_conversion_db, get_compression_db
+from api.pagination import build_pagination
 from api.schemas import (
     FileListResponse, FileUploadResponse, FileUrlUploadResponse, FileDeleteResponse,
     ErrorResponse, BatchDownloadRequest, UrlUploadRequest,
@@ -28,6 +31,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/files", tags=["files"])
 
 UNSUPPORTED_UPLOAD_DETAIL = "File has no supported conversions for the detected media type"
+
+# Upper bound for `limit` on GET /api/files, so one request cannot ask for an unbounded page.
+MAX_PAGE_SIZE = 200
 
 # Define upload directory
 settings = get_settings()
@@ -115,23 +121,52 @@ async def save_file(file: UploadFile, db: FileDB, user_id: str) -> dict:
 
 @router.get(
     "",
-    summary="List all uploaded files",
+    summary="List uploaded files",
     responses={
         200: {
             "model": FileListResponse,
-            "description": "List of all uploaded files"
+            "description": "Uploaded files for the current user, with paging details"
         }
     }
 )
 def list_files(
+    page: int = Query(1, ge=1, description="Page number, starting at 1. Ignored unless `limit` is given."),
+    limit: int | None = Query(
+        None, ge=1, le=MAX_PAGE_SIZE,
+        description="Files per page. Omit to get every file in one response.",
+    ),
+    sort: Literal["filename", "type", "size", "date"] | None = Query(
+        None, description="Column to sort by. Defaults to `date` when `limit` is given.",
+    ),
+    order: Literal["asc", "desc"] | None = Query(
+        None, description="Sort direction. Defaults to `desc` (newest first) when sorting.",
+    ),
     file_db: FileDB = Depends(get_file_db),
     current_user: dict = Depends(get_current_active_user),
 ):
-    """List all uploaded files for the current user"""
-    files = file_db.list_files(user_id=current_user["uuid"])
+    """List uploaded files for the current user.
+
+    Called with no query parameters this returns every file in the same order as
+    before, so existing API users are unaffected. With ``limit`` the response holds
+    one page, sorted newest first unless ``sort``/``order`` say otherwise, and
+    ``pagination`` says how many pages exist. A page past the end returns an empty
+    list rather than an error.
+    """
+    user_id = current_user["uuid"]
+    total_items = file_db.count_files(user_id=user_id)
+    if limit is None and sort is None and order is None:
+        files = file_db.list_files(user_id=user_id)
+    else:
+        files = file_db.list_files(
+            user_id=user_id,
+            sort_by=sort or "date",
+            order=order or "desc",
+            limit=limit,
+            offset=(page - 1) * limit if limit is not None else 0,
+        )
     for file in files:
         file["compatible_formats"] = converter_registry.get_compatible_formats_and_qualities(file["media_type"])
-    return {"files": files}
+    return {"files": files, "pagination": build_pagination(total_items, page, limit)}
 
 
 @router.post(

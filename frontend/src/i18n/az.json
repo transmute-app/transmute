@@ -132,6 +132,12 @@
     "fetchFailed": "Faylları əldə etmək mümkün olmadı",
     "deleteFailed": "Silmək mümkün olmadı"
   },
+  "pagination": {
+    "label": "Səhifələmə",
+    "previous": "Əvvəlki",
+    "next": "Növbəti",
+    "pageOf": "Səhifə {{page}} / {{total}}"
+  },
   "history": {
     "title": "Tapşırıqlar",
     "loading": "Çevirmələr yüklənir...",

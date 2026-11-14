@@ -77,10 +77,18 @@ interface FileTableProps {
   onBulkCompressionLevelChange?: (level: string) => void
   /** Overrides the header label of the type/format column (e.g. for compress mode). */
   typeColumnLabel?: string
+  /**
+   * Controlled sorting. When `onSortChange` is given the table does not sort the
+   * rows itself: the parent supplies them already sorted (for example from a
+   * paginated API), and `sortColumn` / `sortDirection` only drive the header icons.
+   */
+  sortColumn?: SortColumn
+  sortDirection?: SortDirection
+  onSortChange?: (column: SortColumn, direction: SortDirection) => void
 }
 
-type SortColumn = 'filename' | 'type' | 'size' | 'date'
-type SortDirection = 'asc' | 'desc'
+export type SortColumn = 'filename' | 'type' | 'size' | 'date'
+export type SortDirection = 'asc' | 'desc'
 
 /** Logical ordering for compression-level presets (weakest → strongest). */
 const COMPRESSION_LEVEL_ORDER: Record<string, number> = { light: 0, balanced: 1, max: 2 }
@@ -119,21 +127,31 @@ function FileTable({
   onBulkQualityChange,
   onBulkCompressionLevelChange,
   typeColumnLabel,
+  sortColumn: controlledSortColumn,
+  sortDirection: controlledSortDirection,
+  onSortChange,
 }: FileTableProps) {
-  const [sortColumn, setSortColumn] = useState<SortColumn>('date')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  const [localSortColumn, setLocalSortColumn] = useState<SortColumn>('date')
+  const [localSortDirection, setLocalSortDirection] = useState<SortDirection>('desc')
   const { t } = useTranslation()
 
+  const isControlledSort = onSortChange !== undefined
+  const sortColumn = isControlledSort ? (controlledSortColumn ?? 'date') : localSortColumn
+  const sortDirection = isControlledSort ? (controlledSortDirection ?? 'desc') : localSortDirection
+
   const handleSort = (column: SortColumn) => {
-    if (sortColumn === column) {
-      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortColumn(column)
-      setSortDirection(column === 'date' ? 'desc' : 'asc')
+    const nextDirection: SortDirection = sortColumn === column
+      ? (sortDirection === 'asc' ? 'desc' : 'asc')
+      : (column === 'date' ? 'desc' : 'asc')
+    if (onSortChange) {
+      onSortChange(column, nextDirection)
+      return
     }
+    setLocalSortColumn(column)
+    setLocalSortDirection(nextDirection)
   }
 
-  const sortedRows = [...rows].sort((a, b) => {
+  const sortedRows = isControlledSort ? rows : [...rows].sort((a, b) => {
     let cmp = 0
     switch (sortColumn) {
       case 'filename':

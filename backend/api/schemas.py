@@ -115,8 +115,18 @@ class ReadinessResponse(BaseModel):
     checks: ReadinessChecks = Field(..., description="Individual component checks")
 
 
+class PaginationInfo(BaseModel):
+    total_items: int = Field(..., description="Total number of items across all pages", json_schema_extra={"example": 125})
+    total_pages: int = Field(..., description="Total number of pages at the requested page size", json_schema_extra={"example": 7})
+    current_page: int = Field(..., description="The page that was requested (1-based)", json_schema_extra={"example": 1})
+    limit: Optional[int] = Field(None, description="Page size used, or null when all items were returned", json_schema_extra={"example": 20})
+    has_next: bool = Field(..., description="Whether a later page exists", json_schema_extra={"example": True})
+    has_prev: bool = Field(..., description="Whether an earlier page exists", json_schema_extra={"example": False})
+
+
 class FileListResponse(BaseModel):
-    files: list[FileMetadata] = Field(..., description="List of uploaded files")
+    files: list[FileMetadata] = Field(..., description="List of uploaded files (one page when `limit` is given)")
+    pagination: PaginationInfo = Field(..., description="Paging details for this response")
 
 
 class UrlUploadRequest(BaseModel):

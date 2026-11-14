@@ -132,6 +132,12 @@
     "fetchFailed": "Dosyalar alınamadı",
     "deleteFailed": "Silme başarısız oldu"
   },
+  "pagination": {
+    "label": "Sayfalama",
+    "previous": "Önceki",
+    "next": "Sonraki",
+    "pageOf": "Sayfa {{page}} / {{total}}"
+  },
   "history": {
     "title": "İşler",
     "loading": "Dönüşümler yükleniyor...",
