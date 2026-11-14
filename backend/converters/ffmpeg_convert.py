@@ -72,6 +72,15 @@ class FFmpegConverter(ConverterInterface):
     }
     supported_input_formats: set = video_formats | audio_formats
     supported_output_formats: set = (video_formats | audio_formats) - _decode_only_formats
+    # MP4/MOV store each video sample's duration as a 32-bit count of track
+    # timescale ticks. FFmpeg derives that timescale from the source frame
+    # rate, which for variable frame rate input (e.g. macOS screen recordings,
+    # which emit no frames while the screen is static) can be a large, odd
+    # value. A long gap between two frames then overflows and muxing fails
+    # with "Not yet implemented in FFmpeg, patches welcome". A fixed 90 kHz
+    # timescale keeps the VFR timing and fits gaps of up to ~6.6 hours.
+    _mov_family_formats: set = {'mp4', 'mov', 'm4v'}
+    video_track_timescale_args: list = ['-video_track_timescale', '90000']
 
     ffmpeg_paths = {
         'darwin': '/opt/homebrew/bin/ffmpeg',
@@ -457,6 +466,9 @@ class FFmpegConverter(ConverterInterface):
         _mobile_container_formats = {'3gp', '3g2'}
         if self.output_type in _mobile_container_formats:
             cmd.extend(['-c:v', 'libx264', '-c:a', 'aac'])
+
+        if self.output_type in self._mov_family_formats:
+            cmd.extend(self.video_track_timescale_args)
 
         cmd.append(output_file)
         timeout_seconds = self.get_conversion_timeout_seconds(quality)
