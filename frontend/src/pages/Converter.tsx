@@ -191,6 +191,7 @@ function Converter() {
   const [uploading, setUploading] = useState(false)
   const [uploadCount, setUploadCount] = useState(0)
   const [uploadPercent, setUploadPercent] = useState<number | null>(null)
+  const uploadProgressRef = useRef({ pending: 0, totalBytes: 0, sentBytes: 0 })
   const [ignoredUploadCount, setIgnoredUploadCount] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [submittingJobs, setSubmittingJobs] = useState(false)
@@ -359,16 +360,22 @@ function Converter() {
     setUploading(true)
     setError(null)
     setIgnoredUploadCount(0)
-    setUploadCount(files.length)
-    setUploadPercent(0)
+    // Pasted files can start another batch before the current one finishes.
+    // Keep completed bytes until every overlapping batch has settled.
+    const progress = uploadProgressRef.current
+    progress.pending += files.length
+    progress.totalBytes += files.reduce((sum, file) => sum + file.size, 0)
+    setUploadCount(progress.pending)
+    const reportProgress = () => {
+      setUploadPercent(progress.totalBytes > 0 ? Math.round((progress.sentBytes / progress.totalBytes) * 100) : 100)
+    }
+    reportProgress()
 
-    // Track bytes sent per file so the bar reflects overall progress.
-    const totalBytes = files.reduce((sum, f) => sum + f.size, 0)
     const sentBytes = new Array<number>(files.length).fill(0)
     const reportSent = (index: number, bytes: number) => {
+      progress.sentBytes += bytes - sentBytes[index]
       sentBytes[index] = bytes
-      const sent = sentBytes.reduce((sum, b) => sum + b, 0)
-      setUploadPercent(totalBytes > 0 ? Math.round((sent / totalBytes) * 100) : 100)
+      reportProgress()
     }
 
     const promises = files.map(async (file, index) => {
@@ -428,7 +435,8 @@ function Converter() {
         // Add to pending list immediately as each upload completes
         setPendingFiles((prev) => [...prev, pending])
       } finally {
-        setUploadCount((prev) => Math.max(prev - 1, 0))
+        progress.pending -= 1
+        setUploadCount(progress.pending)
       }
     })
 
@@ -442,9 +450,11 @@ function Converter() {
       setError(errors.join('; '))
     }
 
-    setUploading(false)
-    setUploadCount(0)
-    setUploadPercent(null)
+    if (progress.pending === 0) {
+      uploadProgressRef.current = { pending: 0, totalBytes: 0, sentBytes: 0 }
+      setUploading(false)
+      setUploadPercent(null)
+    }
   }
 
   const processUrlUpload = async () => {
