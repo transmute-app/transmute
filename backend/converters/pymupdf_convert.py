@@ -1,7 +1,6 @@
 import os
 import shutil
 import fitz  # PyMuPDF
-import pymupdf4llm
 import markdown
 from io import BytesIO
 from pathlib import Path
@@ -13,6 +12,9 @@ import pillow_avif  # noqa: F401 — registers AVIF plugin on import
 import pillow_jxl   # noqa: F401 — registers JPEG XL plugin on import
 
 from .converter_interface import ConverterInterface
+from core.pdf_layout import load_pymupdf4llm
+
+pymupdf4llm = load_pymupdf4llm()
 
 
 # Raster image output formats supported via PyMuPDF page rendering + Pillow
