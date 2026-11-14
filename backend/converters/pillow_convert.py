@@ -296,6 +296,10 @@ class PillowConverter(ConverterInterface):
                 else:
                     save_kwargs['quality_layers'] = [80]
 
+            # Preserve Pillow's previous clipping of 32-bit integer samples to 16-bit PNG.
+            if output_fmt in ('png', 'apng') and img.mode == 'I':
+                img = img.convert('I;16')
+
             # For PNG, handle optimization
             if output_fmt == 'png':
                 save_kwargs['optimize'] = True
