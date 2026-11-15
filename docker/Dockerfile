@@ -1,4 +1,4 @@
-# Stage 1: Build frontend
+# Stage 1: Build frontend (production only; dev uses node directly via compose)
 FROM node:25-alpine AS frontend-builder
 
 WORKDIR /app/frontend
@@ -8,8 +8,8 @@ RUN npm ci
 COPY frontend/ .
 RUN npm run build
 
-# Stage 2: Runtime
-FROM python:3.13-slim
+# Stage 2: Backend base (all system/python deps, shared by prod and dev)
+FROM python:3.13-slim AS backend-base
 
 ARG BUILD_VERSION="dev"
 
@@ -154,6 +154,22 @@ RUN apt-get update && \
     libmagickcore-7.q16-10-extra \
     libmagickwand-7.q16-10 \
     && rm -rf /var/lib/apt/lists/*
+
+# Stage 3: Build dev backend (allows for hot-reload)
+FROM backend-base AS backend-dev
+
+# Reuses the same Xvfb setup as production's entrypoint.sh, but wraps
+# `python backend/main.py` so the whole process restarts on code changes
+COPY --chmod=755 docker/entrypoint.dev.sh /app/entrypoint.dev.sh
+
+# Expose port
+EXPOSE 3313
+
+# Start the application in dev mode
+ENTRYPOINT ["/bin/bash", "/app/entrypoint.dev.sh"]
+
+# Stage 4: Runtime (production build with code snapshot baked in)
+FROM backend-base AS runtime
 
 # Copy backend code
 COPY backend/ ./backend/

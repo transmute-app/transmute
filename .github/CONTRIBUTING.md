@@ -92,35 +92,52 @@ Examples:
 * `fix: handle empty file extension on upload`
 * `docs: update API examples in README`
 
-### 4. Build and Run the Docker Image (Recommended)
-`docker compose -f docker-compose-dev.yml up -d`
+### 4. Build and Run the dev environment
 
-### 4. Alternatively, Run Directly (Not Recommended)
+### Docker Container (Recommended)
 
-#### 4.1. Install Python dependencies
+> [!NOTE]
+> 
+> Hot-reload is enabled, so any changes to files under backend/ or frontend/ trigger a reload of those files, so you can see the effects of your changes almost immediately, without restarting the docker container.
+> 
+> Saving changes to any file under backend/ will log you out, and it will take a few seconds for the reload to complete and allow you to log back in.
+>
+> Saving changes to any file under frontend/ will apply changes that will be immediately visible in your browser.
 
-`pip3 install requirements.txt`
+```bash
+# Build and run the dev docker container
+make docker
 
-#### 4.2. Build the Frontend
-
+# To stop the container, use
+make docker-down
 ```
-cd ./frontend
-npm install
-npm run build
+
+### Alternatively, the dev environment can be built and run directly.
+
+
+> [!WARNING]
+> 
+> The docker method above does not share the same data as this alternative method. So db, uploads, cache, accounts, etc are independent from one method to the other.
+> 
+> This method stores its data under data/ in the root folder of the app
+
+> [!NOTE]
+> 
+> Hot-reload is enabled here too, for both backend/ and frontend/ files.
+
+
+```bash
+# Install dependencies
+make install
+
+# Launch dev server backend and frontend
+make dev
+
+# To close the app, CTRL+C in the terminal where `make dev` was run.
 ```
 
-#### 4.3. Install other dependencies
-
-- ffmpeg: For video / audio conversions
-- libmagic1: For filetype detection when there are no extensions
-- cairo: SVG interpreting / conversions
-- Drawio Desktop App: To render `.drawio` files
-- pandoc: For document conversions (markdown, docx, html, etc.)
-- pango: Required by weasyprint for PDF generation
-
-#### 4.4. Spin up the app locally
-
-`python3 backend/main.py`
+The app frontend runs on http://localhost:5173 (same for both docker and direct method). 
+If you get `ERR_EMPTY_RESPONSE`, wait a bit and refresh. The backend needs time to load.
 
 Feel free to reach out via issue if you hit any snags.
 
@@ -139,18 +156,23 @@ A `Makefile` is included to simplify common development tasks. Run `make help` t
 | `make dev` | Run backend and frontend dev servers concurrently |
 | `make build` | Build the frontend for production |
 | `make lint` | Run all linters (currently frontend ESLint) |
+| `make test` | Run backend and frontend tests |
+| `make conv-count` | Report the total number of supported conversions |
 | `make clean` | Remove build artifacts and caches |
 | `make docker` | Build and start the Docker dev environment |
 
 ### Installation
 
 ```bash
-# Install everything
+# Install dependencies for backend and frontend
 make install
 
 # Or install individually
-make install-backend    # pip install -r requirements.txt
-make install-frontend   # npm install in frontend/
+make install-backend    # creates .venv/ if needed, then pip installs requirements.txt
+make install-frontend   # npm ci in frontend/
+
+# Create the virtual environment without installing anything
+make venv
 ```
 
 ### Development
@@ -160,8 +182,15 @@ make install-frontend   # npm install in frontend/
 make dev
 
 # Or run them individually
-make dev-backend
-make dev-frontend
+make dev-backend    # runs backend/main.py under watchfiles (auto-restarts on changes)
+make dev-frontend   # runs the Vite dev server
+```
+
+### Reporting
+
+```bash
+# Count total conversions in the database
+make conv-count
 ```
 
 ### Building
@@ -169,6 +198,9 @@ make dev-frontend
 ```bash
 # Build frontend for production
 make build
+
+# Equivalent, since the frontend is currently the only component
+make build-frontend
 ```
 
 ### Linting
@@ -179,6 +211,24 @@ make lint
 
 # Run just frontend ESLint
 make lint-frontend
+
+# Alias for `make lint`
+make check
+```
+
+### Testing
+
+```bash
+# Run backend and frontend tests
+make test
+
+# Or run them individually
+make test-backend    # pytest on backend/, excluding the slow all-conversions/all-compressions suites
+make test-frontend   # Vitest (frontend tests are still being developed)
+
+# Slow, exhaustive suites (currently skipped in CI)
+make test-conversions   # all conversions, except pdf->cbz (sample PDFs contain no extractable images)
+make test-compressions  # all compressions
 ```
 
 ### Docker
@@ -188,7 +238,7 @@ make lint-frontend
 make docker
 
 # Or run steps individually
-make docker-build   # Build the image
+make docker-build   # Build the image using docker-compose-dev.yml
 make docker-up      # Start containers
 make docker-down    # Stop containers
 make docker-logs    # Tail container logs
@@ -199,18 +249,28 @@ make docker-prod
 
 ### Cleanup
 
-```bash
-# Remove build artifacts (frontend/dist, __pycache__, etc.)
-make clean
+The `clean-*` targets are destructive and prompt for confirmation before deleting anything.
 
-# Remove local data (uploads, outputs, db) — prompts for confirmation
+```bash
+# Remove build artifacts (frontend/dist, Vite cache, __pycache__, *.pyc)
+make clean          # alias for make clean-build
+
+# Remove local data (data/uploads, data/outputs, data/tmp, data/db)
 make clean-data
 
-# Remove everything (artifacts + data + node_modules)
+# Remove the Python virtual environment
+make clean-venv
+
+# Stop the Docker dev container and delete its volume
+make clean-docker
+
+# Remove everything (build artifacts, local data, .venv, Docker volume, and frontend/node_modules)
 make clean-all
 ```
 
-> **Note:** The `PYTHON` variable defaults to `python3`. If your system uses a different binary, override it with: `make PYTHON=python dev`
+> [!Note]
+> 
+> The `PYTHON` variable controls which binary is used to *create* `.venv/` (it defaults to `python3`). If your system uses a different binary, override it once when installing: `make PYTHON=python install`.
 
 
 ---
