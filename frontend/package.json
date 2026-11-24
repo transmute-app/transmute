@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@types/react-syntax-highlighter": "^15.5.13",
-    "i18next": "^26.0.4",
+    "i18next": "^26.7.2",
     "i18next-browser-languagedetector": "^8.2.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
